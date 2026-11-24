@@ -4,7 +4,15 @@ import { fishIcon, h } from './dom';
 import { showPostcard } from './modal';
 import type { ToastSpec, UiCtx } from './panel';
 
-const MAX = 4;
+/** At most this many toasts are visible; a newer toast replaces the oldest. */
+export const MAX_TOASTS = 3;
+
+interface PostcardGroup {
+  el: HTMLElement;
+  txt: HTMLElement;
+  items: ToastSpec[];
+  timer: ReturnType<typeof setTimeout>;
+}
 
 export class Toasts {
   readonly root = h('div.ui-toasts', { 'aria-live': 'polite' });
@@ -13,6 +21,8 @@ export class Toasts {
   }
 
   private recent: number[] = [];
+  /** Postcard toasts collapse into one card ("+2 more postcards"). */
+  private cards: PostcardGroup | null = null;
 
   push(t: ToastSpec): void {
     // Fast-forward / offline batches emit many events at once: keep the stack calm.
@@ -20,20 +30,66 @@ export class Toasts {
     this.recent = this.recent.filter((x) => now - x < 1000);
     if (t.kind !== 'postcard' && this.recent.length >= 3) return;
     this.recent.push(now);
+    if (t.kind === 'postcard' && this.cards?.el.isConnected) {
+      this.cards.items.push(t);
+      this.renderCards();
+      return;
+    }
     const el = h(`div.ui-toast.k-${t.kind}`, { role: 'status' });
-    el.append(t.icon ?? h(`i.ui-toast-ico.k-${t.kind}`), h('div.ui-toast-txt', null, h('b', { text: t.title }), t.text ? h('span', { text: t.text }) : null));
+    const txt = h('div.ui-toast-txt', null, h('b', { text: t.title }), t.text ? h('span', { text: t.text }) : null);
+    el.append(t.icon ?? h(`i.ui-toast-ico.k-${t.kind}`), txt);
     const kill = () => {
+      if (el.classList.contains('out')) return;
       el.classList.add('out');
+      if (this.cards?.el === el) this.cards = null;
       setTimeout(() => el.remove(), 300);
     };
-    el.addEventListener('click', () => {
-      t.onClick?.();
-      kill();
-    });
-    if (t.onClick) el.classList.add('click');
+    const timer = setTimeout(kill, t.ms ?? 4200);
+    if (t.kind === 'postcard') {
+      this.cards = { el, txt, items: [t], timer };
+      el.classList.add('click');
+      el.addEventListener('click', () => {
+        const g = this.cards;
+        if (!g || g.el !== el) return kill();
+        const first = g.items.shift();
+        first?.onClick?.();
+        if (g.items.length === 0) return kill();
+        this.renderCards();
+      });
+    } else {
+      el.addEventListener('click', () => {
+        t.onClick?.();
+        kill();
+      });
+      if (t.onClick) el.classList.add('click');
+    }
     this.root.prepend(el);
-    while (this.root.children.length > MAX) this.root.lastElementChild?.remove();
-    setTimeout(kill, t.ms ?? 4200);
+    // newer replace older: drop the oldest live toasts beyond the cap
+    const live = [...this.root.children].filter((c) => !c.classList.contains('out'));
+    for (const old of live.slice(MAX_TOASTS)) {
+      if (this.cards?.el === old) this.cards = null;
+      old.remove();
+    }
+  }
+
+  /** Repaint the grouped postcard card (first card's text + "+N more postcards") and extend its life. */
+  private renderCards(): void {
+    const g = this.cards;
+    if (!g) return;
+    const first = g.items[0];
+    if (!first) return;
+    const more = g.items.length - 1;
+    const kids: Node[] = [h('b', { text: first.title })];
+    if (first.text) kids.push(h('span', { text: first.text }));
+    if (more > 0) kids.push(h('span.ui-toast-more', { text: `+${more} more postcard${more > 1 ? 's' : ''}` }));
+    g.txt.replaceChildren(...kids);
+    clearTimeout(g.timer);
+    const el = g.el;
+    g.timer = setTimeout(() => {
+      el.classList.add('out');
+      if (this.cards?.el === el) this.cards = null;
+      setTimeout(() => el.remove(), 300);
+    }, first.ms ?? 7000);
   }
 }
 

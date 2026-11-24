@@ -37,6 +37,8 @@ export class BeachPainter implements Painter {
   private readonly puffs: { x: number; y: number; r: number; age: number }[] = [];
   private readonly loco = image('/train/locomotive.png');
   private readonly car = image('/train/car_shell.png');
+  /** Line 3 dusk painting as the beach backdrop (procedural sky when missing). */
+  private readonly far = image('/scenery/l3_far_dusk.png', true);
   private puffT = 0;
   private bubT = 0;
 
@@ -107,6 +109,16 @@ export class BeachPainter implements Painter {
     sky.addColorStop(1, '#bfe3da');
     g.fillStyle = sky;
     g.fillRect(0, 0, w, h);
+    const far = this.far;
+    if (far && ready(far)) {
+      // painted Line 3 dusk: horizon (≈ middle of the painting) on the far sea band, slow parallax
+      const ih = h * 0.62 * 2;
+      const iw = (ih * far.naturalWidth) / far.naturalHeight;
+      let x0 = -((camX * h * 0.08) % iw);
+      if (x0 > 0) x0 -= iw;
+      for (let x = x0; x < w; x += iw) g.drawImage(far, x, h * 0.62 - ih / 2 - h * 0.02, iw, ih);
+      return;
+    }
     // far volcano (slow parallax) + smoke
     const vx = w * 0.72 - camX * h * 0.08;
     g.fillStyle = '#7d6f78';
