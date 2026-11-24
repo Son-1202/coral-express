@@ -31,7 +31,7 @@
 | T-06 Sim meta (sights, depot, offline, save, markets, requests) | DEV | high | done |
 | T-07 Bots + balance.ts | DEV | high | in progress |
 | T-13 Controller + render from sim | DEV | medium | in progress |
-| T-14 UI screens | DEV | medium | in progress |
+| T-14 UI screens | DEV | medium | done |
 | T-15 Tank View + motion profiles | DEV | medium | done |
 
 ## Credits
@@ -44,3 +44,4 @@ See pm/CREDITS.md.
 - CONTENT todo: add config.todaysSpecial.minPrice (50) + schema (fold into balance tuning ticket).
 - 2026-11-24 ~13:5x–14:10 UTC: second usage-limit stop (T-07, T-13, T-14, T-15, T-16); all resumed at 14:11. Mitigation: keep ≤ 4 concurrent subagents from now on.
 - T-15 leftovers for polish: fish don't route around decor / hide in castle.
+- T-14 gaps: market Shells/s gain ignores bonds; ending/credits screen not built (→ T-18).
