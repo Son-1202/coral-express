@@ -1,12 +1,24 @@
 // Test helpers: scripted sims that bypass market availability and give Shells.
 import { loadGameData } from '../../../src/data/schema';
 import type { GameData, Habitat, LineId } from '../../../src/data/schema';
-import { createSimInternal, type SimInternals } from '../../../src/sim';
+import { createSimInternal, type SimInternals, type StoryData } from '../../../src/sim';
+import requestsJson from '../../../src/story/requests.json';
 
 export const data: GameData = loadGameData();
+export const story = requestsJson as StoryData;
 
-export function make(seed = 1): SimInternals {
-  return createSimInternal(data, { seed });
+export function make(seed = 1, withStory = false): SimInternals {
+  return createSimInternal(data, withStory ? { seed, story } : { seed });
+}
+
+/** Put decor ids on the open market's decor stall (test-only). */
+export function stock(t: SimInternals, ...decorIds: string[]): void {
+  t.ctx.state.market.decor.push(...decorIds);
+}
+
+/** Never start a Sight (keeps exact-value tests free of random buffs). */
+export function noSights(t: SimInternals): void {
+  t.ctx.state.sight.nextAt = 1e15;
 }
 
 /** Give Shells (not counted as earned). */

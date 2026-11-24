@@ -1,7 +1,7 @@
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { addFish, give, heritage, make } from './helpers';
+import { addFish, give, heritage, make, stock } from './helpers';
 
 function files(dir: string): string[] {
   return readdirSync(dir).flatMap((n) => {
@@ -49,6 +49,7 @@ describe('decor + cosmetics', () => {
     const t = make();
     const h = heritage(t);
     give(t, 1e7);
+    stock(t, 'coral_castle', 'reef_2', 'kelp_strand');
     const place = { type: 'placeDecor' as const, carId: h, decorId: 'coral_castle', x: 0.5, y: 0.9, layer: 'back' as const, scale: 1, flip: false };
     expect(t.sim.act(place)).toEqual({ ok: false, reason: 'noCopy' });
     expect(t.sim.price({ type: 'buyDecor', decorId: 'coral_castle' })).toBe(40000);

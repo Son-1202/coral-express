@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { addCar, addFish, give, heritage, make, setLine } from './helpers';
+import { addCar, addFish, give, heritage, make, setLine, stock } from './helpers';
 
 const bm = (t: ReturnType<typeof make>, carId: string, fishId: string): number =>
   t.sim.carInfo(carId).fish.find((f) => f.fishId === fishId)!.bondMult;
@@ -31,7 +31,7 @@ describe('bonds', () => {
     expect(t.sim.carInfo(h).activeBonds.filter((b) => b.kind === 'pair')).toHaveLength(1);
   });
 
-  it('community: +100% to the car, +5 appeal, and still counts its pair', () => {
+  it('community (D-018): +100% only to the three members, +5 car appeal, still counts its pair', () => {
     const t = make();
     const h = heritage(t);
     const d = addFish(t, 'pebble_damsel', h);
@@ -43,6 +43,10 @@ describe('bonds', () => {
     const info = t.sim.carInfo(h);
     expect(info.appeal).toBeCloseTo(1 + 2 + 4 + 5);
     expect(info.activeBonds.map((b) => b.kind).sort()).toEqual(['community', 'pair']);
+    // a non-member fish in the same car gets nothing from the community
+    const d2 = addFish(t, 'pebble_damsel', h);
+    expect(bm(t, h, d2)).toBe(1);
+    expect(bm(t, h, d)).toBeCloseTo(2);
   });
 
   it('moving a partner away breaks the bond', () => {
@@ -102,6 +106,7 @@ describe('bonds', () => {
     const h = heritage(t);
     const d = addFish(t, 'pebble_damsel', h);
     give(t, 1e9);
+    stock(t, 'treasure_chest');
     for (let i = 0; i < 2; i++) {
       expect(t.sim.act({ type: 'buyDecor', decorId: 'treasure_chest' }).ok).toBe(true);
       expect(t.sim.act({ type: 'placeDecor', carId: h, decorId: 'treasure_chest', x: 0.2, y: 0.9, layer: 'back', scale: 1, flip: false }).ok).toBe(true);
@@ -117,6 +122,7 @@ describe('bonds', () => {
     const c = addFish(u, 'clownfish', hu);
     addFish(u, 'carpet_anemone', hu);
     give(u, 1e14);
+    stock(u, 'captains_wheel');
     expect(u.sim.act({ type: 'buyDecor', decorId: 'captains_wheel' }).ok).toBe(true);
     expect(u.sim.act({ type: 'placeDecor', carId: hu, decorId: 'captains_wheel', x: 0.5, y: 0.9, layer: 'front', scale: 1, flip: false }).ok).toBe(true);
     expect(bm(u, hu, c)).toBeCloseTo(1.7);

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { SimEvent } from '../../../src/sim';
-import { addFish, give, make, setLine } from './helpers';
+import { addFish, give, make, noSights, setLine } from './helpers';
 
 const arrivals = (ev: SimEvent[]): number[] => ev.flatMap((e) => (e.type === 'arrive' ? [e.station] : []));
 
@@ -68,6 +68,7 @@ describe('train', () => {
 
   it('line 3 terminal → ending + endless (fares ×2); final postcard suppressToast', () => {
     const t = make();
+    noSights(t);
     setLine(t, 3);
     addFish(t, 'tubeworm');
     give(t, 1e15);

@@ -1,7 +1,8 @@
 // Bond resolution for one carriage (SPEC B4.6). Deterministic: pairs are matched in
 // bonds.json order, fish in slot order; a fish counts toward at most one pair.
-// Communities (all three species in the car) add their bonus to every fish in the
-// car and also keep their pairs.
+// Communities (all three species in the car) add their bonus to the three member fish
+// only (D-018: first fish of each member species in slot order) and keep their pairs;
+// the +appeal applies to the car.
 import type { DataIndex } from './lookup';
 import type { BondInfo, Fish, PossibleBond } from './types';
 import type { UpgradeFx } from './upgrades';
@@ -53,9 +54,9 @@ export function resolveBonds(idx: DataIndex, fish: readonly Fish[], decorBondPP:
       continue;
     }
     const bonus = cfg.communityBonus + decorBondPP + fx.communityBonusPP;
-    for (const f of fish) fishBonus.set(f.id, (fishBonus.get(f.id) ?? 0) + bonus);
-    communityAppeal += cfg.communityAppeal;
     const ids = c.members.map((m) => fish.find((f) => f.species === m)!.id);
+    for (const id of ids) fishBonus.set(id, (fishBonus.get(id) ?? 0) + bonus);
+    communityAppeal += cfg.communityAppeal;
     active.push({ kind: 'community', bondId: c.id, species: [...c.members], fishIds: ids, bonus });
   }
   return { active, possible, fishBonus, communityAppeal };
