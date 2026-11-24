@@ -1,0 +1,10 @@
+# key job_id model cost status
+plants_reef_try1 02c24baa-6dc3-4d44-80fd-a32028b2ac85 nano_banana_pro(->nano_banana_2) 2 REJECTED copied style bible
+passengers_a 9a1e992b-cb44-48a2-84c1-984d84d71a77 gpt_image_2_6 3:2 medium 1k 1 ok
+plants_reef_try2 ceff98c3-e433-4914-815c-b250d45e5b02 nano_banana_pro(->nano_banana_2) 2 REJECTED copied style bible again
+plants_reef f35aa434-bcf8-448b-b1e1-e5268f1ac07f gpt_image_2_6 2k 1.75
+decor_a 1c4ef0e0-077c-48eb-b498-730517c660f8 gpt_image_2_6 2k 1.75
+foliage_l1 672c660d-0779-40e8-a60c-1fbc3affd61a gpt_image_2_6 2k 1.75
+foliage_l2 ec7dcfcd-c601-4833-aa68-ab2599129494 gpt_image_2_6 2k 1.75
+foliage_l3 f9fbdb76-cc39-482d-8fb4-342a53c44d85 gpt_image_2_6 2k 1.75
+props_l1 c6121914-0791-4313-9efc-95f85832cfdd gpt_image_2_6 4:3 2k 1.75

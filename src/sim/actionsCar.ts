@@ -65,12 +65,11 @@ export function checkBuildTrack(ctx: Ctx): Check {
   });
 }
 
-/** Decor sold on the current line or an earlier one (market rotation is T-06). */
+/** Decor on the open market's decor stall, or already owned (Catalogue "restock"). */
 export function decorAvailable(ctx: Ctx, decorId: string): boolean {
   const d = ctx.idx.decor.get(decorId);
-  if (!d || d.baseCost === null) return false;
-  const pl = poolLine(d.pool);
-  return pl > 0 && pl <= ctx.state.currentLine;
+  if (!d || d.baseCost === null || poolLine(d.pool) === 0) return false;
+  return ctx.state.market.decor.includes(decorId) || (ctx.state.decorOwned[decorId] ?? 0) > 0;
 }
 
 export function checkBuyDecor(ctx: Ctx, a: A<'buyDecor'>): Check {

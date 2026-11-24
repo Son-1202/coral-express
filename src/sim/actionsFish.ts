@@ -10,11 +10,28 @@ import type { Action, Fish } from './types';
 
 type A<T extends Action['type']> = Extract<Action, { type: T }>;
 
-/** Can this species be bought right now? First sale only at its home station market. */
+/** Can this species be bought right now? Catalogue (bought this run) or the open fish stall. */
 export function speciesAvailable(ctx: Ctx, sp: SpeciesDef): boolean {
   const s = ctx.state;
-  if (s.speciesBoughtThisRun.includes(sp.id)) return true;
-  return sp.line === s.currentLine && sp.station === s.marketStation;
+  return s.speciesBoughtThisRun.includes(sp.id) || s.market.fish.includes(sp.id);
+}
+
+/** Consume a Shiny Egg for this species (species-specific first, then a generic one). */
+function useShinyEgg(ctx: Ctx, species: string): boolean {
+  const e = ctx.state.shinyEggs;
+  const i = e.species.indexOf(species);
+  if (i >= 0) { e.species.splice(i, 1); return true; }
+  if (e.any > 0) { e.any--; return true; }
+  return false;
+}
+
+/** Cost of `times` level-ups from `level`, with the species' Today's Special discount. */
+function discountedLevels(ctx: Ctx, sp: SpeciesDef, level: number, times: number): number {
+  const left = ctx.state.levelDiscounts[sp.id] ?? 0;
+  const k = 1 - ctx.idx.data.config.todaysSpecial.levelDiscount;
+  let cost = 0;
+  for (let i = 0; i < times; i++) cost += levelCost(ctx.idx, sp.baseCost, level + i) * (i < left ? k : 1);
+  return cost;
 }
 
 /** Create a fish in a car (purchase, rewards, mascot). Rolls shiny unless `shiny` is given. */
@@ -43,7 +60,8 @@ export function checkBuyFish(ctx: Ctx, a: A<'buyFish'>): Check {
   const cost = copyCost(ctx.idx, ctx.state, sp, ctx.fx());
   return okCheck(cost, () => {
     const events = ctx.events.length;
-    const f = spawnFish(ctx, sp.id, car.id, { spent: cost });
+    const egg = useShinyEgg(ctx, sp.id);
+    const f = spawnFish(ctx, sp.id, car.id, egg ? { spent: cost, shiny: true } : { spent: cost });
     ctx.state.lifetime.fishBought++;
     // Purchase event goes before the stamps spawnFish emitted.
     ctx.events.splice(events, 0, { type: 'purchase', item: 'fish', cost, refId: sp.id, carId: car.id, fishId: f.id, shiny: f.shiny });
@@ -64,23 +82,28 @@ export function checkLevelFish(ctx: Ctx, a: A<'levelFish'>): Check {
     times = 0;
     const budget = ctx.state.shells;
     while (f.level + times < max) {
-      const c = levelCost(ctx.idx, sp.baseCost, f.level + times);
+      const c = discountedLevels(ctx, sp, f.level, times + 1) - cost;
       if (cost + c > budget) break;
       cost += c;
       times++;
     }
-    if (times === 0) return okCheck(levelCost(ctx.idx, sp.baseCost, f.level), () => undefined);
+    if (times === 0) return okCheck(discountedLevels(ctx, sp, f.level, 1), () => undefined);
   } else {
     if (!Number.isInteger(a.times) || a.times < 1) return fail('invalid');
     if (f.level + a.times > max) return fail('maxLevel');
     times = a.times;
-    for (let i = 0; i < times; i++) cost += levelCost(ctx.idx, sp.baseCost, f.level + i);
+    cost = discountedLevels(ctx, sp, f.level, times);
   }
   return okCheck(cost, () => {
     const from = f.level;
     f.level += times;
     f.spent += cost;
     ctx.state.lifetime.levelsBought += times;
+    const left = ctx.state.levelDiscounts[f.species];
+    if (left !== undefined) {
+      if (left > times) ctx.state.levelDiscounts[f.species] = left - times;
+      else delete ctx.state.levelDiscounts[f.species];
+    }
     ctx.emit({ type: 'levelUp', fishId: f.id, species: f.species, level: f.level, levels: times, cost });
     for (const m of ctx.idx.data.config.milestones.levels) {
       if (from < m && f.level >= m) ctx.emit({ type: 'milestone', fishId: f.id, species: f.species, level: m });
