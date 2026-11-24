@@ -30,11 +30,11 @@ export class Post {
   ) {
     this.composer = new EffectComposer(renderer, { frameBufferType: THREE.HalfFloatType });
     this.composer.addPass(new RenderPass(scene, camera));
-    this.tilt = new TiltShiftEffect({ focusArea: 0.34, feather: 0.2, offset: -0.06, kernelSize: KernelSize.LARGE });
+    this.tilt = new TiltShiftEffect({ focusArea: 0.48, feather: 0.3, offset: -0.12, kernelSize: KernelSize.MEDIUM });
     this.bloom = new BloomEffect({ intensity: 0.55, luminanceThreshold: 0.78, luminanceSmoothing: 0.25, mipmapBlur: true, radius: 0.7 });
     const vignette = new VignetteEffect({ offset: 0.32, darkness: 0.42 });
     this.noise = new NoiseEffect({ blendFunction: BlendFunction.SOFT_LIGHT, premultiply: false });
-    this.noise.blendMode.opacity.value = 0.22;
+    this.noise.blendMode.opacity.value = 0.08;
     this.composer.addPass(new EffectPass(camera, this.tilt));
     this.composer.addPass(new EffectPass(camera, this.bloom, this.grade, vignette, this.noise));
     this.setTimeOfDay(0.3);
@@ -49,9 +49,9 @@ export class Post {
     this.quality = q;
     const high = q === 'high';
     this.renderer.setPixelRatio(high ? Math.min(window.devicePixelRatio, 2) : 1);
-    this.tilt.blurPass.kernelSize = high ? KernelSize.LARGE : KernelSize.SMALL;
+    this.tilt.blurPass.kernelSize = high ? KernelSize.MEDIUM : KernelSize.SMALL;
     this.bloom.blendMode.opacity.value = high ? 1 : 0;
-    this.noise.blendMode.opacity.value = high ? 0.22 : 0;
+    this.noise.blendMode.opacity.value = high ? 0.08 : 0;
   }
 
   setSize(w: number, h: number): void {

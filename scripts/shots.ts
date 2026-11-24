@@ -9,7 +9,22 @@ import { createRequire } from 'node:module';
 
 const require = createRequire(import.meta.url);
 // Playwright is installed globally in this environment (see CLAUDE.md).
-function loadPlaywright(): typeof import('playwright') {
+interface PwPage {
+  on(ev: 'console', fn: (m: { type(): string; text(): string }) => void): void;
+  on(ev: 'pageerror', fn: (e: Error) => void): void;
+  goto(url: string, o: { waitUntil: 'load' }): Promise<unknown>;
+  waitForTimeout(ms: number): Promise<void>;
+  screenshot(o: { path: string }): Promise<unknown>;
+  close(): Promise<void>;
+}
+interface PwBrowser {
+  newPage(o: { viewport: { width: number; height: number }; deviceScaleFactor: number }): Promise<PwPage>;
+  close(): Promise<void>;
+}
+interface Pw {
+  chromium: { launch(o?: { args?: string[] }): Promise<PwBrowser> };
+}
+function loadPlaywright(): Pw {
   try {
     return require('playwright');
   } catch {

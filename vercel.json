@@ -1,5 +1,6 @@
 {
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
-  "framework": "vite"
+  "framework": "vite",
+  "ignoreCommand": "git log -1 --pretty=%s | grep -qE '^(wip|chore\\(pm\\))' && exit 0 || exit 1"
 }

@@ -177,9 +177,10 @@ export function paintMidNear(seed: number): HTMLCanvasElement {
   const { ctx, w, h } = p;
   const r = rng(seed);
   const raw = profile(seed, w, [[3, 1], [5, 0.5], [11, 0.2]]);
-  const f = (x: number) => Math.max(0, (raw(x) - 0.55) / 0.45);
+  // rounded islet humps: sqrt gives domed tops instead of pointy peaks
+  const f = (x: number) => Math.sqrt(Math.max(0, (raw(x) - 0.58) / 0.42));
   const base = h - 4;
-  const amp = 230;
+  const amp = 120;
   // rocks: darker, warmer stone
   ctx.fillStyle = SUNNY.cliffShade;
   ctx.beginPath();
@@ -210,12 +211,12 @@ export function paintMidNear(seed: number): HTMLCanvasElement {
     ctx.fillRect(x, t - 2, 3, 6 + ((x * 7) % 5));
   }
   // houses on top of the larger islets
-  for (let x = 40; x < w - 80; x += 90 + r() * 120) {
-    if (f(x) < 0.5) continue;
-    const t = base - f(x + 30) * amp;
-    const hw = 40 + r() * 30;
-    house(ctx, r, x, t + 6, hw, 34 + r() * 22, 1.8);
-    bush(ctx, r, x - 6, t + 6, 12, r() < 0.6);
+  for (let x = 40; x < w - 80; x += 60 + r() * 70) {
+    const hw = 34 + r() * 26;
+    if (f(x) < 0.45 || f(x + hw) < 0.45) continue;
+    const t = base - Math.min(f(x), f(x + hw)) * amp;
+    house(ctx, r, x, t + 8, hw, 30 + r() * 20, 1.8);
+    bush(ctx, r, x - 6, t + 8, 12, r() < 0.6);
   }
   // little sailboats in the gaps
   for (let x = 30; x < w - 30; x += 70 + r() * 140) {

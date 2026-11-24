@@ -2,7 +2,7 @@ import { makeCanvas, rng, pick, shade } from '../paint/canvas';
 import { SUNNY } from '../paint/palette';
 import { PX } from './paintTrack';
 
-export const STATION_BUILDING = { w: 8, h: 4 } as const;
+export const STATION_BUILDING = { w: 6.4, h: 3.2 } as const;
 
 function person(ctx: CanvasRenderingContext2D, x: number, base: number, coat: string, hat: string): void {
   ctx.fillStyle = '#3c3a46';

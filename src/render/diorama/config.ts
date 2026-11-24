@@ -5,9 +5,9 @@
 export const WORLD = {
   fov: 22,
   /** Camera distance and height relative to the train's focus point. */
-  camDist: 19.5,
-  camTiltDeg: 6,
-  focusY: 0.75,
+  camDist: 23,
+  camTiltDeg: 4,
+  focusY: 1.55,
   seaY: -2.5,
   groundY: 0,
   nearGroundY: -0.9,
@@ -26,7 +26,7 @@ export const LAYER_Z = {
   midFar: -60,
   midNear: -26,
   verge: -3.1,
-  station: -2.0,
+  station: -2.3,
   track: 0,
   near: 3.6,
   nearFront: 7.5,

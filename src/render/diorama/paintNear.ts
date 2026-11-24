@@ -77,7 +77,7 @@ export function paintNear(seed: number, variant: number): HTMLCanvasElement {
   flowers(p, r, 100, base, 14, 120);
   flowers(p, r, 420, base, 14, 90);
   if (variant === 0) {
-    lemonTree(p, r, 250, base, 22);
+    lemonTree(p, r, 250, base, 16);
   } else {
     // telegraph pole with wire stubs
     ctx.fillStyle = SUNNY.woodDark;
