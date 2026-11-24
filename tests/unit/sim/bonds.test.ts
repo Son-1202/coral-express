@@ -44,6 +44,8 @@ describe('bonds', () => {
     expect(info.appeal).toBeCloseTo(1 + 2 + 4 + 5);
     expect(info.activeBonds.map((b) => b.kind).sort()).toEqual(['community', 'pair']);
     // a non-member fish in the same car gets nothing from the community
+    give(t, 1e6);
+    t.sim.act({ type: 'buySlot', carId: h });
     const d2 = addFish(t, 'pebble_damsel', h);
     expect(bm(t, h, d2)).toBe(1);
     expect(bm(t, h, d)).toBeCloseTo(2);

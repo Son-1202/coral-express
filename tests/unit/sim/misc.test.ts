@@ -49,7 +49,7 @@ describe('decor + cosmetics', () => {
     const t = make();
     const h = heritage(t);
     give(t, 1e7);
-    stock(t, 'coral_castle', 'reef_2', 'kelp_strand');
+    stock(t, 'coral_castle', 'reef_2');
     const place = { type: 'placeDecor' as const, carId: h, decorId: 'coral_castle', x: 0.5, y: 0.9, layer: 'back' as const, scale: 1, flip: false };
     expect(t.sim.act(place)).toEqual({ ok: false, reason: 'noCopy' });
     expect(t.sim.price({ type: 'buyDecor', decorId: 'coral_castle' })).toBe(40000);
