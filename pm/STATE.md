@@ -17,7 +17,9 @@
 | T-01 Scaffold + diorama | DEV | medium | in progress |
 | T-02 Data files + schema | CONTENT | medium | done |
 | T-03 Story text | CONTENT | medium | done |
-| T-04 Style bible candidates | ART | medium | in progress |
+| T-04 Style bible candidates | ART | medium | done (B chosen) |
+| T-08 Pixelize pipeline | DEV | medium | in progress |
+| T-09 Line 1 hero art | ART | medium | in progress |
 | T-05 Sim core | DEV | high | in progress |
 | T-06 Sim meta (sights, depot, offline, save, markets, requests) | DEV | high | next |
 | T-07 Bots + balance.ts | DEV | high | next |
