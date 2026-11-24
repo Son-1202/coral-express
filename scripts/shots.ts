@@ -1,6 +1,7 @@
 /**
  * Screenshot harness: `npm run shots [-- <url>] [-- --query "fast=1&warp=20"] [-- --name T-01]`
  * Without a URL it starts `vite preview` on the built `dist/` (run `npm run build` first).
+ * Flags: --eval "<js>" (run after load), --only <viewport-prefix>, --wait <ms>, --fps.
  * Saves docs/qa/screens/<name>_<viewport>.png at deviceScaleFactor 1 and fails on console errors.
  */
 import { spawn, type ChildProcess } from 'node:child_process';
@@ -13,6 +14,7 @@ interface PwPage {
   on(ev: 'console', fn: (m: { type(): string; text(): string }) => void): void;
   on(ev: 'pageerror', fn: (e: Error) => void): void;
   goto(url: string, o: { waitUntil: 'load' }): Promise<unknown>;
+  evaluate(js: string): Promise<unknown>;
   waitForTimeout(ms: number): Promise<void>;
   screenshot(o: { path: string }): Promise<unknown>;
   close(): Promise<void>;
@@ -41,6 +43,12 @@ const positional = args.filter((a, i) => !a.startsWith('--') && !(args[i - 1] ??
 const name = flag('name') ?? 'T-01';
 const query = flag('query') ?? 'quality=high';
 const waitMs = Number(flag('wait') ?? 3000);
+/** JS evaluated in the page after load (e.g. "__debug.triggerSight('whale_breach')"). */
+const evalJs = flag('eval');
+/** Only viewports whose id starts with this (e.g. desktop). */
+const only = flag('only');
+/** Print window.__debug.stage.guard.fps after the wait. */
+const fps = args.includes('--fps');
 
 const VIEWPORTS = [
   { id: 'desktop_1280x720', width: 1280, height: 720 },
@@ -76,7 +84,7 @@ async function main(): Promise<void> {
   mkdirSync('docs/qa/screens', { recursive: true });
   const errors: string[] = [];
   try {
-    for (const vp of VIEWPORTS) {
+    for (const vp of VIEWPORTS.filter((v) => !only || v.id.startsWith(only))) {
       const page = await browser.newPage({ viewport: { width: vp.width, height: vp.height }, deviceScaleFactor: 1 });
       page.on('console', (m) => {
         if (m.type() === 'error') errors.push(`[${vp.id}] ${m.text()}`);
@@ -84,7 +92,12 @@ async function main(): Promise<void> {
       page.on('pageerror', (e) => errors.push(`[${vp.id}] ${e.message}`));
       const url = `${base}${base.includes('?') ? '&' : '?'}${query}`;
       await page.goto(url, { waitUntil: 'load' });
+      if (evalJs) {
+        await page.waitForTimeout(500);
+        await page.evaluate(evalJs);
+      }
       await page.waitForTimeout(waitMs);
+      if (fps) console.log(`[${vp.id}] fps`, await page.evaluate('window.__debug && window.__debug.stage.guard.fps'));
       const out = `docs/qa/screens/${name}_${vp.id}.png`;
       await page.screenshot({ path: out });
       console.log(`saved ${out}`);

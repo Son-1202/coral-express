@@ -33,6 +33,9 @@ export interface PlanOpts {
   rng: BotRng;
 }
 
+/** Upper bound on bondMult (pair + community + decor/upgrade pp) for cheap pre-filters. */
+const BOND_CEILING = 4;
+
 interface ReqCtx { open: RequestDef[]; value: Map<string, number> }
 
 function speciesOf(e: Econ, id: string): SpeciesDef {
@@ -95,7 +98,11 @@ function hypCar(car: Carriage, ch: CarChange, newFishId: string): Carriage {
 /** Value of a hypothetical car change: Δ Shells/s and request bonus. */
 function delta(e: Econ, rq: ReqCtx, car: Carriage, ch: CarChange): { gain: number; bonus: number } {
   const cur = e.model.byId.get(car.id);
-  const next = evalCar(e, car, ch);
+  const dd = ch.addDecor && !ch.addSpecies && !ch.removeFishId && !ch.habitat ? e.idx.decor.get(ch.addDecor) : undefined;
+  // Decor without effects only adds appeal: no need to re-run the income model.
+  const next = cur && dd && dd.effects.length === 0
+    ? { ...cur, appeal: cur.appeal + dd.appeal }
+    : evalCar(e, car, ch);
   const gain = carValue(e, next) - (cur ? carValue(e, cur) : 0);
   let bonus = 0;
   if (rq.open.length) {
@@ -184,7 +191,10 @@ export function structuralCandidates(e: Econ, o: PlanOpts): Cand[] {
       if (v < wv) { wv = v; weakest = id; }
     }
     if (!weakest) continue;
-    const b = bestFishFor(e, rq, o, car, species, weakest);
+    // Only species whose best-case output (habitat + full bond bonus) beats the weakest fish.
+    const strong = species.filter((id) => rawFishValue(e, speciesOf(e, id), car.habitat) * BOND_CEILING > wv);
+    if (!strong.length) continue;
+    const b = bestFishFor(e, rq, o, car, strong, weakest);
     if (!b) continue;
     const refund = cfg.sellRefund * (s.fish[weakest]?.spent ?? 0);
     const net = b.cost - refund;
@@ -304,6 +314,7 @@ function moveCandidates(e: Econ, o: PlanOpts): Cand[] {
   const free = s.carriages.filter((c) => c.fish.length < c.slots);
   if (!free.length) return [];
   const out: Cand[] = [];
+  const partners = bondPartners(e);
   for (const car of s.carriages) {
     const m = e.model.byId.get(car.id);
     if (!m) continue;
@@ -316,6 +327,8 @@ function moveCandidates(e: Econ, o: PlanOpts): Cand[] {
       if (o.bonds && !off && fi.bondMult > 1) continue;
       for (const to of free) {
         if (to.id === car.id) continue;
+        // Greedy: only worth a model run if it fixes the habitat or meets a bond partner.
+        if (o.bonds && !(off && sp.habitat === to.habitat) && !(partners.get(f.species)?.some((p) => to.fish.some((id) => s.fish[id]?.species === p)))) continue;
         let gain: number;
         if (o.bonds) {
           const from = evalCar(e, car, { removeFishId: f.id });
@@ -331,4 +344,18 @@ function moveCandidates(e: Econ, o: PlanOpts): Cand[] {
     }
   }
   return out;
+}
+
+const partnerCache = new WeakMap<object, Map<string, string[]>>();
+/** Species → species it bonds with (pairs and community co-members). */
+function bondPartners(e: Econ): Map<string, string[]> {
+  const b = e.idx.data.bonds;
+  let m = partnerCache.get(b);
+  if (m) return m;
+  m = new Map();
+  const add = (x: string, y: string): void => { const l = m!.get(x) ?? []; if (!l.includes(y)) l.push(y); m!.set(x, l); };
+  for (const p of b.pairs) { add(p.a, p.b); add(p.b, p.a); }
+  for (const c of b.communities) for (const x of c.members) for (const y of c.members) if (x !== y) add(x, y);
+  partnerCache.set(b, m);
+  return m;
 }

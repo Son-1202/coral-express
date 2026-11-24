@@ -24,7 +24,7 @@ export function carPicker(ctx: UiCtx, value: string, auto: boolean, onPick: (id:
     const full = c.fish.length >= c.slots;
     const b = btn(
       `ui-carchip hab-${c.habitat}${value === c.id ? ' on' : ''}${full ? ' full' : ''}`,
-      h('span', { html: `<b>${c.heritage ? '★' : i + 1}</b><small>${habitatName(c.habitat)} ${c.fish.length}/${c.slots}</small>` }),
+      h('span', { html: `<b>${c.heritage ? 'H' : i + 1}</b><small><span class="hn">${habitatName(c.habitat)} </span>${c.fish.length}/${c.slots}</small>` }),
       () => onPick(c.id),
       { title: `${carLabel(s, c.id)} — ${habitatName(c.habitat)}, ${c.fish.length}/${c.slots} slots` },
     );

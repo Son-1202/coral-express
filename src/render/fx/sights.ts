@@ -114,7 +114,6 @@ export class SightFx {
   readonly tappables: THREE.Object3D[] = [];
   private actors: Actor[] = [];
   private active: string | null = null;
-  private flags: THREE.Mesh | null = null;
 
   constructor(private readonly host: SightHost) {}
 
@@ -212,7 +211,6 @@ export class SightFx {
       case 'festival_station': {
         const m = new THREE.Mesh(new THREE.PlaneGeometry(10, 1.25), new THREE.MeshBasicMaterial({ map: bunting(), transparent: true, alphaTest: 0.05 }));
         bunting().wrapS = THREE.RepeatWrapping;
-        this.flags = m;
         this.add({
           mesh: m,
           update: (_dt, t) => {
@@ -289,7 +287,6 @@ export class SightFx {
     }
     this.actors = [];
     this.tappables.length = 0;
-    this.flags = null;
     this.active = null;
     this.host.zoomOut(1);
     this.host.fog(1);

@@ -43,7 +43,14 @@ export function depotPanel(ctx: UiCtx): PanelView {
       }
 
       // mascot picker
-      const fish = Object.values(s.fish);
+      // one candidate per species (+ shiny variant): its highest-level fish
+      const bestBy = new Map<string, (typeof s.fish)[string]>();
+      for (const f of Object.values(s.fish)) {
+        const k = `${f.species}|${f.shiny}`;
+        const cur = bestBy.get(k);
+        if (!cur || f.level > cur.level || f.mascot) bestBy.set(k, f);
+      }
+      const fish = [...bestBy.values()].sort((a, b) => b.level - a.level);
       if (!fish.some((f) => f.id === mascotId)) {
         const best = [...fish].sort((a, b) => b.level - a.level)[0];
         mascotId = best?.id ?? '';
@@ -53,7 +60,7 @@ export function depotPanel(ctx: UiCtx): PanelView {
       if (!nameTouched && chosen) mascotName = defaultMascotName(api.data, chosen.species, chosen.nickname);
       const picker = h('div.ui-mascots');
       for (const f of fish) {
-        const b = btn(`ui-mascot${f.id === mascotId ? ' on' : ''}`, h('span', null, fishIcon(api.data, f.species, f.shiny, 40), h('small', { text: `${f.nickname ?? speciesName(api.data, f.species)} · Lv ${f.level}` })), () => {
+        const b = btn(`ui-mascot${f.id === mascotId ? ' on' : ''}`, h('span', null, fishIcon(api.data, f.species, f.shiny, 40), h('small', { text: f.nickname ?? speciesName(api.data, f.species) }), h('em', { text: `Lv ${f.level}` })), () => {
           mascotId = f.id;
           nameTouched = false;
           ctx.rerender();

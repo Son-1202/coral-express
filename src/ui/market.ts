@@ -7,12 +7,12 @@ import { costButton, type PanelView, type UiCtx } from './panel';
 import { carLabel, carPicker } from './cars';
 
 type Tab = 'fish' | 'decor' | 'special' | 'requests' | 'catalogue';
-const TABS: { id: Tab; label: string }[] = [
-  { id: 'fish', label: 'Fish' },
-  { id: 'decor', label: 'Decor & plants' },
-  { id: 'special', label: "Today's Special" },
-  { id: 'requests', label: 'Requests' },
-  { id: 'catalogue', label: 'Catalogue' },
+const TABS: { id: Tab; label: string; short: string }[] = [
+  { id: 'fish', label: 'Fish', short: 'Fish' },
+  { id: 'decor', label: 'Decor & plants', short: 'Decor' },
+  { id: 'special', label: "Today's Special", short: 'Special' },
+  { id: 'requests', label: 'Requests', short: 'Requests' },
+  { id: 'catalogue', label: 'Catalogue', short: 'All' },
 ];
 
 let tab: Tab = 'fish';
@@ -34,7 +34,7 @@ export function marketPanel(ctx: UiCtx): PanelView {
       body.append(keeperCard(ctx));
       const tabs = h('div.ui-tabs', { role: 'tablist' });
       for (const t of TABS) {
-        const b = btn(`ui-tab${t.id === tab ? ' on' : ''}`, t.label, () => {
+        const b = btn(`ui-tab${t.id === tab ? ' on' : ''}`, h('span', { html: `<span class="full">${t.label}</span><span class="short">${t.short}</span>` }), () => {
           tab = t.id;
           ctx.rerender();
         }, { role: 'tab', 'aria-selected': t.id === tab ? 'true' : 'false' });

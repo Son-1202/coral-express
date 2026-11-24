@@ -5,9 +5,12 @@ import type { GameData } from '../data/schema';
 type Attrs = Record<string, string | number | boolean | undefined | null>;
 type Child = Node | string | null | undefined | false;
 
+type TagOf<S extends string> = S extends `${infer T}.${string}` ? T : S;
+type ElOf<S extends string> = TagOf<S> extends keyof HTMLElementTagNameMap ? HTMLElementTagNameMap[TagOf<S>] : HTMLElement;
+
 /** h('div.cls.other', {attr}, ...children) */
-export function h<K extends keyof HTMLElementTagNameMap>(sel: K | `${K}.${string}`, attrs: Attrs | null = null, ...kids: Child[]): HTMLElementTagNameMap[K] {
-  const [tag, ...cls] = sel.split('.') as [K, ...string[]];
+export function h<S extends string>(sel: S, attrs: Attrs | null = null, ...kids: Child[]): ElOf<S> {
+  const [tag, ...cls] = sel.split('.');
   const e = document.createElement(tag);
   if (cls.length) e.className = cls.join(' ');
   if (attrs) {
@@ -19,12 +22,12 @@ export function h<K extends keyof HTMLElementTagNameMap>(sel: K | `${K}.${string
     }
   }
   for (const k of kids) if (k !== null && k !== undefined && k !== false) e.append(k);
-  return e;
+  return e as ElOf<S>;
 }
 
 /** Brass button with click handler. */
 export function btn(cls: string, label: Child, onClick: (ev: MouseEvent) => void, attrs: Attrs = {}): HTMLButtonElement {
-  const b = h(`button.${cls}` as 'button', { type: 'button', ...attrs }, label);
+  const b = h('button', { type: 'button', class: cls, ...attrs }, label) as HTMLButtonElement;
   b.addEventListener('click', (ev) => {
     ev.stopPropagation();
     onClick(ev);
@@ -64,7 +67,7 @@ export function fishIcon(data: GameData, species: string, shiny = false, size = 
 
 /** Generic image with a CSS fallback block when the file is missing. */
 export function artImg(path: string, cls: string, fallback: () => HTMLElement): HTMLElement {
-  if (hasFile(path)) return h(`img.${cls}` as 'img', { src: fileUrl(path), alt: '', draggable: 'false' });
+  if (hasFile(path)) return h(`img.${cls}`, { src: fileUrl(path), alt: '', draggable: 'false' });
   return fallback();
 }
 

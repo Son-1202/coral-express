@@ -2,79 +2,126 @@ import '@fontsource/pixelify-sans/400.css';
 import '@fontsource/pixelify-sans/600.css';
 import '@fontsource/pixelify-sans/700.css';
 import '@fontsource/silkscreen/400.css';
+import * as THREE from 'three';
+import { GameController, type GameView } from './game/controller';
+import { createApi } from './game/api';
+import { createDebug } from './game/debug';
+import { attachInput } from './game/input';
+import { readSave } from './game/storage';
 import { Stage } from './render/stage';
-import { PLACEHOLDER } from './render/placeholder';
-import { Hud, mountRotateCard } from './ui/hud';
+import { createTankView } from './render/tank/tankView';
+import type { TankView } from './render/tank/types';
+import { mountUI } from './ui';
 import type { Quality } from './render/post/post';
 
 const params = new URLSearchParams(location.search);
-const fast = params.get('fast') === '1';
 const qParam = params.get('quality');
-const quality: Quality | 'auto' = qParam === 'high' || qParam === 'low' ? qParam : 'auto';
-/** ?warp=N pre-advances the animation N seconds (handy for screenshots). */
+const seedParam = params.get('seed');
+/** ?warp=N pre-advances the sim N seconds (handy for screenshots). */
 const warp = Math.max(0, Number(params.get('warp') ?? 0) || 0);
 
-function boot(): void {
+async function boot(): Promise<void> {
+  if (params.get('debug') === 'zoo') {
+    // every species, plant and Sight in a grid (T-15)
+    (await import('./render/tank/zoo')).mountZoo(document.body);
+    return;
+  }
   const app = document.getElementById('app') ?? document.body;
   const canvas = document.createElement('canvas');
   canvas.className = 'stage';
   app.appendChild(canvas);
 
-  const stage = new Stage(canvas, {
-    legSeconds: fast ? PLACEHOLDER.fastLegSeconds : PLACEHOLDER.legSeconds,
-    stopSeconds: PLACEHOLDER.stopSeconds,
-    quality,
+  const fresh = params.get('new') === '1';
+  const hadSave = !fresh && readSave() !== null;
+  const game = new GameController({
+    fresh,
+    noSave: params.get('nosave') === '1',
+    ...(seedParam ? { seed: Number(seedParam) >>> 0 } : {}),
   });
-  for (let t = 0; t < warp; t += 1 / 30) stage.step(1 / 30);
+  const settingsQuality = qParam === 'high' || qParam === 'low' ? qParam : 'auto';
+  const stage = new Stage(canvas, game, { quality: settingsQuality as Quality | 'auto' });
 
-  const hud = new Hud(app, (id) => console.info(`[hud] ${id} panel (coming soon)`));
-  mountRotateCard(app);
-
-  // drag / wheel to pan the camera
-  let dragX: number | null = null;
-  canvas.addEventListener('pointerdown', (e) => (dragX = e.clientX));
-  window.addEventListener('pointerup', () => (dragX = null));
-  window.addEventListener('pointermove', (e) => {
-    if (dragX === null) return;
-    stage.rig.addPan(-(e.clientX - dragX) * 0.02);
-    dragX = e.clientX;
-  });
-  canvas.addEventListener('wheel', (e) => stage.rig.addPan((e.deltaX || e.deltaY) * 0.01), { passive: true });
-  window.addEventListener('keydown', (e) => {
-    if (e.key === 'ArrowLeft') stage.follow = Math.min(stage.train.parts.length - 1, stage.follow + 1);
-    if (e.key === 'ArrowRight') stage.follow = Math.max(0, stage.follow - 1);
-  });
-
-  let shells: number = PLACEHOLDER.demoShells;
-  let last = performance.now();
-  const loop = (now: number) => {
-    const dt = Math.min(0.1, Math.max(0, (now - last) / 1000));
-    last = now;
-    stage.frame(dt);
-    shells += PLACEHOLDER.demoShellsPerSec * dt;
-    const m = stage.motion;
-    hud.update({
-      shells,
-      shellsPerSec: PLACEHOLDER.demoShellsPerSec,
-      tickets: 0,
-      progress: m.legProgress,
-      eta: m.eta,
-      stationLabel: m.phase === 'stopped' ? `At station ${m.station + 1}` : `Next: station ${m.station + 2}`,
+  // Tank View (T-15) draws on top of the train view.
+  let tank: TankView | null = null;
+  const carRect = (carId: string) => {
+    const c = stage.train.car(carId);
+    if (!c) return null;
+    const r = canvas.getBoundingClientRect();
+    const toScreen = (x: number, y: number) => {
+      const v = c.fishLayer.localToWorld(new THREE.Vector3(x, y, 0)).project(stage.rig.camera);
+      return { x: r.left + ((v.x + 1) / 2) * r.width, y: r.top + ((1 - v.y) / 2) * r.height };
+    };
+    const a = toScreen(-c.winW / 2, c.winH / 2);
+    const b = toScreen(c.winW / 2, -c.winH / 2);
+    return { x: a.x, y: a.y, w: b.x - a.x, h: b.y - a.y };
+  };
+  try {
+    tank = createTankView({
+      renderer: stage.renderer,
+      api: { data: game.data, state: () => game.sim.state, act: (a) => game.sim.act(a), carInfo: (id) => game.sim.carInfo(id) },
+      host: app,
+      getCarScreenRect: carRect,
+      onExit: () => game.bus.emit('tankView', { carId: null }),
     });
-    requestAnimationFrame(loop);
-  };
-  requestAnimationFrame(loop);
+  } catch (err) {
+    console.warn('[main] Tank View unavailable', err);
+  }
 
-  const w = window as unknown as { __debug?: Record<string, unknown> };
-  w.__debug = {
-    ...(w.__debug ?? {}),
-    stage,
-    setTimeOfDay: (t: number | 'morning' | 'afternoon' | 'dusk' | 'night') => {
-      const map = { morning: 0, afternoon: 0.25, dusk: 0.5, night: 0.75 } as const;
-      stage.post.setTimeOfDay(typeof t === 'number' ? t : map[t]);
+  const view: GameView = {
+    handle(e, bulk) {
+      stage.handle(e, bulk);
+      if (!bulk && tank?.isActive()) tank.onEvent(e);
     },
-    setQuality: (q: Quality) => stage.post.setQuality(q),
+    frame(dt) {
+      stage.skipRender = !!tank?.isCovering();
+      stage.frame(dt);
+      if (tank?.isActive()) {
+        tank.update(dt);
+        tank.render();
+      }
+    },
   };
+  game.view = view;
+
+  const api = createApi(
+    game,
+    {
+      enterTankView(carId) {
+        if (!tank || tank.isActive()) return;
+        tank.enter(carId);
+        game.bus.emit('tankView', { carId });
+      },
+      exitTankView() {
+        tank?.exit();
+      },
+      onSelect(carId) {
+        stage.selectedCarId = carId;
+      },
+      onSettings(s) {
+        if (qParam !== 'high' && qParam !== 'low') stage.setQuality(s.quality);
+      },
+    },
+    hadSave,
+  );
+  if (qParam !== 'high' && qParam !== 'low') stage.setQuality(api.getSettings().quality);
+
+  const debug = createDebug(game, {
+    setTimeOfDay: (t) => (stage.timeOverride = t),
+    openPanel: (id) => game.bus.emit('openPanel', { id }),
+  });
+  api.debug = debug;
+  const w = window as unknown as { __debug?: Record<string, unknown> };
+  w.__debug = Object.assign(w.__debug ?? {}, debug, {
+    stage,
+    api,
+    tank,
+    setQuality: (q: Quality) => stage.setQuality(q),
+  });
+
+  attachInput(canvas, stage, game, api);
+  if (warp > 0) game.fastForward(warp);
+  mountUI(app, api, { title: params.get('title') !== '0' });
+  game.start();
 }
 
-boot();
+void boot();

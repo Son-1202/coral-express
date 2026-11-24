@@ -27,7 +27,8 @@ export type GameEventPayload<T extends GameEventType> = T extends SimEventType
   : T extends keyof UiEventMap
     ? UiEventMap[T]
     : never;
-export type Listener<T extends GameEventType> = (e: GameEventPayload<T>) => void;
+/** Method-style (bivariant) so a `'*'` subscriber can take `(e: SimEvent) => void`. */
+export type Listener<T extends GameEventType> = { bivarianceHack(e: GameEventPayload<T>): void }['bivarianceHack'];
 
 export interface Settings {
   musicVolume: number;
