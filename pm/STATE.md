@@ -1,19 +1,29 @@
 # PM STATE — Coral Express
 
-**Phase:** 0 Preflight → 1 Foundation
-**Live URL:** (not deployed yet — Vercel auth pending)
+**Phase:** 1 Foundation (T-01 DEV, T-04 ART running) + Phase 3 sim (T-05 running)
+**Live URL:** pending — producer will import repo into Vercel (D-008)
 **Repo:** https://github.com/Son-1202/coral-express (branch `main`)
 
 ## Preflight (2026-11-24)
-- GitHub: `gh api` works (repo exists, admin). `gh auth status` reports GH_TOKEN invalid for GraphQL/porcelain; only REST works in this environment — fine.
-- Vercel: CLI not installed, no auth token → asked producer (A7). Using `npx vercel@latest` once a token is available.
-- Higgsfield: balance **122 credits** (starter). nano_banana_pro 2k = 2 cr/image, gpt_image_2_6 = 0.75 cr/image. Full B10 list ≈ 200+ images → top-up requested (A7).
-- Advisor (Fable advisor skill): not available in this session → all advisor steps skipped.
+- GitHub: REST `gh api` works, push to main works.
+- Vercel: no token in container (producer declined); producer imports repo in dashboard.
+- Higgsfield: 122 credits at start; ~500 top-up requested (D-009).
+- Advisor: unavailable (D-001).
 
 ## Ticket board
-| Ticket | Role | Status |
-|---|---|---|
-| T-00 Preflight + skeleton | PM | done |
+| Ticket | Role | Effort | Status |
+|---|---|---|---|
+| T-00 Preflight + skeleton | PM | high | done |
+| T-01 Scaffold + diorama | DEV | medium | in progress |
+| T-02 Data files + schema | CONTENT | medium | done |
+| T-03 Story text | CONTENT | medium | done |
+| T-04 Style bible candidates | ART | medium | in progress |
+| T-05 Sim core | DEV | high | in progress |
+| T-06 Sim meta (sights, depot, offline, save, markets, requests) | DEV | high | next |
+| T-07 Bots + balance.ts | DEV | high | next |
+
+## Credits
+See pm/CREDITS.md.
 
 ## Known issues
-- none yet
+- l3s6 postcard must not toast on arrival (D-011).
