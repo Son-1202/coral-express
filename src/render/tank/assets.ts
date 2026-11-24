@@ -44,7 +44,11 @@ function setup(tex: THREE.Texture, w: number, h: number): void {
 export const fishUrls = (id: string): string[] => [`/fish/${id}.png`, `/_cut/fish/${id}.png`];
 export const plantUrls = (id: string): string[] => [`/plants/${id}.png`, `/_cut/plants/${id}.png`];
 export const decorUrls = (id: string): string[] => [`/decor/${id}.png`, `/_cut/decor/${id}.png`];
-export const sightUrls = (id: string): string[] => [`/sights/${id}.png`, `/_cut/sights/${id}.png`];
+const SIGHT_ART: Record<string, string> = { dolphin_race: 'dolphin', seagull_thief: 'gull', whale_breach: 'whale' };
+export const sightUrls = (id: string): string[] => {
+  const a = SIGHT_ART[id] ?? id;
+  return [`/sights/${id}.png`, `/sights/${a}.png`, `/_cut/sights/${a}.png`];
+};
 export const backdropUrls = (habitat: string, variant: string): string[] => [
   `/tank/${variant}.png`, `/tank/backdrop_${habitat}.png`, `/train/interior_${habitat}.png`, `/_cut/train/interior_${habitat}.png`,
 ];

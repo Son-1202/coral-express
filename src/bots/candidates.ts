@@ -294,12 +294,12 @@ export function structuralCandidates(e: Econ, o: PlanOpts): Cand[] {
     }
   }
 
-  out.push(...moveCandidates(e, rq, o));
+  out.push(...moveCandidates(e, o));
   return out;
 }
 
 /** Free moves into cars with a free slot (greedy: bonds + habitat; bond-never: habitat only). */
-function moveCandidates(e: Econ, rq: ReqCtx, o: PlanOpts): Cand[] {
+function moveCandidates(e: Econ, o: PlanOpts): Cand[] {
   const s = e.state;
   const free = s.carriages.filter((c) => c.fish.length < c.slots);
   if (!free.length) return [];
@@ -330,6 +330,5 @@ function moveCandidates(e: Econ, rq: ReqCtx, o: PlanOpts): Cand[] {
       }
     }
   }
-  void rq;
   return out;
 }

@@ -1,4 +1,4 @@
-import { formatNumber } from '../util/format';
+import { formatNumber, type NumberFormatMode } from '../util/format';
 import './hud.css';
 
 export interface HudState {
@@ -72,10 +72,10 @@ export class Hud {
     parent.appendChild(this.root);
   }
 
-  update(s: HudState): void {
-    this.shells.textContent = formatNumber(s.shells);
-    this.sps.textContent = formatNumber(s.shellsPerSec);
-    this.tickets.textContent = formatNumber(s.tickets);
+  update(s: HudState, mode: NumberFormatMode = 'short'): void {
+    this.shells.textContent = formatNumber(s.shells, mode);
+    this.sps.textContent = formatNumber(s.shellsPerSec, mode);
+    this.tickets.textContent = formatNumber(s.tickets, mode);
     const pct = `${(s.progress * 100).toFixed(1)}%`;
     this.fill.style.width = pct;
     (this.fill.nextElementSibling as HTMLElement).style.left = pct;
