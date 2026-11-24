@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { makeCanvas, rng, toTexture } from '../paint/canvas';
 import { outline } from './paintTrain';
+import { PATHS, hasFile, sharedTexture } from '../../assets';
 
 /** Reef-style tank decor (corals, anemone, rocks) painted on a transparent canvas. */
 function paintDecor(seed: number): HTMLCanvasElement {
@@ -57,6 +58,10 @@ uniform float uTime;
 uniform float uTilt;
 uniform float uSeed;
 uniform sampler2D uDecor;
+uniform sampler2D uInterior;
+uniform float uUseInterior;
+uniform vec4 uCrop;
+uniform float uFrenzy;
 uniform vec3 uWater;
 uniform vec3 uDeep;
 uniform vec3 uSand;
@@ -75,10 +80,19 @@ void main() {
   // decor with plant sway: offsetX = sin(t*freq + x*0.7) * amp * uv.y^2
   vec2 duv = vec2(uv.x, uv.y / 0.6);
   duv.x += sin(uTime * 1.6 + uv.x * 0.7 * 10.0) * 0.012 * duv.y * duv.y - uTilt * 0.05 * duv.y;
-  if (duv.y <= 1.0) {
+  if (uUseInterior > 0.5) {
+    // painted habitat interior (cover-cropped), with a gentle refraction ripple
+    vec2 iuv = uCrop.xy + uv * uCrop.zw;
+    iuv.x += sin(uv.y * 30.0 + uTime * 1.7) * 0.0015 - uTilt * 0.01 * uv.y;
+    col = texture2D(uInterior, iuv).rgb;
+    col += cau * 0.05 * (1.0 - uv.y);
+    col += pow(rays, 6.0) * 0.05 * uv.y;
+  } else if (duv.y <= 1.0) {
     vec4 d = texture2D(uDecor, duv);
     col = mix(col, d.rgb, d.a);
   }
+  // feeding frenzy: warm shimmer
+  col += uFrenzy * vec3(0.10, 0.07, 0.0) * (0.6 + 0.4 * sin(uTime * 6.0 + uv.x * 12.0));
   // air gap above the water line
   if (uv.y > level) {
     col = vec3(0.86, 0.95, 0.95);
@@ -96,11 +110,27 @@ export interface Tank {
   mesh: THREE.Mesh;
   setTilt(t: number): void;
   update(time: number): void;
+  setHabitat(h: string): void;
+  setFrenzy(f: number): void;
 }
+
+/** Water colours per habitat for the procedural fallback (render palette only). */
+const HABITAT_WATER: Record<string, [string, string, string]> = {
+  reef: ['#62d3dc', '#2a8fb4', '#f1dfb4'],
+  mangrove: ['#8fb38a', '#4d6b4a', '#a98d63'],
+  kelp: ['#4fa38b', '#1d5a55', '#b9a77a'],
+  polar: ['#bfe6f2', '#5c9cc4', '#f0f6fa'],
+  vent: ['#3f6c6e', '#1d2b33', '#4a4040'],
+};
 
 export function createTank(seed: number, w: number, h: number): Tank {
   const decor = toTexture(paintDecor(seed), true);
+  const aspect = w / h;
   const uniforms = {
+    uInterior: { value: null as THREE.Texture | null },
+    uUseInterior: { value: 0 },
+    uCrop: { value: new THREE.Vector4(0, 0, 1, 1) },
+    uFrenzy: { value: 0 },
     uTime: { value: 0 },
     uTilt: { value: 0 },
     uSeed: { value: seed * 1.37 },
@@ -113,10 +143,43 @@ export function createTank(seed: number, w: number, h: number): Tank {
     new THREE.PlaneGeometry(w, h),
     new THREE.ShaderMaterial({ vertexShader: vert, fragmentShader: frag, uniforms }),
   );
+  let habitat = '';
+  const checkLoaded = () => {
+    const img = uniforms.uInterior.value?.image as unknown;
+    if (img instanceof HTMLImageElement && img.naturalWidth > 0) {
+      crop({ width: img.naturalWidth, height: img.naturalHeight });
+      uniforms.uUseInterior.value = 1;
+    }
+  };
+  const crop = (img: { width: number; height: number }) => {
+    // cover-crop: full width, lower band of the painting (sand + reef line)
+    const ih = Math.min(1, img.width / aspect / img.height);
+    uniforms.uCrop.value.set(0, Math.max(0, 0.08), 1, ih);
+  };
   return {
     mesh,
     setTilt: (t) => (uniforms.uTilt.value = t),
-    update: (time) => (uniforms.uTime.value = time),
+    update: (time) => {
+      uniforms.uTime.value = time;
+      if (uniforms.uUseInterior.value === 0) checkLoaded();
+    },
+    setFrenzy: (f) => (uniforms.uFrenzy.value = f),
+    setHabitat(hb) {
+      if (hb === habitat) return;
+      habitat = hb;
+      const [water, deep, sand] = HABITAT_WATER[hb] ?? HABITAT_WATER.reef ?? ['#62d3dc', '#2a8fb4', '#f1dfb4'];
+      uniforms.uWater.value.set(water);
+      uniforms.uDeep.value.set(deep);
+      uniforms.uSand.value.set(sand);
+      const path = PATHS.interior(hb);
+      if (!hasFile(path)) {
+        uniforms.uUseInterior.value = 0;
+        return;
+      }
+      uniforms.uInterior.value = sharedTexture(path, () => makeCanvas(2, 2).canvas, { webp: true });
+      uniforms.uUseInterior.value = 0;
+      checkLoaded();
+    },
   };
 }
 

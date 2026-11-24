@@ -16,7 +16,7 @@ export function firstExisting(candidates: readonly string[]): string | null {
 /** `texture.userData.aspect` (w/h) is kept up to date when the real image arrives. */
 export function tankTexture(candidates: readonly string[], placeholder: () => HTMLCanvasElement): THREE.Texture {
   const ph = placeholder();
-  const tex = new THREE.Texture(ph);
+  const tex: THREE.Texture = new THREE.Texture(ph);
   setup(tex, ph.width, ph.height);
   const url = firstExisting(candidates);
   if (url) {

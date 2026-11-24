@@ -1,0 +1,176 @@
+/* Tank View overlay (T-15). Ticket-cream panels + brass buttons, ≥44 px touch targets. */
+.tank-root {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  touch-action: none;
+  user-select: none;
+  font-family: 'Pixelify Sans', system-ui, sans-serif;
+  color: #3a2c1e;
+  --cream: #fbf3df;
+  --ink: #3a2c1e;
+  --brass: #c9a24a;
+  --brass-dark: #8a6a2a;
+  --seafoam: #8fd1b8;
+}
+.tank-root.hidden { display: none; }
+.tank-root .tk-panel {
+  background: var(--cream);
+  border: 2px solid var(--brass-dark);
+  border-radius: 6px;
+  box-shadow: 0 3px 0 rgba(40, 30, 10, 0.35), inset 0 0 0 2px #fff8e8;
+}
+.tank-root .tk-btn {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 14px;
+  font: inherit;
+  font-size: 16px;
+  color: #2b1d0e;
+  background: linear-gradient(#e8c66a, var(--brass));
+  border: 2px solid var(--brass-dark);
+  border-radius: 6px;
+  box-shadow: 0 2px 0 var(--brass-dark);
+  cursor: pointer;
+}
+.tank-root .tk-btn:active { transform: translateY(1px); box-shadow: 0 1px 0 var(--brass-dark); }
+.tank-root .tk-btn.on { background: linear-gradient(#bfeadb, var(--seafoam)); }
+.tk-top {
+  position: absolute;
+  top: 10px;
+  left: 12px;
+  right: 12px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.tk-title { padding: 8px 14px; font-size: 18px; font-weight: 600; }
+.tk-title .tk-heritage { margin-left: 8px; font-size: 13px; color: var(--brass-dark); }
+.tk-spacer { flex: 1; }
+.tk-card {
+  position: absolute;
+  right: 14px;
+  top: 70px;
+  width: min(300px, 40vw);
+  padding: 12px 14px;
+  font-size: 14px;
+  line-height: 1.35;
+}
+.tk-card input {
+  width: 100%;
+  box-sizing: border-box;
+  font: inherit;
+  font-size: 20px;
+  font-weight: 700;
+  border: 0;
+  border-bottom: 2px dashed var(--brass);
+  background: transparent;
+  color: var(--ink);
+  padding: 2px 0;
+}
+.tk-card .tk-row { display: flex; justify-content: space-between; gap: 8px; }
+.tk-card .tk-flavor { margin-top: 8px; font-style: italic; color: #6b5338; }
+.tk-card .tk-shiny { color: #c98a00; font-weight: 700; }
+.tk-card .tk-num { font-family: 'Silkscreen', monospace; }
+.tk-hint {
+  position: absolute;
+  left: 50%;
+  bottom: 16px;
+  transform: translateX(-50%);
+  padding: 6px 12px;
+  font-size: 14px;
+  pointer-events: none;
+  opacity: 0.92;
+}
+.tk-dock {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 10px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.tk-dock .tk-bar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.tk-tray { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 2px; }
+.tk-item {
+  position: relative;
+  flex: 0 0 auto;
+  width: 64px;
+  height: 64px;
+  display: grid;
+  place-items: center;
+  background: #e9f6f0;
+  border: 2px solid var(--brass-dark);
+  border-radius: 6px;
+  cursor: grab;
+  touch-action: none;
+}
+.tk-item.nofit { opacity: 0.45; }
+.tk-item img { max-width: 52px; max-height: 52px; image-rendering: pixelated; pointer-events: none; }
+.tk-item .tk-count {
+  position: absolute;
+  right: 2px;
+  bottom: 0;
+  font-family: 'Silkscreen', monospace;
+  font-size: 11px;
+}
+.tk-empty { font-size: 13px; color: #6b5338; padding: 18px 4px; }
+.tk-meter { display: flex; align-items: center; gap: 6px; font-size: 13px; }
+.tk-meter .tk-meter-bar { width: 120px; height: 10px; background: #e2d6b8; border: 1px solid var(--brass-dark); border-radius: 3px; overflow: hidden; }
+.tk-meter .tk-meter-fill { height: 100%; background: var(--seafoam); }
+.tk-meter .tk-meter-fill.full { background: #e07a5a; }
+.tk-sw-group { display: flex; gap: 4px; align-items: center; font-size: 12px; }
+.tk-sw {
+  width: 28px;
+  height: 28px;
+  border: 2px solid var(--brass-dark);
+  border-radius: 50%;
+  cursor: pointer;
+  padding: 0;
+}
+.tk-sw.on { outline: 3px solid #2b3f63; outline-offset: 1px; }
+.tk-sw.locked { opacity: 0.35; cursor: not-allowed; }
+.tk-ghost {
+  position: fixed;
+  z-index: 60;
+  width: 64px;
+  height: 64px;
+  pointer-events: none;
+  image-rendering: pixelated;
+  transform: translate(-50%, -85%);
+  opacity: 0.85;
+}
+.tk-photo-frame {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.tk-photo-bar {
+  position: absolute;
+  left: 50%;
+  bottom: 14px;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+  padding: 8px;
+}
+.tk-toast {
+  position: absolute;
+  left: 50%;
+  top: 72px;
+  transform: translateX(-50%);
+  padding: 8px 14px;
+  font-size: 15px;
+}
+.tank-root.photo .tk-top,
+.tank-root.photo .tk-card,
+.tank-root.photo .tk-dock,
+.tank-root.photo .tk-hint { display: none; }
+@media (max-width: 700px) {
+  .tk-card { top: auto; bottom: 120px; width: min(280px, 70vw); }
+  .tk-title { font-size: 15px; }
+}
