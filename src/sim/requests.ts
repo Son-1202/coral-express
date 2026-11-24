@@ -89,7 +89,7 @@ export function updateRequests(ctx: Ctx, sid: string, arrived: boolean): void {
   if (arrived) {
     for (const id of [...board.ids]) {
       const r = ctx.idx.requests.get(id);
-      if (!r) continue;
+      if (!r || s.requestsDoneThisRun.includes(id)) continue;
       const carId = requestMetBy(ctx, r.condition);
       if (!carId) continue;
       board.ids = board.ids.filter((x) => x !== id);

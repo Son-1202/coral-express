@@ -14,7 +14,7 @@ describe('passenger requests', () => {
     expect(t.ctx.state.requestBoards['l1s2']!.ids).toEqual(['r_l1_02']); // line-wide ones already on l1s1
   });
 
-  it('completes on arrival at that station when met → income reward + event; history survives reset', () => {
+  it('completes on arrival when met → reward + event; once per run; offered again after reset', () => {
     const t = make(1, true);
     noSights(t);
     const h = heritage(t);
@@ -30,10 +30,22 @@ describe('passenger requests', () => {
     expect(t.ctx.state.lifetime.requestShells).toBeCloseTo(expected, 6);
     expect(t.ctx.state.lifetime.requestsCompleted).toBe(1);
     expect(t.ctx.state.permanent.requestHistory).toEqual(['r_l1_01']);
+    expect(t.ctx.state.requestsDoneThisRun).toEqual(['r_l1_01']);
+    // within the run it never completes again, even if put back on the board
+    t.ctx.state.requestBoards['l1s1']!.ids.push('r_l1_01');
+    t.sim.advance(51 * 6);
+    expect(done(t.sim.drainEvents()).filter((e) => e.requestId === 'r_l1_01')).toHaveLength(0);
     t.ctx.state.runShells = 1e6;
     t.ctx.state.terminalReachedThisRun = true;
     expect(t.sim.act({ type: 'depotReset', mascotFishId: Object.keys(t.ctx.state.fish)[0]!, nextLine: 1 }).ok).toBe(true);
-    expect(t.ctx.state.requestBoards['l1s1']!.ids).not.toContain('r_l1_01');
+    expect(t.ctx.state.requestsDoneThisRun).toEqual([]);
+    expect(t.ctx.state.requestBoards['l1s1']!.ids).toContain('r_l1_01'); // eligible again
+    expect(t.ctx.state.permanent.requestHistory).toEqual(['r_l1_01']);
+    expect(t.ctx.state.permanent.requestCounts).toEqual({ r_l1_01: 1 });
+    // mascot damsel is in the car → completes again on the next station-1 arrival
+    t.sim.advance(51 * 2);
+    expect(done(t.sim.drainEvents()).map((e) => e.requestId)).toContain('r_l1_01');
+    expect(t.ctx.state.permanent.requestCounts['r_l1_01']).toBe(2);
     expect(t.ctx.state.permanent.requestHistory).toEqual(['r_l1_01']);
   });
 

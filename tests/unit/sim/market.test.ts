@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createSim } from '../../../src/sim';
+import { createSim, createSimInternal } from '../../../src/sim';
 import { addFish, data, give, heritage, make, noSights } from './helpers';
 
 describe('station markets', () => {
@@ -56,6 +56,12 @@ describe('station markets', () => {
     t.sim.advance(51);
     const s = t.sim.stats();
     expect(t.ctx.state.market.special!.price).toBeCloseTo(120 * (s.fishSps + s.fareSps), 6);
+  });
+
+  it("min price comes from config.todaysSpecial.minPrice (fallback 50)", () => {
+    const cfg = { ...data.config, todaysSpecial: { ...data.config.todaysSpecial, minPrice: 75 } };
+    const t = createSimInternal({ ...data, config: cfg }, { seed: 1 });
+    expect(t.ctx.state.market.special!.price).toBe(75);
   });
 
   it('special kinds: level discount, shiny egg, free slot, cosmetic; sold once', () => {
