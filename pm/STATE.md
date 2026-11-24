@@ -1,7 +1,7 @@
 # PM STATE — Coral Express
 
 **Phase:** 1 Foundation (T-01 DEV, T-04 ART running) + Phase 3 sim (T-05 running)
-**Live URL:** Vercel project son-1202/coral-express connected (URL appears once first green deploy lands)
+**Live URL:** https://coral-express.vercel.app (auto-deploys from main; first green deploy = T-01 efa824a)
 **Repo:** https://github.com/Son-1202/coral-express (branch `main`)
 
 ## Preflight (2026-11-24)
@@ -32,3 +32,4 @@ See pm/CREDITS.md.
 
 ## Known issues
 - l3s6 postcard must not toast on arrival (D-011).
+- 2026-11-24 ~05:55–09:10 UTC: subagents T-06/T-09/T-10/T-12 hit the 5-hour usage limit; resumed at 09:10 via SendMessage with work on disk intact.
