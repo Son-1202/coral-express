@@ -19,7 +19,7 @@
 | T-03 Story text | CONTENT | medium | done |
 | T-04 Style bible candidates | ART | medium | done (B chosen) |
 | T-08 Pixelize pipeline | DEV | medium | done |
-| T-09 Line 1 hero art | ART | medium | done (station regen pending) |
+| T-09 Line 1 hero art | ART | medium | done |
 | T-05 Sim core | DEV | high | done |
 | T-10 Lines 2–3 art | ART | medium | done |
 | T-11 Music + ambience | ART | medium | done |
