@@ -28,7 +28,7 @@ void main() {
   float scale = mix(1.0, 0.25, d);
   float w1 = sin(vWorld.x * 0.55 * scale + uTime * 0.9 + sin(zf * 0.35 + uTime * 0.4) * 1.6 + zf * 0.15);
   float w2 = sin(zf * 1.7 + sin(vWorld.x * 0.21) * 2.0 - uTime * 0.6);
-  float crest = smoothstep(0.86, 0.98, w1 * 0.5 + w2 * 0.5 + 0.15);
+  float crest = smoothstep(0.78, 0.95, w1 * 0.5 + w2 * 0.5 + 0.15);
   col = mix(col, uFoam, crest * mix(0.55, 0.15, d));
   // sun glitter path
   float glit = exp(-pow((vWorld.x - uSunX) / mix(10.0, 90.0, d), 2.0)) * smoothstep(0.05, 0.6, d);

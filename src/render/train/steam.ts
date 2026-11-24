@@ -56,9 +56,9 @@ export class Steam {
       }
       p.mesh.position.x += p.vx * dt;
       p.mesh.position.y += p.vy * dt * (1 - k * 0.6);
-      const s = 0.25 + k * 0.9;
+      const s = 0.32 + k * 1.3;
       p.mesh.scale.set(s, s, 1);
-      p.mat.opacity = Math.min(1, k * 6) * (1 - k) * 0.85;
+      p.mat.opacity = Math.min(1, k * 6) * (1 - k) * 0.95;
     }
   }
 }

@@ -79,14 +79,16 @@ export function paintNear(seed: number, variant: number): HTMLCanvasElement {
   if (variant === 0) {
     lemonTree(p, r, 250, base, 16);
   } else {
-    // telegraph pole with wire stubs
-    ctx.fillStyle = SUNNY.woodDark;
-    ctx.fillRect(250, 2, 4, base - 2);
-    ctx.fillStyle = SUNNY.wood;
-    ctx.fillRect(240, 8, 24, 3);
-    ctx.fillStyle = '#fffaf0';
-    ctx.fillRect(242, 5, 2, 3);
-    ctx.fillRect(260, 5, 2, 3);
+    // little red post box + planter (kept low so it never hides the train)
+    ctx.fillStyle = '#d65a4a';
+    ctx.fillRect(244, base - 22, 12, 22);
+    ctx.fillStyle = '#b8463a';
+    ctx.fillRect(244, base - 22, 12, 3);
+    ctx.fillStyle = '#2f2a2a';
+    ctx.fillRect(247, base - 16, 6, 2);
+    ctx.fillStyle = '#d9714d';
+    ctx.fillRect(262, base - 8, 26, 8);
+    flowers(p, r, 275, base - 8, 12, 22);
   }
   return p.canvas;
 }
