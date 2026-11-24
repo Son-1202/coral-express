@@ -196,6 +196,13 @@ export class Stage implements GameView {
     this.fx.handle(e);
   }
 
+  /** UI `itemFly`: sparkle + bubble pop where the bought item lands. */
+  itemFly(carId: string): void {
+    const at = this.train.carWorld(carId);
+    if (!at) return;
+    this.fx.itemLanded(at);
+  }
+
   /** World X of a carriage's door (for passengers). */
   doorX(carId: string): number | null {
     const c = this.train.car(carId);

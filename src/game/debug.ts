@@ -1,5 +1,6 @@
 import type { LineId } from '../data/schema';
 import type { GameController } from './controller';
+import { spawnFish } from '../sim/actionsFish';
 import { TIME_NAMES, type TimeName } from '../render/timeOfDay';
 
 export type SkipTarget = 'line2' | 'line3' | 'depotReset' | 'terminal' | 'ending';
@@ -156,6 +157,16 @@ export function createDebug(game: GameController, hooks: DebugHooks): Record<str
       botOff = null;
     },
     addShells,
+    /** Debug: put a fish straight into a carriage (ignores markets/price). */
+    spawnFish: (species: string, carId?: string, opts: { level?: number; shiny?: boolean } = {}) => {
+      const car = carId ? s().carriages.find((c) => c.id === carId) : s().carriages.find((c) => c.fish.length < c.slots);
+      if (!car || car.fish.length >= car.slots || !game.data.species.some((x) => x.id === species)) return null;
+      const f = spawnFish(ctx, species, car.id, opts);
+      ctx.invalidate();
+      ctx.refreshBonds();
+      game.drain();
+      return f.id;
+    },
     fastForward: (sec: number) => game.fastForward(sec),
     triggerSight: (id: string) => {
       const ok = sim.triggerSight(id);

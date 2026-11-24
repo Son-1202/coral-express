@@ -118,6 +118,10 @@ async function boot(): Promise<void> {
     setQuality: (q: Quality) => stage.setQuality(q),
   });
 
+  // UI → render: a bought item flies into its carriage (uiSound has no audio module yet)
+  const onAny = game.bus.on as unknown as (t: string, cb: (e: { carId?: string; kind?: string }) => void) => () => void;
+  onAny.call(game.bus, 'itemFly', (e) => e.carId && stage.itemFly(e.carId));
+
   attachInput(canvas, stage, game, api);
   if (warp > 0) game.fastForward(warp);
   mountUI(app, api, { title: params.get('title') !== '0' });

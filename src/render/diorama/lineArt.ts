@@ -23,12 +23,12 @@ export interface LineLayerSpec {
 /** Far: horizon (≈ middle of the painting) at the camera's eye level → reads as infinitely far. */
 export const LINE_LAYOUT: LineLayerSpec[] = [
   { layer: 'far', z: LAYER_Z.far, width: 230, anchorY: WORLD.focusY + 1.7, anchorV: 0.5, fog: false },
-  { layer: 'mid', z: LAYER_Z.midFar, width: 96, anchorY: -9.5, anchorV: 0.0, fog: true },
-  { layer: 'near', z: LAYER_Z.verge - 0.3, width: 22, anchorY: -0.15, anchorV: 0.0, fog: false },
+  { layer: 'mid', z: LAYER_Z.midFar, width: 66, anchorY: -9.5, anchorV: 0.0, fog: true },
+  { layer: 'near', z: LAYER_Z.verge - 0.3, width: 19, anchorY: -0.15, anchorV: 0.0, fog: false },
 ];
 
 /** Per-line tweaks (mid strips differ a lot in how much ground they paint). */
-const MID_ANCHOR: Record<number, number> = { 1: -9.5, 2: -8.0, 3: -9.0 };
+const MID_ANCHOR: Record<number, number> = { 1: -8.0, 2: -6.5, 3: -7.5 };
 
 function mirrored(t: THREE.Texture): THREE.Texture {
   const m = t.clone();

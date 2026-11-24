@@ -135,7 +135,12 @@ function bestFishFor(e: Econ, rq: ReqCtx, o: PlanOpts, car: Carriage, species: s
     const sp = speciesOf(e, id);
     const cost = copyCost(e.idx, e.state, sp, e.fx);
     let d: { gain: number; bonus: number };
-    if (o.bonds) d = delta(e, rq, car, { addSpecies: id, removeFishId });
+    if (car.fish.length === 0 && car.decor.length === 0) {
+      // A lone fish has no bonds: the analytic value is exact (requests: species only).
+      let bonus = 0;
+      for (const r of rq.open) if (r.condition.type === 'species' && r.condition.species === id) bonus += rq.value.get(r.id) ?? 0;
+      d = { gain: rawFishValue(e, sp, car.habitat), bonus: o.bonds ? bonus : 0 };
+    } else if (o.bonds) d = delta(e, rq, car, { addSpecies: id, removeFishId });
     else {
       const cur = e.model.byId.get(car.id);
       const lost = removeFishId && cur ? fishValue(e, cur, removeFishId) : 0;

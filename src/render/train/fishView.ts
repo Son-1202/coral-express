@@ -6,7 +6,7 @@ import { fishMaterial, shinyTint, type FishUniforms } from './fishMaterial';
 import { paintFish } from './tank';
 
 /** World units per sprite pixel for fish (art is 64 px on the long side). */
-export const FISH_UNITS_PER_PX = 0.0068;
+export const FISH_UNITS_PER_PX = 0.0088;
 /** Placeholder fish are tiny canvases; scale them up to a similar size. */
 const PLACEHOLDER_UNITS_PER_PX = 0.026;
 const SWARM_COUNT = 9;

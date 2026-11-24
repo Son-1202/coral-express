@@ -60,6 +60,8 @@ export function createGreedyBot(opts: BotOptions, name: Extract<BotName, 'greedy
   const frenzyF = 1 + ((cfg.frenzy.mult - 1) * cfg.frenzy.seconds) / cfg.frenzy.cooldown;
   let cache: { sig: string; t: number; cands: Cand[] } = { sig: '', t: -1e9, cands: [] };
   let waitFor = 0;
+  /** Per-fish level candidates, reused while level, discount and output are unchanged. */
+  const levelCache = new Map<string, { key: string; cands: Cand[] }>();
   const pps = (sp: string): number => idx.species.get(sp)?.basePps ?? 0;
 
   function spsAt(v: VirtualFish, level: number): number {
@@ -75,6 +77,10 @@ export function createGreedyBot(opts: BotOptions, name: Extract<BotName, 'greedy
       const sp = f && idx.species.get(f.species);
       if (!f || !sp || v.level >= cfg.maxLevel) continue;
       const left = disc[f.species] ?? 0;
+      const key = `${v.level}|${left}|${v.sps0 * spsAt(v, v.level) / v.sps0}|${e.frenzyF}`;
+      const hit = levelCache.get(id);
+      if (hit && hit.key === key) { out.push(...hit.cands); continue; }
+      const mine: Cand[] = [];
       const costOf = (times: number): number => {
         let c = 0;
         for (let i = 0; i < times; i++) c += levelCost(idx, sp.baseCost, v.level + i) * (i < left ? k : 1);
@@ -84,11 +90,13 @@ export function createGreedyBot(opts: BotOptions, name: Extract<BotName, 'greedy
       const add = (times: number): void => {
         const cost = costOf(times);
         const gain = (spsAt(v, v.level + times) - base) * e.frenzyF;
-        out.push({ kind: 'level', actions: [{ type: 'levelFish', fishId: id, times }], cost, now: cost, gain, bonus: 0, fishId: id, levels: times });
+        mine.push({ kind: 'level', actions: [{ type: 'levelFish', fishId: id, times }], cost, now: cost, gain, bonus: 0, fishId: id, levels: times });
       };
       add(1);
       const m = cfg.milestones.levels.find((l) => l > v.level);
       if (m !== undefined && m - v.level > 1 && m - v.level <= MILESTONE_LOOKAHEAD) add(m - v.level);
+      levelCache.set(id, { key, cands: mine });
+      out.push(...mine);
     }
     return out;
   }

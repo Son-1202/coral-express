@@ -43,7 +43,7 @@ describe('Bus', () => {
     const bus = new Bus();
     const got: string[] = [];
     const off = bus.on('fare', (e) => got.push(`fare:${e.amount}`));
-    bus.on('*', (e) => got.push(`*:${e.type}`));
+    bus.on("*", (e) => got.push(`*:${(e as { type: string }).type}`));
     bus.emitSim({ type: 'fare', amount: 5, station: 2 });
     off();
     bus.emitSim({ type: 'fare', amount: 6, station: 3 });

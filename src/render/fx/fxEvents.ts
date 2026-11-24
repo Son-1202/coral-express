@@ -143,6 +143,11 @@ export class FxEvents {
     }
   }
 
+  itemLanded(at: THREE.Vector3): void {
+    this.s.particles.burst(sparkleTex(), at, 10, { speed: 1.6, size: 0.12 });
+    this.bubbles(at, 8);
+  }
+
   private bubbles(at: THREE.Vector3, n: number): void {
     for (let i = 0; i < n; i++)
       this.s.particles.spawn({ tex: bubbleTex(), x: at.x + (Math.random() - 0.5) * 1.6, y: at.y - 0.25, z: at.z + 0.2, vy: 0.5 + Math.random() * 0.5, life: 0.9 + Math.random() * 0.5, size: 0.06 + Math.random() * 0.05, wobble: 0.04 });

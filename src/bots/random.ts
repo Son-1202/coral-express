@@ -15,25 +15,39 @@ export function createRandomBot(opts: BotOptions): Bot {
   const rng = botRng(opts.seed);
   let lastSight = -1;
 
-  function options(sim: Sim): Action[][] {
+  /** One random affordable action: categories in random order, first non-empty one wins
+   *  (= uniform over non-empty categories), then uniform within it. */
+  function randomAction(sim: Sim): Action | undefined {
+    const cats = categories(sim);
+    for (let i = cats.length - 1; i > 0; i--) { const j = rng.int(i + 1); [cats[i], cats[j]] = [cats[j]!, cats[i]!]; }
+    for (const make of cats) {
+      const list = make().filter((a) => canDo(sim, a));
+      if (list.length) return rng.pick(list);
+    }
+    return undefined;
+  }
+
+  function categories(sim: Sim): (() => Action[])[] {
     const s = sim.state;
-    const cats: Action[][] = [];
+    const cats: (() => Action[])[] = [];
     const free = s.carriages.filter((c) => c.fish.length < c.slots);
     const species = [...new Set([...s.speciesBoughtThisRun, ...s.market.fish])];
     const fishIds = Object.keys(s.fish);
-    cats.push(species.flatMap((sp) => free.map((c): Action => ({ type: 'buyFish', species: sp, carId: c.id }))));
-    cats.push(fishIds.map((id): Action => ({ type: 'levelFish', fishId: id, times: 1 })));
-    cats.push(habitatsForLine(idx, s.currentLine).map((h): Action => ({ type: 'buyCarriage', habitat: h })));
-    cats.push(s.carriages.map((c): Action => ({ type: 'buySlot', carId: c.id })));
-    const tray = trayDecor(s);
-    const decor: Action[] = [];
-    for (const id of tray) for (const c of s.carriages) decor.push({ type: 'placeDecor', carId: c.id, decorId: id, ...decorPlacement(rng.next()) });
-    for (const id of new Set([...s.market.decor, ...Object.keys(s.decorOwned)])) decor.push({ type: 'buyDecor', decorId: id });
-    cats.push(decor);
-    cats.push([{ type: 'buildTrack' }]);
-    cats.push(fishIds.flatMap((id) => free.filter((c) => c.id !== s.fish[id]?.carId).map((c): Action => ({ type: 'moveFish', fishId: id, carId: c.id }))));
-    cats.push(idx.data.upgrades.map((u): Action => ({ type: 'buyUpgrade', id: u.id })));
-    return cats.map((list) => list.filter((a) => canDo(sim, a))).filter((list) => list.length > 0);
+    cats.push(() => species.flatMap((sp) => free.map((c): Action => ({ type: 'buyFish', species: sp, carId: c.id }))));
+    cats.push(() => fishIds.map((id): Action => ({ type: 'levelFish', fishId: id, times: 1 })));
+    cats.push(() => habitatsForLine(idx, s.currentLine).map((h): Action => ({ type: 'buyCarriage', habitat: h })));
+    cats.push(() => s.carriages.map((c): Action => ({ type: 'buySlot', carId: c.id })));
+    cats.push(() => {
+      const decor: Action[] = [];
+      const x = decorPlacement(rng.next());
+      for (const id of trayDecor(s)) for (const c of s.carriages) decor.push({ type: 'placeDecor', carId: c.id, decorId: id, ...x });
+      for (const id of new Set([...s.market.decor, ...Object.keys(s.decorOwned)])) decor.push({ type: 'buyDecor', decorId: id });
+      return decor;
+    });
+    cats.push(() => [{ type: 'buildTrack' }]);
+    cats.push(() => fishIds.flatMap((id) => free.filter((c) => c.id !== s.fish[id]?.carId).map((c): Action => ({ type: 'moveFish', fishId: id, carId: c.id }))));
+    cats.push(() => idx.data.upgrades.map((u): Action => ({ type: 'buyUpgrade', id: u.id })));
+    return cats;
   }
 
   function resetAction(sim: Sim): Action | null {
@@ -63,8 +77,7 @@ export function createRandomBot(opts: BotOptions): Bot {
         const r = resetAction(sim);
         if (r) { out.push(r); return out; }
       }
-      const cat = rng.pick(options(sim));
-      const a = cat && rng.pick(cat);
+      const a = randomAction(sim);
       if (a) out.push(a);
       return out;
     },

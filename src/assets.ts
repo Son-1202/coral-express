@@ -93,6 +93,8 @@ export function loadTextureUrl(path: string, placeholder: () => HTMLCanvasElemen
   if (hasFile(path)) {
     const img = new Image();
     img.onload = () => {
+      // the GPU storage was sized for the placeholder: free it so the real image re-allocates
+      tex.dispose();
       tex.image = opts.transform ? opts.transform(img) : img;
       tex.needsUpdate = true;
       opts.onLoad?.(img);
