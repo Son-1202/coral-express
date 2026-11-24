@@ -43,7 +43,7 @@ describe('partners + default target car', () => {
     s.shells = 1e9;
     expect(sim.act({ type: 'buyCarriage', habitat: 'mangrove' }).ok).toBe(true);
     expect(sim.act({ type: 'buyCarriage', habitat: 'reef' }).ok).toBe(true);
-    const [c1, c2, c3] = s.carriages.map((c) => c.id);
+    const [, c2, c3] = s.carriages.map((c) => c.id);
     // mudskipper is mangrove: goes to car 2
     expect(defaultTargetCar(s, data, 'mudskipper')).toBe(c2);
     // anemone in car 3 → clownfish follows it there

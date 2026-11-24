@@ -10,22 +10,22 @@ export interface Beat {
   dur: number;
 }
 
-/** Beat durations in seconds (total ≈ 56 s incl. credits; credits length depends on the list). */
+/** Beat durations in seconds (45 s + 8–14 s of credits). */
 export const BEAT_SECONDS: Record<Exclude<BeatId, 'credits'>, number> = {
-  beach: 7,
+  beach: 6,
   postcard: 9,
-  dive: 8,
+  dive: 7,
   video: 10,
-  panorama: 10,
-  theEnd: 5,
+  panorama: 9,
+  theEnd: 4,
 };
 
 /** Skip becomes available after this many seconds. */
 export const SKIP_AFTER_S = 3;
 
-/** Credits scroll seconds: 4 s base + 1.1 s per line, clamped to 8..20. */
+/** Credits scroll seconds: 3 s base + 0.8 s per line, clamped to 8..14 (whole ending ≤ 60 s). */
 export function creditsSeconds(lines: number): number {
-  return Math.max(8, Math.min(20, 4 + lines * 1.1));
+  return Math.max(8, Math.min(14, 3 + lines * 0.8));
 }
 
 export function buildTimeline(creditLines: number, videoSeconds = BEAT_SECONDS.video): Beat[] {

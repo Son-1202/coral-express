@@ -1,6 +1,6 @@
 # PM STATE — Coral Express
 
-**Phase:** 3–4 (sim meta, art, render, Tank View in parallel)
+**Phase:** 5 Content & tuning (game playable end to end on live URL)
 **Live URL:** https://coral-express.vercel.app (auto-deploys from main; first green deploy = T-01 efa824a)
 **Repo:** https://github.com/Son-1202/coral-express (branch `main`)
 
@@ -31,8 +31,8 @@
 | T-18 Audio + ending + video player | DEV | medium | in progress |
 | T-12 Sprite sheets | ART | medium | done |
 | T-06 Sim meta (sights, depot, offline, save, markets, requests) | DEV | high | done |
-| T-07 Bots + balance.ts | DEV | high | in progress |
-| T-13 Controller + render from sim | DEV | medium | in progress |
+| T-07 Bots + balance.ts | DEV | high | done (1/14 green) |
+| T-13 Controller + render from sim | DEV | medium | done |
 | T-14 UI screens | DEV | medium | done |
 | T-15 Tank View + motion profiles | DEV | medium | done |
 
