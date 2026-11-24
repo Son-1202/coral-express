@@ -25,3 +25,9 @@ rb_decor_a 9daeb456-a484-4106-82e3-49fc7b4f311c image_background_remover 1
 rb_plants_vent 06d998e3-9c04-4fda-81a4-84fdf49e4d75 image_background_remover 1
 rb_foliage_l1 c70449b2-00f7-48df-a465-432c0f1e6dde image_background_remover 1
 rb_foliage_l2 e045583a-fc85-4f32-86f8-e81d416a6252 image_background_remover 1
+icons_a 16162fa3-2130-4f18-a87b-5ec846149ac7 gpt_image_2_6 1:1 1k transparent 1
+icons_b f8f1ca62-49ff-43c2-8dbc-03b51299538b gpt_image_2_6 1:1 1k transparent 1
+wheel_rod 6e6cdc37-fb2c-45df-8632-c2488d76f989 gpt_image_2_6 16:9 1k transparent 1
+frame_1 cc4a640a-6645-47cb-9e16-e4cf0a186a12 gpt_image_2_6 16:9 2k 1.75
+frame_2 9ddcc2f2-80dd-401f-8fbf-8cf052770f2a gpt_image_2_6 16:9 2k 1.75
+frame_3 46f55cd2-69cd-4e55-80f5-5389c586e2cf gpt_image_2_6 16:9 2k 1.75

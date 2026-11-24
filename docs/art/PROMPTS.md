@@ -43,7 +43,7 @@ STYLE BLOCK = the block in CLAUDE.md, prepended verbatim to every prompt below.
 | 3 | mid B | `5f36351d-00cf-4980-8101-bc1607ca16dc` | 21:9 | 2 | T09_mid_B.png | reject – houses duplicated in two stacked rows |
 | 4 | near A | `d4f8ff41-bcfd-4064-af13-ee629fd74354` | 21:9 | 2 | T09_near_A.png | **KEPT** – clean flat grey, poles with insulators, flowers |
 | 5 | near B | `7801e90a-691f-4917-bb37-7de171243e10` | 21:9 | 2 | T09_near_B.png | reject – fog bleed, poles without crossbars |
-| 6 | station A | `1e96d8c9-e1fc-493a-9185-4cb320ffec54` | 16:9 | 2 | T09_station_A.png | **KEPT (placeholder)** – bleed (train bogies under platform, village behind); awning almost invisible |
+| 6 | station A | `1e96d8c9-e1fc-493a-9185-4cb320ffec54` | 16:9 | 2 | T09_station_A.png | superseded placeholder – bleed (train bogies, village), no awning |
 | 16 | station B (retry, "reference ONLY for style") | `992cfaa8-c02d-4c81-9124-d6821b3513b8` | 16:9 | 2 | T09_station_B.png | reject – copied the whole style-bible scene |
 | 7 | loco A | `e4cca474-eca8-4f99-8966-6d3cac20523e` | 16:9 | 2 | T09_loco_A.png | reject – no chimney/dome, odd cab, bleed |
 | 8 | loco B | `0472b3c4-9806-4626-af4d-583a5f585b03` | 16:9 | 2 | T09_loco_B.png | reject – copied style-bible scene |
@@ -81,7 +81,18 @@ STYLE BLOCK = the block in CLAUDE.md, prepended verbatim to every prompt below.
 - Loco C cutout trimmed → 768×367. Station A cutout cropped at y 1092 (slab top only; bogie bleed below) → 768×251. Interiors: reef as-is 2752×1536; mangrove cropped to 88,80 2580×1380.
 - `contact.cjs` → `docs/art/candidates/T-09_contact.jpg`; per-candidate previews `docs/art/candidates/T-09_<cand>.jpg`.
 
+### Station fix (PM-approved, budget ≤ 8 cr) — spent 4 cr, total T-09 = 43 cr (39 + 4 approved)
+Prompt (after STYLE BLOCK): [C only: "Use the reference image ONLY for pixel-art style and palette; do NOT copy its background, scenery, train, track, people or composition."] Draw a single small seaside railway station platform alone, as a game sprite: a raised cream stone platform slab; a large striped blue-and-cream canvas awning ROOF with a scalloped front edge covering the whole platform, held up by four slim brass posts; under the roof a wooden bench, a brass lamp post with a glass lantern, wooden flower boxes with red and yellow flowers, and a round hanging clock with no numbers. No train, no rails, no people, no fence, no grass, no houses, no sea. Single isolated subject, side view, centered, on a plain flat solid light grey background filling the whole image, no shadow on the ground.
+
+| # | Variant | Job id | AR | Cost | Raw | Verdict |
+|---|---|---|---|---|---|---|
+| 21 | station C, WITH style-bible ref + "reference ONLY" | `1da32b6f-ac4e-4632-8a90-b44f8eb737fa` | 16:9 | 2 | T09_station_C.png | reject – leaked the whole bible scene a 3rd time |
+| 22 | station D, NO reference, full STYLE BLOCK | `f49fdb70-dc90-4040-b4c1-f724c9f380c5` | 16:9 | 2 | T09_station_D.png | **KEPT** – blue/cream scalloped awning roof on 4 brass posts, bench, lantern, flower boxes, hanging clock (no numerals), clean flat grey |
+
+Cutout: `key.cjs … 12 --global` (free) + `station_fix.cjs` (restores the lantern glass the global key removed) → `assets/_cut/station/l1.png` 768×402. Palette/pixel density matches loco/shell well.
+**Recommendation:** for isolated sprites, skip the style-bible reference — it leaked the scene in 7 of 10 sprite generations.
+
 ### Open issues for PM
-1. **Station `l1.png` is a placeholder**: platform, bench, lamp post, flower boxes, blank sign — but **no striped awning** (only bare posts). Needs one more generation + cutout (~3 cr): suggest no style-bible reference, or the kept locomotive cutout as reference.
+1. ~~Station placeholder~~ fixed (station D).
 2. Far layer horizon sits at ~50 %, not 55 %.
 3. Pistol Shrimp reads a bit like a crayfish (long body); acceptable at sprite scale.
