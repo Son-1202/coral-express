@@ -24,10 +24,10 @@
 | T-10 Lines 2–3 art | ART | medium | done |
 | T-11 Music + ambience | ART | medium | done |
 | T-12 Sprite sheets | ART | medium | in progress |
-| T-06 Sim meta (sights, depot, offline, save, markets, requests) | DEV | high | in progress |
-| T-07 Bots + balance.ts | DEV | high | next (after T-06) |
+| T-06 Sim meta (sights, depot, offline, save, markets, requests) | DEV | high | done (T-06-b tweak running) |
+| T-07 Bots + balance.ts | DEV | high | in progress |
 | T-13 Controller + render from sim | DEV | medium | in progress |
-| T-14 UI screens | DEV | medium | next (after T-06) |
+| T-14 UI screens | DEV | medium | in progress |
 | T-15 Tank View + motion profiles | DEV | medium | in progress |
 
 ## Credits
