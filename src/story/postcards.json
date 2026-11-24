@@ -1,0 +1,27 @@
+{
+  "postcards": [
+    { "stationId": "l1s1", "text": "Dear one, the train is yours now. Lemonbay is where it all began: one tank, one damsel, and a sea too big to keep in a jar. Feed them well. Love, Wren" },
+    { "stationId": "l1s2", "text": "Anemones don't run, so they wait for a friend to come home to them. Patience is a kind of welcome, dear. Love, Wren" },
+    { "stationId": "l1s3", "text": "The first clownfish I ever carried hid in her anemone for a week. Then she waved at every child on the platform. Friends make us brave. Love, Wren" },
+    { "stationId": "l1s4", "text": "Mudskippers climb out to look at the world, then hop right back. I think they are homesick and curious at once. I know the feeling. Love, Wren" },
+    { "stationId": "l1s5", "text": "The shrimp digs, the goby keeps watch. Neither could manage alone. Every good line needs two people minding it, dear. Love, Wren" },
+    { "stationId": "l1s6", "text": "Old Sandro's lamp points out to sea, not along the coast. I used to wonder why. Some lines don't really end at the last station, dear. Love, Wren" },
+    { "stationId": "l2s1", "text": "The fjords! Bring a scarf. Garibaldi glow like lanterns in grey water. I promised them warmer seas, someday. Love, Wren" },
+    { "stationId": "l2s2", "text": "Seahorse fathers carry the little ones. I carried mine on this train, every carriage full. Mind the kelp, it tickles. Love, Wren" },
+    { "stationId": "l2s3", "text": "Can you spot the seadragon? I lost one for a whole afternoon once. She was right there, pretending to be a leaf. Love, Wren" },
+    { "stationId": "l2s4", "text": "A thousand krill, and every one of them knows the way. I've always envied that. I only ever had the timetable. Love, Wren" },
+    { "stationId": "l2s5", "text": "Icefish sleep so quietly. Sometimes, late at night, I'd tell them about where they came from. They seemed to listen. Love, Wren" },
+    { "stationId": "l2s6", "text": "From Kaldhavn you can see smoke on the southern horizon. Islands of fire, the sailors say. I kept the track plans in my recipe tin. Love, Wren" },
+    { "stationId": "l3s1", "text": "Warm at last! My knees thank me. Down in the deep here, little gardens grow on the heat of the earth. Imagine that. Love, Wren" },
+    { "stationId": "l3s2", "text": "The yeti crab farms in his own fur. Clever fellow. I've grown herbs in the galley window for forty years, so we got on. Love, Wren" },
+    { "stationId": "l3s3", "text": "A snail in armour, born beside a volcano. The sea makes the strangest, bravest things. I've packed a pot of tea for the last stretch. Love, Wren" },
+    { "stationId": "l3s4", "text": "The octopus opened every latch on the train, then simply sat by the window looking out. I understood her completely. Love, Wren" },
+    { "stationId": "l3s5", "text": "Nearly there. I built this train so people could meet the sea. I meant to take them home one day, dear. Will you finish it for me? Love, Wren" },
+    { "stationId": "l3s6", "text": "My dear, the tracks were never meant to stop at the sand. Open the glass. Let them see their cousins, and the whole wide sea. Then see who chooses to ride home with you. Love, Wren" }
+  ],
+  "notes": {
+    "firstDepotReset": { "text": "The depot pools are warm and quiet. Everyone rests, nobody is forgotten. Start again, dear; the train remembers the way better each time. Love, Wren" },
+    "lineOpened2": { "text": "The Sunny Coast is done! The Fog Fjords are next, cold and lovely. Pack the good blanket from the Heritage Carriage. Love, Wren" },
+    "lineOpened3": { "text": "The Volcano Isles at last. I never finished this stretch myself. Every fish aboard has been waiting for it, I think. So have I. Love, Wren" }
+  }
+}

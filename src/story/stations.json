@@ -1,0 +1,24 @@
+{
+  "stations": [
+    { "id": "l1s1", "line": 1, "index": 1, "name": "Lemonbay Halt", "stallkeeper": { "name": "Nonna Rosaria", "tint": "#F2D16B", "passengerSprite": 3 }, "greeting": "Ah, Wren's old train! Come, the damsels have been waiting for you." },
+    { "id": "l1s2", "line": 1, "index": 2, "name": "Santa Brezza", "stallkeeper": { "name": "Tomasz Ferro", "tint": "#E98A7B", "passengerSprite": 7 }, "greeting": "Mind the wet steps, friend. The anemones like a slow hello." },
+    { "id": "l1s3", "line": 1, "index": 3, "name": "Marisol Cove", "stallkeeper": { "name": "Lucia Albaran", "tint": "#F4A259", "passengerSprite": 1 }, "greeting": "Orange and white, bright as a parasol. Clownfish, fresh from the cove!" },
+    { "id": "l1s4", "line": 1, "index": 4, "name": "Capo Mangrovia", "stallkeeper": { "name": "Beppe Lund", "tint": "#8FB56A", "passengerSprite": 10 }, "greeting": "Watch your shoes. The mudskippers here jump before they think." },
+    { "id": "l1s5", "line": 1, "index": 5, "name": "Pescadoro Pier", "stallkeeper": { "name": "Marta Quell", "tint": "#7FB7BE", "passengerSprite": 5 }, "greeting": "Hear that snap? That's the shrimp saying welcome." },
+    { "id": "l1s6", "line": 1, "index": 6, "name": "Gabbiano Lighthouse", "stallkeeper": { "name": "Old Sandro", "tint": "#F6E7C1", "passengerSprite": 12 }, "greeting": "End of the Sunny Coast, they say. The lamp has always pointed further." },
+
+    { "id": "l2s1", "line": 2, "index": 1, "name": "Grimsvik Quay", "stallkeeper": { "name": "Ingrid Haldor", "tint": "#E07A3F", "passengerSprite": 2 }, "greeting": "Cold hands, warm cocoa, golden garibaldi. You're welcome in Grimsvik." },
+    { "id": "l2s2", "line": 2, "index": 2, "name": "Tangholm", "stallkeeper": { "name": "Leif Brannmo", "tint": "#6E9E78", "passengerSprite": 8 }, "greeting": "The kelp grows tall here, and the seahorses hold on tight." },
+    { "id": "l2s3", "line": 2, "index": 3, "name": "Selnes Light", "stallkeeper": { "name": "Astrid Velle", "tint": "#C9A0B8", "passengerSprite": 4 }, "greeting": "Look closely. Our seadragons dress up as seaweed for visitors." },
+    { "id": "l2s4", "line": 2, "index": 4, "name": "Ravnfjord", "stallkeeper": { "name": "Oskar Tind", "tint": "#9FC3D9", "passengerSprite": 11 }, "greeting": "A whole cloud of krill in one jar. Don't count them, you'll be here all winter." },
+    { "id": "l2s5", "line": 2, "index": 5, "name": "Isbrekka", "stallkeeper": { "name": "Sigrun Mo", "tint": "#DCEBF2", "passengerSprite": 6 }, "greeting": "Icefish have clear blood, you know. Clear hearts too, I think." },
+    { "id": "l2s6", "line": 2, "index": 6, "name": "Kaldhavn Harbour", "stallkeeper": { "name": "Halvard Rook", "tint": "#B85C4A", "passengerSprite": 9 }, "greeting": "Last stop of the fjords. Wren once said the smoke to the south was calling her." },
+
+    { "id": "l3s1", "line": 3, "index": 1, "name": "Kahiko Landing", "stallkeeper": { "name": "Auntie Moana", "tint": "#E85D75", "passengerSprite": 3 }, "greeting": "Aloha, little train! Warm sand, warm water, warm vents below." },
+    { "id": "l3s2", "line": 3, "index": 2, "name": "Pumice Point", "stallkeeper": { "name": "Keoni Pahu", "tint": "#D9CBB0", "passengerSprite": 10 }, "greeting": "Stones that float, crabs with fur. Strange shore, good shore." },
+    { "id": "l3s3", "line": 3, "index": 3, "name": "Ember Bay", "stallkeeper": { "name": "Leilani Ka'i", "tint": "#F08A24", "passengerSprite": 1 }, "greeting": "Our snails wear iron shoes. Very fashionable, very sturdy." },
+    { "id": "l3s4", "line": 3, "index": 4, "name": "Motu Ahi", "stallkeeper": { "name": "Tavita Rua", "tint": "#7A4E9C", "passengerSprite": 7 }, "greeting": "The octopus will try to ride your train. Let her, she's earned it." },
+    { "id": "l3s5", "line": 3, "index": 5, "name": "Obsidian Reach", "stallkeeper": { "name": "Mele Fonoti", "tint": "#3C4A5C", "passengerSprite": 5 }, "greeting": "Quiet now. The ghost rays only come when the glass is calm." },
+    { "id": "l3s6", "line": 3, "index": 6, "name": "Grand Terminus", "stallkeeper": { "name": "The Stationmaster", "tint": "#C8A24A", "passengerSprite": 12 }, "greeting": "You came all this way. Wren said you would." }
+  ]
+}

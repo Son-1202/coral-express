@@ -1,0 +1,52 @@
+{
+  "lines": [
+    {
+      "beat": "beachSlowdown",
+      "text": "The Coral Express slows on the black-sand beach. There is no platform here, only the hush of the waves."
+    },
+    {
+      "beat": "postcard",
+      "postcardRef": "l3s6",
+      "text": null
+    },
+    {
+      "beat": "dive",
+      "text": "The rails run down the sand and into the sea. The train follows them, and the water closes softly over the roof."
+    },
+    {
+      "beat": "glassOpens",
+      "text": "The glass swings open. Every fish swims out to meet its wild cousins."
+    },
+    {
+      "beat": "panorama",
+      "text": "And one by one, they swim back to the carriages, because the train is home too."
+    },
+    {
+      "beat": "theEnd",
+      "text": "The End… of the line?"
+    }
+  ],
+  "credits": [
+    {
+      "role": "Game by",
+      "names": [
+        "Son-1202"
+      ]
+    },
+    {
+      "role": "Made with",
+      "names": [
+        "Claude Code",
+        "Higgsfield"
+      ]
+    },
+    {
+      "role": "Fonts",
+      "names": [
+        "Pixelify Sans",
+        "Silkscreen"
+      ]
+    }
+  ],
+  "endlessToast": "The Undersea Line is open. Fares ×2, forever."
+}

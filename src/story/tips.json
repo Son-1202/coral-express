@@ -1,0 +1,9 @@
+{
+  "tips": [
+    { "id": "buyFirstFish", "trigger": "buyFirstFish", "text": "Tap the Fish stall to buy your first Pebble Damsel. It's on the house!" },
+    { "id": "makeFirstPair", "trigger": "makeFirstPair", "text": "Partners earn more together. Put the Clownfish in the same carriage as the Carpet Anemone." },
+    { "id": "feedCarriage", "trigger": "feedCarriage", "text": "Tap a carriage to feed it. Its fish earn ×3 for a few seconds." },
+    { "id": "tankViewPlant", "trigger": "tankViewPlant", "text": "Double-tap a carriage to step inside, then tap the pencil and drag in a plant." },
+    { "id": "requestsBoard", "trigger": "requestsBoard", "text": "Passengers post wishes on the Requests board. Meet them and they'll reward you next visit." }
+  ]
+}

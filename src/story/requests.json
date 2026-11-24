@@ -1,0 +1,686 @@
+{
+  "requests": [
+    {
+      "id": "r_l1_01",
+      "line": 1,
+      "stationId": "l1s1",
+      "passenger": {
+        "name": "Pia",
+        "sprite": 2
+      },
+      "text": "I've never seen a fish up close. Even a little one would do!",
+      "condition": {
+        "type": "species",
+        "species": "pebble_damsel"
+      },
+      "reward": {
+        "type": "income",
+        "seconds": 180
+      }
+    },
+    {
+      "id": "r_l1_02",
+      "line": 1,
+      "stationId": "l1s2",
+      "passenger": {
+        "name": "Signor Bassi",
+        "sprite": 9
+      },
+      "text": "My grandson draws clownfish all day. May I show him a real one?",
+      "condition": {
+        "type": "species",
+        "species": "clownfish"
+      },
+      "reward": {
+        "type": "income",
+        "seconds": 180
+      }
+    },
+    {
+      "id": "r_l1_03",
+      "line": 1,
+      "stationId": "l1s3",
+      "passenger": {
+        "name": "Elena",
+        "sprite": 4
+      },
+      "text": "A pretty carriage would cheer up my sister. Something to smile at?",
+      "condition": {
+        "type": "appeal",
+        "value": 10
+      },
+      "reward": {
+        "type": "income",
+        "seconds": 240
+      }
+    },
+    {
+      "id": "r_l1_04",
+      "line": 1,
+      "passenger": {
+        "name": "Little Matteo",
+        "sprite": 11
+      },
+      "text": "Is it true there's a fish that walks? I have to see it!",
+      "condition": {
+        "type": "species",
+        "species": "mudskipper"
+      },
+      "reward": {
+        "type": "income",
+        "seconds": 180
+      }
+    },
+    {
+      "id": "r_l1_05",
+      "line": 1,
+      "stationId": "l1s4",
+      "passenger": {
+        "name": "The Rossi Family",
+        "sprite": 6
+      },
+      "text": "We'd love to see a whole reef family living together, like us.",
+      "condition": {
+        "type": "community",
+        "community": "reef_family"
+      },
+      "reward": {
+        "type": "incomeCosmetic",
+        "seconds": 300,
+        "cosmetic": "paint_red"
+      }
+    },
+    {
+      "id": "r_l1_06",
+      "line": 1,
+      "stationId": "l1s5",
+      "passenger": {
+        "name": "Gardener Ines",
+        "sprite": 1
+      },
+      "text": "Two green plants in one carriage, please. I miss my garden.",
+      "condition": {
+        "type": "decor",
+        "items": [
+          {
+            "plantAny": true,
+            "count": 2
+          }
+        ]
+      },
+      "reward": {
+        "type": "decor",
+        "decorId": "treasure_chest"
+      }
+    },
+    {
+      "id": "r_l1_07",
+      "line": 1,
+      "stationId": "l1s6",
+      "passenger": {
+        "name": "Captain Orsi",
+        "sprite": 12
+      },
+      "text": "I sailed these waters for fifty years. Show me something truly lovely.",
+      "condition": {
+        "type": "appeal",
+        "value": 25
+      },
+      "reward": {
+        "type": "income",
+        "seconds": 240
+      }
+    },
+    {
+      "id": "r_l1_08",
+      "line": 1,
+      "passenger": {
+        "name": "Fortunato",
+        "sprite": 8
+      },
+      "text": "They say a sparkling fish brings luck. I could use a little.",
+      "condition": {
+        "type": "shiny"
+      },
+      "reward": {
+        "type": "shinyEgg"
+      }
+    },
+    {
+      "id": "r_l1_09",
+      "line": 1,
+      "stationId": "l1s5",
+      "passenger": {
+        "name": "Nurse Livia",
+        "sprite": 5
+      },
+      "text": "I heard of a goby that keeps watch for its friend. How kind!",
+      "condition": {
+        "type": "species",
+        "species": "watchman_goby"
+      },
+      "reward": {
+        "type": "income",
+        "seconds": 180
+      }
+    },
+    {
+      "id": "r_l1_10",
+      "line": 1,
+      "stationId": "l1s6",
+      "passenger": {
+        "name": "The Mangrove Club",
+        "sprite": 3
+      },
+      "text": "Our club is named after the mangrove crew. Can we meet them?",
+      "condition": {
+        "type": "community",
+        "community": "mangrove_crew"
+      },
+      "reward": {
+        "type": "incomeCosmetic",
+        "seconds": 300,
+        "cosmetic": "sand_white"
+      }
+    },
+    {
+      "id": "r_l1_11",
+      "line": 1,
+      "stationId": "l1s3",
+      "passenger": {
+        "name": "Wren's Old Neighbour",
+        "sprite": 10
+      },
+      "text": "Wren kept sea glass and a little plant by her window. Do you?",
+      "condition": {
+        "type": "decor",
+        "items": [
+          {
+            "decorId": "sea_glass",
+            "count": 1
+          },
+          {
+            "plantAny": true,
+            "count": 1
+          }
+        ]
+      },
+      "reward": {
+        "type": "decor",
+        "decorId": "wren_photo"
+      }
+    },
+    {
+      "id": "r_l1_12",
+      "line": 1,
+      "stationId": "l1s6",
+      "passenger": {
+        "name": "Bride and Groom",
+        "sprite": 7
+      },
+      "text": "Our wedding photo needs the most beautiful carriage on the coast.",
+      "condition": {
+        "type": "appeal",
+        "value": 40
+      },
+      "reward": {
+        "type": "income",
+        "seconds": 240
+      }
+    },
+    {
+      "id": "r_l2_01",
+      "line": 2,
+      "stationId": "l2s1",
+      "passenger": {
+        "name": "Fisher Arne",
+        "sprite": 9
+      },
+      "text": "Garibaldi used to visit my nets as a boy. I'd love to see one again.",
+      "condition": {
+        "type": "species",
+        "species": "garibaldi"
+      },
+      "reward": {
+        "type": "income",
+        "seconds": 180
+      }
+    },
+    {
+      "id": "r_l2_02",
+      "line": 2,
+      "stationId": "l2s2",
+      "passenger": {
+        "name": "Solveig",
+        "sprite": 2
+      },
+      "text": "My papa says seahorse dads carry their babies. Is that true?",
+      "condition": {
+        "type": "species",
+        "species": "kelp_seahorse"
+      },
+      "reward": {
+        "type": "income",
+        "seconds": 180
+      }
+    },
+    {
+      "id": "r_l2_03",
+      "line": 2,
+      "stationId": "l2s3",
+      "passenger": {
+        "name": "Professor Lund",
+        "sprite": 12
+      },
+      "text": "I'm writing a paper on underwater beauty. Impress me, please.",
+      "condition": {
+        "type": "appeal",
+        "value": 40
+      },
+      "reward": {
+        "type": "income",
+        "seconds": 240
+      }
+    },
+    {
+      "id": "r_l2_04",
+      "line": 2,
+      "passenger": {
+        "name": "The Kelp Choir",
+        "sprite": 6
+      },
+      "text": "We sing about the kelp court. We'd love to see it in person.",
+      "condition": {
+        "type": "community",
+        "community": "kelp_court"
+      },
+      "reward": {
+        "type": "incomeCosmetic",
+        "seconds": 300,
+        "cosmetic": "backdrop_kelp_1"
+      }
+    },
+    {
+      "id": "r_l2_05",
+      "line": 2,
+      "stationId": "l2s4",
+      "passenger": {
+        "name": "Painter Elsa",
+        "sprite": 4
+      },
+      "text": "I want to paint a seadragon, but I can never find one.",
+      "condition": {
+        "type": "species",
+        "species": "leafy_seadragon"
+      },
+      "reward": {
+        "type": "income",
+        "seconds": 180
+      }
+    },
+    {
+      "id": "r_l2_06",
+      "line": 2,
+      "stationId": "l2s4",
+      "passenger": {
+        "name": "Forester Bjorn",
+        "sprite": 10
+      },
+      "text": "Two strands of giant kelp, swaying together. Like home.",
+      "condition": {
+        "type": "decor",
+        "items": [
+          {
+            "decorId": "kelp_strand",
+            "count": 2
+          }
+        ]
+      },
+      "reward": {
+        "type": "decor",
+        "decorId": "sunken_rowboat"
+      }
+    },
+    {
+      "id": "r_l2_07",
+      "line": 2,
+      "stationId": "l2s5",
+      "passenger": {
+        "name": "Little Nils",
+        "sprite": 11
+      },
+      "text": "Is there really a fish with see-through blood? Show me!",
+      "condition": {
+        "type": "species",
+        "species": "icefish"
+      },
+      "reward": {
+        "type": "income",
+        "seconds": 180
+      }
+    },
+    {
+      "id": "r_l2_08",
+      "line": 2,
+      "stationId": "l2s5",
+      "passenger": {
+        "name": "Mrs. Tindvik",
+        "sprite": 1
+      },
+      "text": "The fog makes everything grey. A bright carriage would warm me up.",
+      "condition": {
+        "type": "appeal",
+        "value": 80
+      },
+      "reward": {
+        "type": "income",
+        "seconds": 240
+      }
+    },
+    {
+      "id": "r_l2_09",
+      "line": 2,
+      "passenger": {
+        "name": "Fortune-Teller Runa",
+        "sprite": 5
+      },
+      "text": "I dreamed of a shimmering fish in the fjord. Was it real?",
+      "condition": {
+        "type": "shiny"
+      },
+      "reward": {
+        "type": "shinyEgg"
+      }
+    },
+    {
+      "id": "r_l2_10",
+      "line": 2,
+      "stationId": "l2s6",
+      "passenger": {
+        "name": "The Harbour Skaters",
+        "sprite": 3
+      },
+      "text": "We skate on the ice floe every winter. Can we see the real one?",
+      "condition": {
+        "type": "community",
+        "community": "ice_floe"
+      },
+      "reward": {
+        "type": "incomeCosmetic",
+        "seconds": 300,
+        "cosmetic": "backdrop_polar_1"
+      }
+    },
+    {
+      "id": "r_l2_11",
+      "line": 2,
+      "stationId": "l2s6",
+      "passenger": {
+        "name": "Diver Hallgrim",
+        "sprite": 8
+      },
+      "text": "An ice arch with something green beneath it. I saw that once, deep down.",
+      "condition": {
+        "type": "decor",
+        "items": [
+          {
+            "decorId": "ice_arch",
+            "count": 1
+          },
+          {
+            "plantAny": true,
+            "count": 1
+          }
+        ]
+      },
+      "reward": {
+        "type": "decor",
+        "decorId": "brass_diver"
+      }
+    },
+    {
+      "id": "r_l2_12",
+      "line": 2,
+      "stationId": "l2s6",
+      "passenger": {
+        "name": "Lighthouse Keeper Mags",
+        "sprite": 7
+      },
+      "text": "Fifty winters of fog. Show me the loveliest carriage in the north.",
+      "condition": {
+        "type": "appeal",
+        "value": 120
+      },
+      "reward": {
+        "type": "income",
+        "seconds": 240
+      }
+    },
+    {
+      "id": "r_l3_01",
+      "line": 3,
+      "stationId": "l3s1",
+      "passenger": {
+        "name": "Kai",
+        "sprite": 11
+      },
+      "text": "Grandpa says gardens grow down by the hot vents. Can I see one?",
+      "condition": {
+        "type": "species",
+        "species": "tubeworm"
+      },
+      "reward": {
+        "type": "income",
+        "seconds": 180
+      }
+    },
+    {
+      "id": "r_l3_02",
+      "line": 3,
+      "stationId": "l3s2",
+      "passenger": {
+        "name": "Auntie Pua",
+        "sprite": 1
+      },
+      "text": "A crab with fur? I'll believe it when I see it, dear.",
+      "condition": {
+        "type": "species",
+        "species": "yeti_crab"
+      },
+      "reward": {
+        "type": "income",
+        "seconds": 180
+      }
+    },
+    {
+      "id": "r_l3_03",
+      "line": 3,
+      "stationId": "l3s2",
+      "passenger": {
+        "name": "Hula Teacher Nalu",
+        "sprite": 6
+      },
+      "text": "My students need inspiration. Show us a carriage full of grace.",
+      "condition": {
+        "type": "appeal",
+        "value": 100
+      },
+      "reward": {
+        "type": "income",
+        "seconds": 240
+      }
+    },
+    {
+      "id": "r_l3_04",
+      "line": 3,
+      "stationId": "l3s3",
+      "passenger": {
+        "name": "Geologist Ana",
+        "sprite": 4
+      },
+      "text": "A snail with iron armour! I must see it for my notebook.",
+      "condition": {
+        "type": "species",
+        "species": "scaly_snail"
+      },
+      "reward": {
+        "type": "income",
+        "seconds": 180
+      }
+    },
+    {
+      "id": "r_l3_05",
+      "line": 3,
+      "passenger": {
+        "name": "The Vent Singers",
+        "sprite": 9
+      },
+      "text": "Our songs are about the vent choir. We've never heard it sing back.",
+      "condition": {
+        "type": "community",
+        "community": "vent_choir"
+      },
+      "reward": {
+        "type": "incomeCosmetic",
+        "seconds": 300,
+        "cosmetic": "backdrop_vent_1"
+      }
+    },
+    {
+      "id": "r_l3_06",
+      "line": 3,
+      "stationId": "l3s4",
+      "passenger": {
+        "name": "Fisher Iosefa",
+        "sprite": 12
+      },
+      "text": "An octopus stole my lunch once. I'd like to meet her cousin.",
+      "condition": {
+        "type": "species",
+        "species": "vent_octopus"
+      },
+      "reward": {
+        "type": "income",
+        "seconds": 180
+      }
+    },
+    {
+      "id": "r_l3_07",
+      "line": 3,
+      "stationId": "l3s4",
+      "passenger": {
+        "name": "Gardener Lani",
+        "sprite": 2
+      },
+      "text": "Two tubeworm gardens side by side. That's my kind of flower bed.",
+      "condition": {
+        "type": "decor",
+        "items": [
+          {
+            "decorId": "tube_garden",
+            "count": 2
+          }
+        ]
+      },
+      "reward": {
+        "type": "decor",
+        "decorId": "basalt_pillars"
+      }
+    },
+    {
+      "id": "r_l3_08",
+      "line": 3,
+      "stationId": "l3s5",
+      "passenger": {
+        "name": "Stargazer Hina",
+        "sprite": 5
+      },
+      "text": "The night sky is so bright here. Can your carriages outshine it?",
+      "condition": {
+        "type": "appeal",
+        "value": 180
+      },
+      "reward": {
+        "type": "income",
+        "seconds": 240
+      }
+    },
+    {
+      "id": "r_l3_09",
+      "line": 3,
+      "passenger": {
+        "name": "Lucky Malu",
+        "sprite": 8
+      },
+      "text": "A sparkling fish by the volcano! That would be a story to tell.",
+      "condition": {
+        "type": "shiny"
+      },
+      "reward": {
+        "type": "shinyEgg"
+      }
+    },
+    {
+      "id": "r_l3_10",
+      "line": 3,
+      "stationId": "l3s5",
+      "passenger": {
+        "name": "Night Ferryman Tui",
+        "sprite": 10
+      },
+      "text": "Some nights I see pale wings under my boat. Was it a ghost ray?",
+      "condition": {
+        "type": "species",
+        "species": "ghost_ray"
+      },
+      "reward": {
+        "type": "income",
+        "seconds": 180
+      }
+    },
+    {
+      "id": "r_l3_11",
+      "line": 3,
+      "stationId": "l3s5",
+      "passenger": {
+        "name": "Old Navigator Rangi",
+        "sprite": 7
+      },
+      "text": "Basalt and green growing things. Build me a little island in glass.",
+      "condition": {
+        "type": "decor",
+        "items": [
+          {
+            "decorId": "basalt_pillars",
+            "count": 1
+          },
+          {
+            "plantAny": true,
+            "count": 2
+          }
+        ]
+      },
+      "reward": {
+        "type": "decor",
+        "decorId": "captains_wheel"
+      }
+    },
+    {
+      "id": "r_l3_12",
+      "line": 3,
+      "passenger": {
+        "name": "The Island Council",
+        "sprite": 3
+      },
+      "text": "Before you go on, show us the finest carriage these isles have seen.",
+      "condition": {
+        "type": "appeal",
+        "value": 300
+      },
+      "reward": {
+        "type": "income",
+        "seconds": 240
+      }
+    }
+  ]
+}
