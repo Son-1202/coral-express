@@ -38,3 +38,4 @@ See pm/CREDITS.md.
 - 2026-11-24 ~05:55–09:10 UTC: subagents T-06/T-09/T-10/T-12 hit the 5-hour usage limit; resumed at 09:10 via SendMessage with work on disk intact.
 - Art known issues: station/l3 has painted rails (crop or regenerate in art-fix pass); station scale differs L1 vs L2/L3 (normalize in render).
 - CONTENT todo: add config.todaysSpecial.minPrice (50) + schema (fold into balance tuning ticket).
+- 2026-11-24 ~13:5x–14:10 UTC: second usage-limit stop (T-07, T-13, T-14, T-15, T-16); all resumed at 14:11. Mitigation: keep ≤ 4 concurrent subagents from now on.
