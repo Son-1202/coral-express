@@ -1,7 +1,7 @@
 # PM STATE — Coral Express
 
 **Phase:** 1 Foundation (T-01 DEV, T-04 ART running) + Phase 3 sim (T-05 running)
-**Live URL:** pending — producer will import repo into Vercel (D-008)
+**Live URL:** Vercel project son-1202/coral-express connected (URL appears once first green deploy lands)
 **Repo:** https://github.com/Son-1202/coral-express (branch `main`)
 
 ## Preflight (2026-11-24)
@@ -20,10 +20,10 @@
 | T-04 Style bible candidates | ART | medium | done (B chosen) |
 | T-08 Pixelize pipeline | DEV | medium | done |
 | T-09 Line 1 hero art | ART | medium | in progress |
-| T-05 Sim core | DEV | high | in progress |
+| T-05 Sim core | DEV | high | done |
 | T-10 Lines 2–3 art | ART | medium | in progress |
 | T-11 Music + ambience | ART | medium | in progress |
-| T-06 Sim meta (sights, depot, offline, save, markets, requests) | DEV | high | next |
+| T-06 Sim meta (sights, depot, offline, save, markets, requests) | DEV | high | in progress |
 | T-07 Bots + balance.ts | DEV | high | next |
 
 ## Credits
