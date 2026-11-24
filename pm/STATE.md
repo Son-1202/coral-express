@@ -25,6 +25,8 @@
 | T-11 Music + ambience | ART | medium | done |
 | T-16 Painterly set + shiny | ART | medium | done |
 | T-17 Cinematic video clips | ART | medium | next (when a slot frees) |
+| T-16 Painterly set + shiny | ART | medium | done |
+| T-17 Cinematic video clips | ART | medium | next (when a slot frees) |
 | T-12 Sprite sheets | ART | medium | done |
 | T-06 Sim meta (sights, depot, offline, save, markets, requests) | DEV | high | done |
 | T-07 Bots + balance.ts | DEV | high | in progress |
