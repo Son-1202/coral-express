@@ -24,3 +24,33 @@ Batch 1 total: 76.5 cr.
 - **4 line_1:** The small seafoam-green train travels slowly to the right across the stone viaduct, puffs of white steam trail behind it, sailboats drift on the glittering bay, seagulls fly over the lemon trees, leaves rustle in the breeze. Gentle slow camera push-in, no cuts, keep the HD-2D pixel-art painterly diorama style.
 - **5 line_2:** The small seafoam-green train travels slowly to the left along the lakeside track, steam puffs from its chimney, morning mist drifts across the still fjord lake and between the mountains, birds fly across the sky, the reflections ripple gently. Gentle slow camera push-in, no cuts, keep the HD-2D pixel-art painterly diorama style.
 - **6 line_3:** The small seafoam-green train travels slowly to the left along the wooden pier over the turquoise lagoon, steam puffs from its chimney, smoke billows gently from the volcano, palm trees sway, waves lap the black-sand beach, seabirds glide. Gentle slow camera push-in, no cuts, keep the HD-2D pixel-art painterly diorama style.
+
+Balance 546.29 → 469.79 (**76.5 cr spent**, within the 100 cr budget). No retries, no Seedance needed.
+
+## Selection (frames at 0 / ⅓ / ⅔ / end extracted with ffmpeg and reviewed)
+| clip | kept | why |
+|---|---|---|
+| title_loop | **take A** `c988c193` | Both takes are calm and static-camera (train stays parked, steam, waves, gulls, fish). A's steam fades out by the end, so its last frame matches the steam-free first frame better (better loop seam); B ends with a visible steam plume. |
+| ending_dive | **take A** `be8163fb` | Coherent the whole way: fish schools, mantas, turtles, sunbeams, slow drift. Take B has the requested swirl through the carriages but in the second half the school smears into a blurry ring and a shipwreck appears. Note: both show a small steam wisp underwater (reads as bubbles at game size). |
+| line_1 | `4380093b` | Train crosses the viaduct to the right, gulls, sailboats, slow push/pan. Good. |
+| line_2 | `e2641357` | Train runs left along the lake, mist drifts, birds, gentle push-in. Good. |
+| line_3 | `f6f38071` | Train on the pier, volcano smoke, gulls, palms. Train moves only slightly (fine for a 5 s cover). |
+
+## Post-processing
+- Source: 1284×716, 24 fps. Output scaled to **1280×714** (lanczos), yuv420p, no audio.
+- MP4: `libx264 -crf 28 -preset slow -movflags +faststart -an`. WebM: `libvpx-vp9 -crf 38 -b:v 0 -an`. Poster: frame 0 JPG (`-q:v 3`).
+- title_loop: seamless loop built by dropping the first 0.5 s and xfading (fade, 0.5 s) the clip's tail into its first 0.5 s → 7.54 s; the last output frame blends into the first.
+
+| file | mp4 | webm | duration |
+|---|---|---|---|
+| title_loop | 0.44 MB | 0.42 MB | 7.54 s |
+| ending_dive | 1.90 MB | 2.38 MB | 10.04 s |
+| line_1 | 0.56 MB | 0.58 MB | 5.04 s |
+| line_2 | 0.34 MB | 0.28 MB | 5.04 s |
+| line_3 | 0.44 MB | 0.43 MB | 5.04 s |
+
+All ≤ 4 MB. Raw downloads (all 7 takes, ~69 MB) kept in `assets/_raw/t17/` — PM may want to exclude these from git (large).
+
+## Notes for DEV
+- Use `<video muted playsinline autoplay loop poster=…jpg>` with `<source>` webm first, then mp4. title_loop has `loop`; ending_dive and line_* play once (or loop if desired; they don't loop seamlessly).
+- Posters are frame 0 of each final video, so the poster→video swap is invisible. Line/ending clips start on their key art exactly; title_loop starts 0.5 s in (near-identical to title_keyart).
