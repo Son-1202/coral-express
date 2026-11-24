@@ -22,6 +22,7 @@ export function tankTexture(candidates: readonly string[], placeholder: () => HT
   if (url) {
     const img = new Image();
     img.onload = () => {
+      tex.dispose(); // size changes: drop the immutable GPU storage so it re-uploads
       tex.image = img;
       setup(tex, img.naturalWidth, img.naturalHeight);
     };

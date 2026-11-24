@@ -62,7 +62,7 @@ export function drawFrame(ctx: CanvasRenderingContext2D, n: FrameId, w: number, 
     ctx.fillRect(0, h - u * 1.5, w, u * 1.5);
     ctx.fillRect(0, 0, u * 1.5, h);
     ctx.fillRect(w - u * 1.5, 0, u * 1.5, h);
-    const sw = u * 5;
+    const sw = u * 3.2;
     const sx = w - u * 1.5 - sw - u;
     const sy = u * 2.5;
     ctx.fillStyle = '#fffdf6';
@@ -74,7 +74,7 @@ export function drawFrame(ctx: CanvasRenderingContext2D, n: FrameId, w: number, 
     ctx.strokeStyle = 'rgba(60,40,30,0.55)';
     ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.arc(sx - u * 0.5, sy + sw * 0.9, u * 2.2, 0, Math.PI * 2);
+    ctx.arc(sx - u * 0.5, sy + sw * 0.9, u * 1.6, 0, Math.PI * 2);
     ctx.stroke();
     ctx.fillStyle = '#3a2c1e';
     ctx.font = `${Math.round(u * 1.1)}px "Pixelify Sans", monospace`;
