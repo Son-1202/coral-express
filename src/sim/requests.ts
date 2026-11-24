@@ -1,7 +1,8 @@
 // Passenger Requests (SPEC B4.13). Every request on a station's board is active; it
 // completes automatically when the train arrives at that station with the condition
-// met. Boards are per run; completed ids are kept forever in permanent.requestHistory
-// and never offered again. A board is rebuilt after `request.refreshVisits` visits.
+// met. Each request completes at most once per run (state.requestsDoneThisRun, cleared
+// by Depot Reset, so later runs offer it again); permanent.requestHistory/requestCounts
+// keep the lifetime record. A board is rebuilt after `request.refreshVisits` visits.
 import { earn } from './actionCheck';
 import type { Ctx } from './ctx';
 import { baseIncome } from './rates';
@@ -65,7 +66,7 @@ function lineOf(sid: string): number {
  *  skipping completed ones, ones on other boards and (if possible) the previous board's. */
 function buildBoard(ctx: Ctx, sid: string, previous: string[]): string[] {
   const s = ctx.state;
-  const done = new Set(s.permanent.requestHistory);
+  const done = new Set(s.requestsDoneThisRun);
   const taken = new Set<string>();
   for (const [k, b] of Object.entries(s.requestBoards)) if (k !== sid) for (const id of b.ids) taken.add(id);
   const line = lineOf(sid);
@@ -92,7 +93,10 @@ export function updateRequests(ctx: Ctx, sid: string, arrived: boolean): void {
       const carId = requestMetBy(ctx, r.condition);
       if (!carId) continue;
       board.ids = board.ids.filter((x) => x !== id);
-      s.permanent.requestHistory.push(id);
+      s.requestsDoneThisRun.push(id);
+      const p = s.permanent;
+      if (!p.requestHistory.includes(id)) p.requestHistory.push(id);
+      p.requestCounts[id] = (p.requestCounts[id] ?? 0) + 1;
       s.lifetime.requestsCompleted++;
       const g = grantReward(ctx, r.reward);
       ctx.emit({

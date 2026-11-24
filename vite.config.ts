@@ -15,6 +15,8 @@ function listFiles(dir: string): string[] {
   if (!existsSync(dir)) return [];
   const out: string[] = [];
   for (const name of readdirSync(dir)) {
+    // `_cut`, `_raw`, … are ART working dirs, never shipped (D-016).
+    if (name.startsWith('_') || name === 'style_bible.png') continue;
     const p = join(dir, name);
     if (statSync(p).isDirectory()) out.push(...listFiles(p));
     else out.push('/' + relative(ASSET_DIR, p).split(sep).join('/'));
@@ -35,6 +37,20 @@ function assetList(): Plugin {
 export default defineConfig({
   publicDir: ASSET_DIR,
   plugins: [assetList()],
-  build: { target: 'es2022', chunkSizeWarningLimit: 1200 },
+  build: {
+    target: 'es2022',
+    chunkSizeWarningLimit: 700,
+    rollupOptions: {
+      output: {
+        // Keep the app chunk small: three + postprocessing go to their own cacheable chunks.
+        manualChunks(id: string) {
+          if (id.includes('node_modules/three')) return 'three';
+          if (id.includes('node_modules/postprocessing')) return 'post';
+          if (id.includes('node_modules/howler')) return 'audio';
+          return undefined;
+        },
+      },
+    },
+  },
   test: { include: ['tests/unit/**/*.test.ts'] },
 });

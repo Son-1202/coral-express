@@ -115,8 +115,10 @@ export interface PermanentState {
   endless: boolean;
   reachedTerminals: LineId[];
   resets: number;
-  /** Request ids ever completed (kept across resets; never offered again). */
+  /** Request ids ever completed (unique, first-completion order; kept across resets). */
   requestHistory: string[];
+  /** Completions per request id (kept across resets). */
+  requestCounts: Record<string, number>;
 }
 
 // ---------------- T-06 meta state ----------------
@@ -206,6 +208,8 @@ export interface SimState {
   levelDiscounts: Record<string, number>;
   /** Shiny Eggs: `any` = next fish purchase of any species; `species` = per species. */
   shinyEggs: { any: number; species: string[] };
+  /** Request ids completed this run (cleared by Depot Reset; each completes once per run). */
+  requestsDoneThisRun: string[];
   /** Fish Shells earned per species this run (E1 dominance metric). */
   speciesShells: Record<string, number>;
 }

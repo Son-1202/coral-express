@@ -36,7 +36,7 @@ function defaultPermanent(): PermanentState {
   return {
     tickets: 0, totalTicketsEarned: 0, upgrades: [], openedLines: [1], stamps: [], postcards: [],
     unlockedCosmetics: [], mascot: null, oldFriendStreak: 0, oldFriend: false, endless: false,
-    reachedTerminals: [], resets: 0, requestHistory: [],
+    reachedTerminals: [], resets: 0, requestHistory: [], requestCounts: {},
   };
 }
 
@@ -55,7 +55,7 @@ export function blankState(seed: number): SimState {
     frenzy: {}, modifiers: [], permanent: defaultPermanent(), incomeWindow: { seconds: 0, amount: 0 },
     sight: { active: null, nextAt: -1 },
     market: { station: 1, stationId: '', fish: [], decor: [], special: null, requests: [] },
-    requestBoards: {}, levelDiscounts: {}, shinyEggs: { any: 0, species: [] }, speciesShells: {},
+    requestBoards: {}, requestsDoneThisRun: [], levelDiscounts: {}, shinyEggs: { any: 0, species: [] }, speciesShells: {},
   };
 }
 
@@ -86,6 +86,7 @@ export function startRun(ctx: Ctx, line: LineId): void {
   s.frenzy = {};
   s.modifiers = [];
   s.requestBoards = {};
+  s.requestsDoneThisRun = [];
   s.levelDiscounts = {};
   s.speciesShells = {};
   s.shells = cfg.startShells + ctx.fx().startShellsPerTicket * s.permanent.totalTicketsEarned;

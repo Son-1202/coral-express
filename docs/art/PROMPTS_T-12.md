@@ -1,0 +1,60 @@
+# T-12 prompt log — sprite sheets (ART)
+
+Date 2026-11-24. Budget ≤ 70 cr. **Spent ≈ 51.25 cr** (4 nano + 6×1 gpt 1k + 19×1.75 gpt 2k + 8×1 remove_background). Account balance is shared with parallel ART tickets, so per-job costs come from quotes + `transactions`.
+
+## Method
+- Every prompt = STYLE BLOCK + `REFNOTE` + `SHEET` + subject text (frames: STYLE + REFNOTE + subject). Exact texts: `docs/art/tools/t12_prompts.json`; request builder `docs/art/tools/t12_build.cjs`.
+- Style bible job `174186f2-e469-421b-a531-b0da32893b7b` passed as `medias[{role:image_references}]` on every request (`models_explore get gpt_image_2_6` → role `image_references`).
+- **Deviation (model):** `nano_banana_pro` with the style-bible reference returned a near-copy of the style bible twice (plants_reef try 1+2, rejected; see `assets/_raw/t12/plants_reef_try1.png`). The REFNOTE ("reference is ONLY a style guide…") did not help nano. All nano-designated sheets were therefore made with `gpt_image_2_6` quality medium **2k** (1.75 cr), which follows the reference style faithfully. Small sheets (passengers, sights, icons, wheel/rod) = gpt medium 1k (1 cr).
+- **Alpha:** some gpt outputs came back already transparent (plants mangrove/kelp/polar, and every request sent with `background:"transparent"`). Opaque sheets → `remove_background` (1 cr each). Exceptions (free local keyer `docs/art/tools/key.cjs --global`, flat grey bg): `decor_b` (keeps translucent ice arch + enclosed holes), `foliage_l2` (remove_background made birch leaves semi-transparent), photo frames 1–3 (outside + empty centre keyed in one flood-fill so the centre is transparent).
+- Slicing: `docs/art/tools/t12_slice.cjs` (connected components on a downscaled, dilated alpha mask, N largest, reading order, trimmed, max 768 px long side, lanczos). Icons used `--scale 2` (tight gaps). Fetch: `t12_fetch.sh`. Contact sheet: `t12_contact.cjs` → `docs/art/candidates/T-12_contact.jpg`.
+- Raw sheets: `assets/_raw/t12/<sheet>.png` (+ `_rb` = remove_background result, `_key` = local key).
+
+## Jobs
+| Sheet | Job id | Model / params | Cost | Alpha | Result |
+|---|---|---|---|---|---|
+| plants_reef_try1 | `02c24baa-6dc3-4d44-80fd-a32028b2ac85` |   nano_banana_pro(->nano_banana_2) 2 REJECTED copied style bible |  |  |  |
+| passengers_a | `9a1e992b-cb44-48a2-84c1-984d84d71a77` |   gpt_image_2_6 3:2 medium 1k 1 ok |  |  |  |
+| plants_reef_try2 | `ceff98c3-e433-4914-815c-b250d45e5b02` |   nano_banana_pro(->nano_banana_2) 2 REJECTED copied style bible again |  |  |  |
+| plants_reef | `f35aa434-bcf8-448b-b1e1-e5268f1ac07f` |   gpt_image_2_6 2k 1.75 |  |  |  |
+| decor_a | `1c4ef0e0-077c-48eb-b498-730517c660f8` |   gpt_image_2_6 2k 1.75 |  |  |  |
+| foliage_l1 | `672c660d-0779-40e8-a60c-1fbc3affd61a` |   gpt_image_2_6 2k 1.75 |  |  |  |
+| foliage_l2 | `ec7dcfcd-c601-4833-aa68-ab2599129494` |   gpt_image_2_6 2k 1.75 |  |  |  |
+| foliage_l3 | `f9fbdb76-cc39-482d-8fb4-342a53c44d85` |   gpt_image_2_6 2k 1.75 |  |  |  |
+| props_l1 | `c6121914-0791-4313-9efc-95f85832cfdd` |   gpt_image_2_6 4:3 2k 1.75 |  |  |  |
+| plants_mangrove | `1ab31ca4-753a-40e4-a28c-150aa354701a` |   gpt_image_2_6 2k 1.75 |  |  |  |
+| plants_kelp | `f3aa6e57-dcfb-4e59-bef8-f545868fd426` |   gpt_image_2_6 2k 1.75 |  |  |  |
+| plants_polar | `25b5f32a-1e9d-4a95-8c27-ae14c96074e8` |   gpt_image_2_6 2k 1.75 |  |  |  |
+| plants_vent | `279240dc-69ba-4996-bf86-aae97498a5d3` |   gpt_image_2_6 2k 1.75 |  |  |  |
+| decor_b | `a21233a2-fd30-4063-87ba-ba8afac69438` |   gpt_image_2_6 2k 1.75 |  |  |  |
+| props_l2 | `c4b48e2e-4677-4cfa-8849-1ec33b5f21da` |   gpt_image_2_6 4:3 2k 1.75 |  |  |  |
+| rb_plants_reef | `aac05d7f-fa44-493e-ae8c-997db47ff11c` |   image_background_remover ? ok |  |  |  |
+| props_l3 | `4fb2a158-2296-4077-9379-49f47ce3c54a` |   gpt_image_2_6 4:3 2k transparent 1.75 |  |  |  |
+| wildlife_a | `68081b53-d203-4919-b0f4-813137225724` |   gpt_image_2_6 2k transparent 1.75 |  |  |  |
+| wildlife_b | `695cc3da-51ef-43d1-a54f-196b836cb8c2` |   gpt_image_2_6 2k transparent 1.75 |  |  |  |
+| wildlife_c | `2b2b0e74-b1a7-49c4-b3a5-9e1a718549f3` |   gpt_image_2_6 2k transparent 1.75 |  |  |  |
+| passengers_b | `0492c54c-9c64-4d21-8188-511965ec6093` |   gpt_image_2_6 3:2 1k transparent 1 |  |  |  |
+| sights | `332642de-7366-48d4-8f85-f5866491461f` |   gpt_image_2_6 16:9 1k transparent 1 |  |  |  |
+| rb_decor_a | `9daeb456-a484-4106-82e3-49fc7b4f311c` |   image_background_remover 1 |  |  |  |
+| rb_plants_vent | `06d998e3-9c04-4fda-81a4-84fdf49e4d75` |   image_background_remover 1 |  |  |  |
+| rb_foliage_l1 | `c70449b2-00f7-48df-a465-432c0f1e6dde` |   image_background_remover 1 |  |  |  |
+| rb_foliage_l2 | `e045583a-fc85-4f32-86f8-e81d416a6252` |   image_background_remover 1 |  |  |  |
+| icons_a | `16162fa3-2130-4f18-a87b-5ec846149ac7` |   gpt_image_2_6 1:1 1k transparent 1 |  |  |  |
+| icons_b | `f8f1ca62-49ff-43c2-8dbc-03b51299538b` |   gpt_image_2_6 1:1 1k transparent 1 |  |  |  |
+| wheel_rod | `6e6cdc37-fb2c-45df-8632-c2488d76f989` |   gpt_image_2_6 16:9 1k transparent 1 |  |  |  |
+| frame_1 | `cc4a640a-6645-47cb-9e16-e4cf0a186a12` |   gpt_image_2_6 16:9 2k 1.75 |  |  |  |
+| frame_2 | `9ddcc2f2-80dd-401f-8fbf-8cf052770f2a` |   gpt_image_2_6 16:9 2k 1.75 |  |  |  |
+| frame_3 | `46f55cd2-69cd-4e55-80f5-5389c586e2cf` |   gpt_image_2_6 16:9 2k 1.75 |  |  |  |
+| rb_foliage_l3 | `aed4fa6c-e3f5-4f43-9435-c925aeeb27ec` |   image_background_remover 1 |  |  |  |
+| rb_props_l1 | `d2a21af1-914e-4f36-ba87-d140198a4b0a` |   image_background_remover 1 |  |  |  |
+| rb_props_l2 | `515f61cc-ae80-4672-8da8-c5d04cfe4ad6` |   image_background_remover 1 |  |  |  |
+
+(Columns after params: cost is the last number in the params column.) Rejected: plants_reef_try1/try2 (nano copied style bible). All other sheets accepted on first try after visual review (Read on every preview + contact sheet).
+
+## Outputs (96 files)
+plants/{reef,mangrove,kelp,polar,vent}_{1-4} · decor/{sea_glass,treasure_chest,mangrove_root,coral_castle,sunken_rowboat,ice_arch,brass_diver,basalt_pillars,captains_wheel,wren_photo} · scenery/l{1-3}_foliage_{1-3}, l{1-3}_props_{1-4} · wildlife/{sea_turtle,pelican,beach_crab,seal,puffin,otter,frigatebird,flamingo,manta} · passengers/p1–p12 · sights/{dolphin,gull,whale} · icons/{shell,ticket,stamp,tab_market,tab_track,tab_stamps,tab_depot,heart_bubble,upgrade_*×8} · train/{wheel,rod} · ui/photo_frames_{1-3}.
+
+## Notes for DEV/PM
+- Each sprite is capped at 768 px independently, so relative scale between sprites of a sheet is not preserved; set world sizes in data/manifest.
+- p8 (painter) is a woman; p11 wears a flat cap. Bell icon's sparkle marks and the lighter steam wisps were dropped/kept faint by slicing.
+- Icons are ~135–270 px; downscale with NearestFilter for 32 px use.

@@ -7,8 +7,14 @@ import { baseIncome } from './rates';
 import { rand } from './rng';
 import type { Action, SpecialKind, TodaysSpecial } from './types';
 
-/** Floor price of Today's Special (ticket rule 7: "min 50"; not in config.json — flag to CONTENT). */
+/** Fallback floor price of Today's Special when config.todaysSpecial.minPrice is absent. */
 export const SPECIAL_MIN_PRICE = 50;
+
+/** config.todaysSpecial.minPrice (optional; not yet in schema.ts — CONTENT may add it). */
+export function specialMinPrice(ctx: Ctx): number {
+  const v = (ctx.idx.data.config.todaysSpecial as { minPrice?: unknown }).minPrice;
+  return typeof v === 'number' && Number.isFinite(v) ? v : SPECIAL_MIN_PRICE;
+}
 /** Earlier-station species offered next to the signature one (SPEC B4.12). */
 const EARLIER_FISH = 2;
 const DECOR_STALL = 3;
@@ -53,7 +59,7 @@ function rollSpecial(ctx: Ctx): TodaysSpecial | null {
   if (s.carriages.some((c) => c.slots < cfg.maxSlots)) kinds.push('freeSlot');
   if (cosmetics.length) kinds.push('cosmetic');
   const kind = pick(ctx, kinds) ?? 'shinyEgg';
-  const price = Math.max(SPECIAL_MIN_PRICE, cfg.todaysSpecial.priceSecondsOfIncome * baseIncome(ctx).totalSps);
+  const price = Math.max(specialMinPrice(ctx), cfg.todaysSpecial.priceSecondsOfIncome * baseIncome(ctx).totalSps);
   const sp: TodaysSpecial = { kind, price, sold: false };
   if (kind === 'levelDiscount') sp.species = pick(ctx, owned);
   if (kind === 'cosmetic') sp.cosmetic = pick(ctx, cosmetics);

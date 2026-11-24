@@ -31,3 +31,8 @@ wheel_rod 6e6cdc37-fb2c-45df-8632-c2488d76f989 gpt_image_2_6 16:9 1k transparent
 frame_1 cc4a640a-6645-47cb-9e16-e4cf0a186a12 gpt_image_2_6 16:9 2k 1.75
 frame_2 9ddcc2f2-80dd-401f-8fbf-8cf052770f2a gpt_image_2_6 16:9 2k 1.75
 frame_3 46f55cd2-69cd-4e55-80f5-5389c586e2cf gpt_image_2_6 16:9 2k 1.75
+rb_foliage_l3 aed4fa6c-e3f5-4f43-9435-c925aeeb27ec image_background_remover 1
+rb_props_l1 d2a21af1-914e-4f36-ba87-d140198a4b0a image_background_remover 1
+rb_props_l2 515f61cc-ae80-4672-8da8-c5d04cfe4ad6 image_background_remover 1
+decor_b: local key.cjs (free), no remove_background
+foliage_l2: rb result (e045583a) made birch leaves semi-transparent -> replaced by local key.cjs --global
