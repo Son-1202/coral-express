@@ -28,7 +28,9 @@ export const LINE_LAYOUT: LineLayerSpec[] = [
 ];
 
 /** Per-line tweaks (mid strips differ a lot in how much ground they paint). */
-const MID_ANCHOR: Record<number, number> = { 1: -8.0, 2: -6.5, 3: -7.5 };
+const MID_ANCHOR: Record<number, number> = { 1: -10.0, 2: -7.5, 3: -9.0 };
+
+const NEAR_WIDTH: Record<number, number> = { 3: 14 };
 
 function mirrored(t: THREE.Texture): THREE.Texture {
   const m = t.clone();
@@ -56,10 +58,11 @@ export function buildLineArt(line: number, scene: THREE.Scene): { group: THREE.G
       tex.colorSpace = THREE.SRGBColorSpace;
       tex.anisotropy = 4;
       tex.needsUpdate = true;
-      const h = (spec.width * img.naturalHeight) / img.naturalWidth;
+      const width = spec.layer === 'near' ? (NEAR_WIDTH[line] ?? spec.width) : spec.width;
+      const h = (width * img.naturalHeight) / img.naturalWidth;
       const anchorY = spec.layer === 'mid' ? (MID_ANCHOR[line] ?? spec.anchorY) : spec.anchorY;
       const l = new TileLayer({
-        width: spec.width,
+        width,
         height: h,
         y: anchorY - spec.anchorV * h,
         z: spec.z,

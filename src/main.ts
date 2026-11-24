@@ -72,9 +72,9 @@ async function boot(): Promise<void> {
       stage.handle(e, bulk);
       if (!bulk && tank?.isActive()) tank.onEvent(e);
     },
-    frame(dt) {
+    frame(dt, realDt) {
       stage.skipRender = !!tank?.isCovering();
-      stage.frame(dt);
+      stage.frame(dt, realDt);
       if (tank?.isActive()) {
         tank.update(dt);
         tank.render();

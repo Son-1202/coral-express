@@ -1,0 +1,551 @@
+{
+  "info": {
+    "games": 200,
+    "bots": [
+      "greedy",
+      "random",
+      "bondNever",
+      "greedyOffline"
+    ],
+    "minutes": 120,
+    "offlineAt": 30,
+    "offlineHours": 8,
+    "seedBase": 1,
+    "workers": 4,
+    "seconds": 103.477
+  },
+  "games": {
+    "bondNever": 200,
+    "random": 200,
+    "greedyOffline": 200,
+    "greedy": 200
+  },
+  "rows": [
+    {
+      "id": "greedyFirstReset",
+      "metric": "Greedy time to first Depot Reset",
+      "target": "15–20 min",
+      "value": "12.8 (p10 6.0, p90 12.8); not within 120 min: 0.0%",
+      "pass": false,
+      "rule": "median in range",
+      "raw": {
+        "n": 200,
+        "p10": 357,
+        "median": 765,
+        "p90": 765,
+        "max": 765
+      }
+    },
+    {
+      "id": "randomFirstReset",
+      "metric": "Random time to first Depot Reset",
+      "target": "35–70 min (or not within 120 min in ≤20% runs)",
+      "value": "45.1 (p10 38.3, p90 55.4); not within 120 min: 0.0%",
+      "pass": true,
+      "rule": "median in range, or median ≥ 35 min with ≤20% never",
+      "raw": {
+        "n": 200,
+        "p10": 2298,
+        "median": 2706,
+        "p90": 3321,
+        "max": 4236,
+        "never": 0
+      }
+    },
+    {
+      "id": "greedyTerminus",
+      "metric": "Greedy time to Grand Terminus (active)",
+      "target": "60–90 min",
+      "value": ">limit (p10 29.6, p90 >limit); reached: 37.5%",
+      "pass": false,
+      "rule": "median in range",
+      "raw": {
+        "n": 200,
+        "p10": 1773,
+        "median": "Infinity",
+        "p90": "Infinity",
+        "max": "Infinity"
+      }
+    },
+    {
+      "id": "offlineSooner",
+      "metric": "Greedy + one 8 h offline break at min 30: Terminus sooner",
+      "target": "15–35% sooner",
+      "value": "n/a (offline median 33.1 vs >limit; reached 65.5%)",
+      "pass": false,
+      "rule": "1 − median(offline)/median(greedy) in range",
+      "raw": {
+        "offline": {
+          "n": 200,
+          "p10": 1773,
+          "median": 1989,
+          "p90": "Infinity",
+          "max": "Infinity"
+        },
+        "sooner": null
+      }
+    },
+    {
+      "id": "bondNeverSlower",
+      "metric": "Bond-never time to Terminus vs greedy",
+      "target": "≥30% slower (or not reached in 120 min)",
+      "value": "n/a; median >limit; not reached 54.5%",
+      "pass": false,
+      "rule": "median ratio ≥ 1.3, or bond-never median not reached while greedy is",
+      "raw": {
+        "bondNever": {
+          "n": 200,
+          "p10": 1917,
+          "median": "Infinity",
+          "p90": "Infinity",
+          "max": "Infinity"
+        },
+        "slower": null,
+        "notReached": 0.545
+      }
+    },
+    {
+      "id": "bondNeverIncome15",
+      "metric": "Bond-never avg income at min 15 of run 1 vs greedy",
+      "target": "≤75%",
+      "value": "75.3% (bond-never 4.16e+4/s vs greedy 5.53e+4/s)",
+      "pass": false,
+      "rule": "ratio of medians",
+      "raw": {
+        "greedy": 55271,
+        "bondNever": 41594.933333333334,
+        "ratio": 0.7525634298878857
+      }
+    },
+    {
+      "id": "firstPair",
+      "metric": "First game time to first pair (greedy)",
+      "target": "≤2.5 min",
+      "value": "3.4 (p10 3.4, p90 3.5)",
+      "pass": false,
+      "rule": "median",
+      "raw": {
+        "n": 200,
+        "p10": 206,
+        "median": 206,
+        "p90": 208,
+        "max": 208
+      }
+    },
+    {
+      "id": "requestShare",
+      "metric": "Share of greedy income from Requests",
+      "target": "5–15%",
+      "value": "20.6% (p10 0.0%, p90 60.9%)",
+      "pass": false,
+      "rule": "median in range",
+      "raw": {
+        "n": 200,
+        "p10": 1.5503115594188203e-8,
+        "median": 0.2058766005133547,
+        "p90": 0.6092652269112953,
+        "max": 0.6589331635911986
+      }
+    },
+    {
+      "id": "goalGap",
+      "metric": "Max gap between meaningful goals, min 5–15 of each run (greedy)",
+      "target": "never > 3 min",
+      "value": "4.3 (p10 3.4, p90 5.5); games with a gap > 3 min: 93.5%",
+      "pass": false,
+      "rule": "p90 of per-game max ≤ 3 min",
+      "raw": {
+        "n": 200,
+        "p10": 204,
+        "median": 255,
+        "p90": 333,
+        "max": 600
+      }
+    },
+    {
+      "id": "fareShare",
+      "metric": "Fares vs total (greedy, session avg)",
+      "target": "fares 25–50% of total",
+      "value": "1.5% (p10 0.0%, p90 7.3%)",
+      "pass": false,
+      "rule": "median in range",
+      "raw": {
+        "n": 200,
+        "p10": 1.2510812279656755e-10,
+        "median": 0.015457983671517182,
+        "p90": 0.07336482444996059,
+        "max": 0.20265132041597783
+      }
+    },
+    {
+      "id": "dominance",
+      "metric": "Max single-species share of fish income at each reset (greedy)",
+      "target": "≤35%",
+      "value": "36.0% (p10 32.8%, p90 78.9%); resets over 35%: 70.3%",
+      "pass": false,
+      "rule": "p90 over all resets ≤ 35%",
+      "raw": {
+        "n": 400,
+        "p10": 0.3280794501784761,
+        "median": 0.35974598125258095,
+        "p90": 0.7891678685203795,
+        "max": 0.8075384541636553
+      }
+    },
+    {
+      "id": "speciesBought",
+      "metric": "Every species bought before Terminus (greedy)",
+      "target": "≥90% of runs per species",
+      "value": "8/18 species below 90%: watchman_goby 0.0%, snow_crab 3.5%, tubeworm 37.5%, yeti_crab 37.5%, scaly_snail 37.5%, vent_octopus 31.5%, ghost_ray 21.0%, pocket_whale 0.0%",
+      "pass": false,
+      "rule": "every species ≥ 90% of games",
+      "raw": {
+        "pebble_damsel": 1,
+        "carpet_anemone": 1,
+        "clownfish": 0.985,
+        "mudskipper": 1,
+        "pistol_shrimp": 0.92,
+        "watchman_goby": 0,
+        "garibaldi": 0.995,
+        "kelp_seahorse": 1,
+        "leafy_seadragon": 1,
+        "ice_krill": 1,
+        "icefish": 0.99,
+        "snow_crab": 0.035,
+        "tubeworm": 0.375,
+        "yeti_crab": 0.375,
+        "scaly_snail": 0.375,
+        "vent_octopus": 0.315,
+        "ghost_ray": 0.21,
+        "pocket_whale": 0
+      }
+    },
+    {
+      "id": "deadTime",
+      "metric": "Longest dead time after min 1 (greedy)",
+      "target": "≤90 s",
+      "value": "415 s (p10 305, p90 1476, max 1944)",
+      "pass": false,
+      "rule": "p90 of per-game longest gap between purchases ≤ 90 s",
+      "raw": {
+        "n": 200,
+        "p10": 305,
+        "median": 415,
+        "p90": 1476,
+        "max": 1944
+      }
+    },
+    {
+      "id": "resetsBeforeTerminus",
+      "metric": "Depot Resets before Terminus (greedy)",
+      "target": "3–6",
+      "value": "2 (p10 2, p90 2); over 75 games that reached it",
+      "pass": false,
+      "rule": "median over games reaching the Terminus",
+      "raw": {
+        "n": 75,
+        "p10": 2,
+        "median": 2,
+        "p90": 2,
+        "max": 2
+      }
+    }
+  ],
+  "species": {
+    "pebble_damsel": 1,
+    "carpet_anemone": 1,
+    "clownfish": 0.985,
+    "mudskipper": 1,
+    "pistol_shrimp": 0.92,
+    "watchman_goby": 0,
+    "garibaldi": 0.995,
+    "kelp_seahorse": 1,
+    "leafy_seadragon": 1,
+    "ice_krill": 1,
+    "icefish": 0.99,
+    "snow_crab": 0.035,
+    "tubeworm": 0.375,
+    "yeti_crab": 0.375,
+    "scaly_snail": 0.375,
+    "vent_octopus": 0.315,
+    "ghost_ray": 0.21,
+    "pocket_whale": 0
+  },
+  "dominant": {
+    "pistol_shrimp": 94,
+    "icefish": 95,
+    "clownfish": 27,
+    "ice_krill": 40,
+    "leafy_seadragon": 12,
+    "mudskipper": 7,
+    "snow_crab": 6
+  },
+  "illegal": {
+    "bondNever": 0,
+    "random": 0,
+    "greedyOffline": 0,
+    "greedy": 0
+  },
+  "extra": {
+    "bondNever": {
+      "firstReset": {
+        "n": 200,
+        "p10": 765,
+        "median": 765,
+        "p90": 765,
+        "max": 765
+      },
+      "terminus": {
+        "n": 200,
+        "p10": 1917,
+        "median": "Infinity",
+        "p90": "Infinity",
+        "max": "Infinity"
+      },
+      "resets": {
+        "n": 200,
+        "p10": 2,
+        "median": 2,
+        "p90": 2,
+        "max": 2
+      },
+      "ticketsPerReset": {
+        "n": 400,
+        "p10": 17,
+        "median": 763,
+        "p90": 5928,
+        "max": 37473
+      },
+      "fareShare": {
+        "n": 200,
+        "p10": 8.369313856733578e-11,
+        "median": 0.01803282224126955,
+        "p90": 0.09632518400324204,
+        "max": 0.21973568597204737
+      },
+      "requestShare": {
+        "n": 200,
+        "p10": 1.6737922260069097e-9,
+        "median": 0.17810920434718977,
+        "p90": 0.4568131876809446,
+        "max": 0.6452124962233731
+      },
+      "offlineShare": {
+        "n": 200,
+        "p10": 0,
+        "median": 0,
+        "p90": 0,
+        "max": 0
+      },
+      "deadTime": {
+        "n": 200,
+        "p10": 288,
+        "median": 358,
+        "p90": 504,
+        "max": 1584
+      },
+      "income15": {
+        "n": 200,
+        "p10": 41271.333333333336,
+        "median": 41594.933333333334,
+        "p90": 66008.8,
+        "max": 72122.00000000156
+      }
+    },
+    "random": {
+      "firstReset": {
+        "n": 200,
+        "p10": 2298,
+        "median": 2706,
+        "p90": 3321,
+        "max": 4236
+      },
+      "terminus": {
+        "n": 200,
+        "p10": "Infinity",
+        "median": "Infinity",
+        "p90": "Infinity",
+        "max": "Infinity"
+      },
+      "resets": {
+        "n": 200,
+        "p10": 1,
+        "median": 1,
+        "p90": 3,
+        "max": 7
+      },
+      "ticketsPerReset": {
+        "n": 369,
+        "p10": 5,
+        "median": 9,
+        "p90": 11,
+        "max": 4849
+      },
+      "fareShare": {
+        "n": 200,
+        "p10": 0.0003961532677892566,
+        "median": 0.10847676521558222,
+        "p90": 0.2579966342642107,
+        "max": 0.3717628848138176
+      },
+      "requestShare": {
+        "n": 200,
+        "p10": 0.005976122332672676,
+        "median": 0.028360004164469713,
+        "p90": 0.13784453696007753,
+        "max": 0.6063452031403506
+      },
+      "offlineShare": {
+        "n": 200,
+        "p10": 0,
+        "median": 0,
+        "p90": 0,
+        "max": 0
+      },
+      "deadTime": {
+        "n": 200,
+        "p10": 18,
+        "median": 24,
+        "p90": 42,
+        "max": 141
+      },
+      "income15": {
+        "n": 200,
+        "p10": 366.663333333313,
+        "median": 727.5383333333463,
+        "p90": 1277.8232352941461,
+        "max": 3761.0161274509805
+      }
+    },
+    "greedyOffline": {
+      "firstReset": {
+        "n": 200,
+        "p10": 357,
+        "median": 765,
+        "p90": 765,
+        "max": 765
+      },
+      "terminus": {
+        "n": 200,
+        "p10": 1773,
+        "median": 1989,
+        "p90": "Infinity",
+        "max": "Infinity"
+      },
+      "resets": {
+        "n": 200,
+        "p10": 2,
+        "median": 2,
+        "p90": 2,
+        "max": 2
+      },
+      "ticketsPerReset": {
+        "n": 400,
+        "p10": 22,
+        "median": 1000,
+        "p90": 24307,
+        "max": 64079
+      },
+      "fareShare": {
+        "n": 200,
+        "p10": 6.41293193515939e-11,
+        "median": 3.913996041732648e-10,
+        "p90": 0.09356998109627904,
+        "max": 0.14425629334150775
+      },
+      "requestShare": {
+        "n": 200,
+        "p10": 1.2966536555244772e-7,
+        "median": 0.0889201298718673,
+        "p90": 0.21247205818924828,
+        "max": 0.4086649064461883
+      },
+      "offlineShare": {
+        "n": 200,
+        "p10": 0,
+        "median": 6.001861666250727e-9,
+        "p90": 0.8827297106718723,
+        "max": 0.9907736144590253
+      },
+      "deadTime": {
+        "n": 200,
+        "p10": 255,
+        "median": 409,
+        "p90": 504,
+        "max": 1295
+      },
+      "income15": {
+        "n": 200,
+        "p10": 36058.89166666692,
+        "median": 55271,
+        "p90": 86402.5333333234,
+        "max": 99508.80000000485
+      }
+    },
+    "greedy": {
+      "firstReset": {
+        "n": 200,
+        "p10": 357,
+        "median": 765,
+        "p90": 765,
+        "max": 765
+      },
+      "terminus": {
+        "n": 200,
+        "p10": 1773,
+        "median": "Infinity",
+        "p90": "Infinity",
+        "max": "Infinity"
+      },
+      "resets": {
+        "n": 200,
+        "p10": 2,
+        "median": 2,
+        "p90": 2,
+        "max": 2
+      },
+      "ticketsPerReset": {
+        "n": 400,
+        "p10": 22,
+        "median": 1677,
+        "p90": 24154,
+        "max": 43180
+      },
+      "fareShare": {
+        "n": 200,
+        "p10": 1.2510812279656755e-10,
+        "median": 0.015457983671517182,
+        "p90": 0.07336482444996059,
+        "max": 0.20265132041597783
+      },
+      "requestShare": {
+        "n": 200,
+        "p10": 1.5503115594188203e-8,
+        "median": 0.2058766005133547,
+        "p90": 0.6092652269112953,
+        "max": 0.6589331635911986
+      },
+      "offlineShare": {
+        "n": 200,
+        "p10": 0,
+        "median": 0,
+        "p90": 0,
+        "max": 0
+      },
+      "deadTime": {
+        "n": 200,
+        "p10": 305,
+        "median": 415,
+        "p90": 1476,
+        "max": 1944
+      },
+      "income15": {
+        "n": 200,
+        "p10": 36058.89166666692,
+        "median": 55271,
+        "p90": 86402.5333333234,
+        "max": 99508.80000000485
+      }
+    }
+  }
+}

@@ -28,12 +28,16 @@ void main() {
   if (uGhost > 0.5) {
     // dotted outline of a missing partner: edge pixels only, every other screen pixel
     float a = c.a;
-    float n = texture2D(map, vUv + vec2(uTexel.x, 0.0)).a + texture2D(map, vUv - vec2(uTexel.x, 0.0)).a
-            + texture2D(map, vUv + vec2(0.0, uTexel.y)).a + texture2D(map, vUv - vec2(0.0, uTexel.y)).a;
-    bool edge = a > 0.5 && n < 3.5;
+    vec2 t2 = uTexel * 2.5;
+    float n = texture2D(map, vUv + vec2(t2.x, 0.0)).a + texture2D(map, vUv - vec2(t2.x, 0.0)).a
+            + texture2D(map, vUv + vec2(0.0, t2.y)).a + texture2D(map, vUv - vec2(0.0, t2.y)).a;
+    if (a < 0.5) discard;
+    bool edge = n < 3.5;
     float dots = mod(floor(gl_FragCoord.x / 2.0) + floor(gl_FragCoord.y / 2.0), 2.0);
-    if (!edge || dots < 0.5) discard;
-    gl_FragColor = vec4(1.0, 1.0, 1.0, uOpacity);
+    // faint silhouette + dotted white rim
+    float alpha = edge ? (dots > 0.5 ? uOpacity : 0.0) : uOpacity * 0.22;
+    if (alpha <= 0.0) discard;
+    gl_FragColor = vec4(1.0, 1.0, 1.0, alpha);
     return;
   }
   if (c.a < 0.5) discard;

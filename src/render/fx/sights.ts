@@ -139,8 +139,8 @@ export class SightFx {
       case 'dolphin_race': {
         const tex = sharedTexture(PATHS.sight('dolphin'), paintDolphin, { pixel: true });
         for (let i = 0; i < 3; i++) {
-          const m = spriteMesh(tex, 1.5, 0.65);
-          let x = fx - 9 - i * 1.8;
+          const m = spriteMesh(tex, 1.5, 0.95);
+          let x = fx - 6 - i * 1.6;
           const ph = i * 1.3;
           this.add(
             {
@@ -149,9 +149,9 @@ export class SightFx {
                 x += dt * (3.2 + Math.sin(t + ph) * 0.4) + (h.focusX() - fx) * 0;
                 const cyc = (t * 0.9 + ph) % 1;
                 const jump = Math.sin(cyc * Math.PI);
-                m.position.set(x + (h.focusX() - fx), -1.6 + jump * 2.1, -9);
+                m.position.set(x + (h.focusX() - fx), -1.2 + jump * 3.8, -12);
                 m.rotation.z = Math.cos(cyc * Math.PI) * 0.6;
-                if (cyc < 0.05) h.particles.spawn({ tex: splashTex(), x: m.position.x, y: -0.8, z: -8.8, life: 0.5, size: 0.5, sizeEnd: 0.8, aspect: 1.6, vy: 0.3 });
+                if (cyc < 0.05) h.particles.spawn({ tex: splashTex(), x: m.position.x, y: 0.2, z: -11.8, life: 0.5, size: 0.5, sizeEnd: 0.8, aspect: 1.6, vy: 0.3 });
                 return true;
               },
             },

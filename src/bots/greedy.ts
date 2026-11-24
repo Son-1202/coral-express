@@ -10,7 +10,7 @@ import type { Action, Sim, SimState } from '../sim';
 import { levelCost, milestoneMult } from '../sim/costs';
 import { buildIndex } from '../sim/lookup';
 import { structuralCandidates, type Cand, type PlanOpts } from './candidates';
-import { snapshot, type Econ } from './econ';
+import { snapshot, type CarCache, type Econ } from './econ';
 import { botRng } from './rng';
 import type { Bot, BotName, BotOptions } from './types';
 import { canDo } from './util';
@@ -18,7 +18,7 @@ import { canDo } from './util';
 /** Max purchases chained in one decision (level-ups only, then at most one structural). */
 const MAX_CHAIN = 25;
 /** Structural candidates are re-evaluated at least this often (bond partners level up). */
-const REFRESH_SECONDS = 30;
+const REFRESH_SECONDS = 120;
 /** First Depot Reset needs at least this many Tickets (SPEC E1). */
 const FIRST_RESET_TICKETS = 3;
 /** Level bundle up to the next milestone is considered within this many levels. */
@@ -62,6 +62,7 @@ export function createGreedyBot(opts: BotOptions, name: Extract<BotName, 'greedy
   let waitFor = 0;
   /** Per-fish level candidates, reused while level, discount and output are unchanged. */
   const levelCache = new Map<string, { key: string; cands: Cand[] }>();
+  const carCache: CarCache = new Map();
   const pps = (sp: string): number => idx.species.get(sp)?.basePps ?? 0;
 
   function spsAt(v: VirtualFish, level: number): number {
@@ -77,7 +78,7 @@ export function createGreedyBot(opts: BotOptions, name: Extract<BotName, 'greedy
       const sp = f && idx.species.get(f.species);
       if (!f || !sp || v.level >= cfg.maxLevel) continue;
       const left = disc[f.species] ?? 0;
-      const key = `${v.level}|${left}|${v.sps0 * spsAt(v, v.level) / v.sps0}|${e.frenzyF}`;
+      const key = `${v.level}|${left}|${spsAt(v, v.level)}`;
       const hit = levelCache.get(id);
       if (hit && hit.key === key) { out.push(...hit.cands); continue; }
       const mine: Cand[] = [];
@@ -115,7 +116,7 @@ export function createGreedyBot(opts: BotOptions, name: Extract<BotName, 'greedy
     // Waiting for an unaffordable best plan: nothing can overtake it until the state
     // changes or it becomes affordable (affordable scores are fixed, waits shrink equally).
     if (sig === cache.sig && t - cache.t < REFRESH_SECONDS && s.shells < waitFor) return [];
-    const e = snapshot(idx, s, frenzyF);
+    const e = snapshot(idx, s, frenzyF, carCache);
     if (sig !== cache.sig || t - cache.t >= REFRESH_SECONDS) cache = { sig, t, cands: structuralCandidates(e, plan) };
     let structural = cache.cands;
     // Reset-ready except for the terminal: the track is what matters now. Other purchases
@@ -181,7 +182,9 @@ export function createGreedyBot(opts: BotOptions, name: Extract<BotName, 'greedy
       const s = sim.state;
       const out: Action[] = [];
       const next = idx.data.upgrades.find((u) => !s.permanent.upgrades.includes(u.id));
-      if (next && canDo(sim, { type: 'buyUpgrade', id: next.id })) out.push({ type: 'buyUpgrade', id: next.id });
+      // Upgrades change prices/effects: no other purchase in the same second.
+      const upgrading = !!next && canDo(sim, { type: 'buyUpgrade', id: next.id });
+      if (next && upgrading) out.push({ type: 'buyUpgrade', id: next.id });
       if (sim.canDepotReset() && sim.projectedTickets() >= resetTarget(s)) {
         const mascot = pickMascot(sim, pps);
         const line = Math.max(...s.permanent.openedLines) as LineId;
@@ -193,7 +196,7 @@ export function createGreedyBot(opts: BotOptions, name: Extract<BotName, 'greedy
       const feed = feedBest(sim);
       if (feed) out.push(feed);
       // A Stowaway tap takes a free slot, so purchases wait one second.
-      if (!tapped && out.every((a) => a.type !== 'buyUpgrade')) out.push(...purchases(sim, t));
+      if (!tapped && !upgrading) out.push(...purchases(sim, t));
       return out;
     },
   };

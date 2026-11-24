@@ -1,6 +1,7 @@
 // Writes docs/qa/balance_report.md + .json from a Summary.
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
+import { loadGameData } from '../../src/data/schema';
 import { diagnosis } from './diagnosis';
 import type { Summary } from './metrics';
 
@@ -33,7 +34,7 @@ export function writeReport(base: string, s: Summary, info: RunInfo): void {
     '',
     '## Diagnosis',
     '',
-    ...diagnosis(s),
+    ...diagnosis(s, loadGameData()),
     '',
     '## Definitions',
     '',

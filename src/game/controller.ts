@@ -10,7 +10,8 @@ import { readSave, writeSave } from './storage';
 export interface GameView {
   /** `bulk` = part of a large batch (fast-forward/offline): apply state, skip VFX. */
   handle(e: SimEvent, bulk: boolean): void;
-  frame(dt: number): void;
+  /** dt = clamped render step; realDt = true wall-clock gap (FPS measurement). */
+  frame(dt: number, realDt: number): void;
 }
 
 export interface ControllerOpts {
@@ -108,12 +109,14 @@ export class GameController {
       this.offline(gap);
       return;
     }
-    const dt = Math.min(0.1, Math.max(0, gap));
-    if (!this.paused) this.sim.advance(dt * this.speed);
+    const real = Math.max(0, gap);
+    const dt = Math.min(0.1, real);
+    // the sim always gets the full wall-clock gap (slow frames must not lose game time)
+    if (!this.paused) this.sim.advance(real * this.speed);
     this.drain();
-    this.saveTimer += dt;
+    this.saveTimer += real;
     if (this.saveTimer >= AUTOSAVE_SECONDS) this.save();
-    this.view?.frame(dt);
+    this.view?.frame(dt, real);
     this.bus.emit('frame', { dt });
   }
 

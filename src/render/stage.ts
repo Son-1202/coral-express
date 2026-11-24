@@ -226,8 +226,8 @@ export class Stage implements GameView {
     }
   }
 
-  frame(dt: number): void {
-    this.guard.tick(dt);
+  frame(dt: number, realDt = dt): void {
+    this.guard.tick(realDt);
     this.time += dt;
     this.syncState();
     this.placeTrain(dt);

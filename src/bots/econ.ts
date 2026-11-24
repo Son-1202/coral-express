@@ -57,11 +57,39 @@ export function arrivalSecs(idx: DataIndex, fx: UpgradeFx): number {
   return legSeconds(idx, fx) + idx.data.config.stopSeconds;
 }
 
-export function snapshot(idx: DataIndex, state: SimState, frenzyF: number): Econ {
+/** Per-car model cache (key = everything computeCar reads), so a re-plan after one
+ *  purchase only recomputes the car that changed. */
+export type CarCache = Map<string, { key: string; model: CarModel }>;
+
+function carKey(state: SimState, car: Carriage, globalMult: number, upgrades: number): string {
+  let k = `${globalMult}|${upgrades}|${car.habitat}|`;
+  for (const id of car.fish) { const f = state.fish[id]; if (f) k += `${f.id}:${f.species}:${f.level}:${f.shiny ? 1 : 0}:${f.mascot ? 1 : 0},`; }
+  k += '|';
+  for (const d of car.decor) k += `${d.id},`;
+  return k;
+}
+
+function cachedTrain(idx: DataIndex, state: SimState, fx: UpgradeFx, globalMult: number, cache: CarCache): TrainModel {
+  const ups = state.permanent.upgrades.length;
+  const cars = state.carriages.map((c) => {
+    const key = carKey(state, c, globalMult, ups);
+    const hit = cache.get(c.id);
+    if (hit && hit.key === key) return hit.model;
+    const model = computeCar(idx, state, c, fx, globalMult);
+    cache.set(c.id, { key, model });
+    return model;
+  });
+  let totalAppeal = 0;
+  let baseFishSps = 0;
+  for (const c of cars) { totalAppeal += c.appeal; baseFishSps += c.baseSps; }
+  return { cars, byId: new Map(cars.map((c) => [c.carId, c] as const)), totalAppeal, baseFishSps };
+}
+
+export function snapshot(idx: DataIndex, state: SimState, frenzyF: number, cache?: CarCache): Econ {
   const fx = upgradeFx(idx, state);
-  const model = computeTrain(idx, state, fx);
   const oldFriend = state.permanent.oldFriend ? 1 + idx.data.config.mascot.oldFriendBonus : 1;
   const globalMult = ticketMult(idx, state) * whaleMult(idx, state) * oldFriend;
+  const model = cache ? cachedTrain(idx, state, fx, globalMult, cache) : computeTrain(idx, state, fx);
   const fpa = (fareBaseMult(idx, state, fx) * avgStationMult(idx, state.builtTo)) / arrivalSecs(idx, fx);
   const fareSps = model.totalAppeal * fpa;
   // Object.create keeps lookups of real fish on the live record (prototype chain) while

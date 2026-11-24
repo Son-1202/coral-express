@@ -58,7 +58,7 @@ export class Passengers {
     const mesh = new THREE.Mesh(this.geo, mat);
     mesh.renderOrder = 3;
     this.group.add(mesh);
-    const p: Pax = { mesh, mat, x, tx: x, speed: 0.9 + this.rnd() * 0.5, mode: 'idle', t: 0, cheer: 0, phase: this.rnd() * 6, h: 0.6, w: 0.3 };
+    const p: Pax = { mesh, mat, x, tx: x, speed: 1.1 + this.rnd() * 0.5, mode: 'idle', t: 0, cheer: 0, phase: this.rnd() * 6, h: 0.6, w: 0.3 };
     this.list.push(p);
     return p;
   }
@@ -67,12 +67,12 @@ export class Passengers {
   arrive(stationX: number, doorXs: number[], count: number, seed: number): void {
     this.seed = (seed % 2147483646) + 1;
     for (let i = 0; i < count; i++) {
+      const tx = doorXs[Math.floor(this.rnd() * doorXs.length)] ?? stationX;
       const fromLeft = this.rnd() < 0.5;
-      const start = stationX + (fromLeft ? -1 : 1) * (5 + this.rnd() * 2.5);
-      const p = this.make(1 + Math.floor(this.rnd() * COUNT_SPRITES), start);
-      p.tx = doorXs[Math.floor(this.rnd() * doorXs.length)] ?? stationX;
+      const p = this.make(1 + Math.floor(this.rnd() * COUNT_SPRITES), tx + (fromLeft ? -1 : 1) * (2 + this.rnd() * 2.5));
+      p.tx = tx;
       p.mode = 'walk';
-      p.t = -i * 0.35;
+      p.t = 0.6 - i * 0.3;
     }
     // someone gets off and wanders away
     if (doorXs.length) {

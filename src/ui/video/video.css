@@ -1,0 +1,25 @@
+.cine { position: absolute; inset: 0; overflow: hidden; background: #0b1e24; pointer-events: none; }
+.cine-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; image-rendering: pixelated; }
+.cine-still {
+  position: absolute; inset: -6%; background: #12343b center / cover no-repeat;
+  image-rendering: pixelated; animation: cine-kenburns 24s ease-in-out infinite alternate;
+}
+.cine-still-empty { background: radial-gradient(ellipse at 50% 30%, #3e8c7b, #0b1e24 75%); }
+@keyframes cine-kenburns {
+  from { transform: scale(1) translate(0, 0); }
+  to { transform: scale(1.12) translate(-2.5%, -1.5%); }
+}
+@media (prefers-reduced-motion: reduce) { .cine-still { animation: none; } }
+
+.cine-splash { position: fixed; inset: 0; z-index: 60; cursor: pointer; animation: cine-in 0.6s ease-out; }
+.cine-splash.out { opacity: 0; transition: opacity 0.6s ease-in; pointer-events: none; }
+@keyframes cine-in { from { opacity: 0; } to { opacity: 1; } }
+.cine-card {
+  position: absolute; left: 50%; bottom: 12%; transform: translateX(-50%); padding: 14px 34px 12px;
+  background: var(--paper, #fbf1d6); color: var(--ink, #2f4a4a); border: 3px solid var(--brass, #d9ac4c);
+  border-radius: 10px; box-shadow: 0 6px 0 rgba(0, 0, 0, 0.25); text-align: center;
+  font-family: var(--font-head, system-ui); animation: cine-card 0.9s 0.3s both cubic-bezier(.2,1.4,.4,1);
+}
+.cine-card-line { font-size: clamp(22px, 4vw, 40px); font-weight: 700; letter-spacing: 1px; }
+.cine-card-region { font-size: clamp(14px, 2vw, 20px); color: var(--ink-soft, #5b7470); margin-top: 2px; }
+@keyframes cine-card { from { opacity: 0; transform: translate(-50%, 30px); } to { opacity: 1; transform: translate(-50%, 0); } }
