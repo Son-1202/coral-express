@@ -111,7 +111,7 @@ export class Bubbles {
   draw(g: CanvasRenderingContext2D, dt: number, t: number, ceil: number, unit: number): void {
     g.strokeStyle = 'rgba(235,255,250,0.75)';
     g.fillStyle = 'rgba(235,255,250,0.18)';
-    g.lineWidth = Math.max(1, unit * 0.0025);
+    g.lineWidth = unit * 0.0025;
     for (let i = this.xs.length - 1; i >= 0; i--) {
       this.ys[i] -= dt * unit * (0.08 + this.rs[i] * 6);
       const x = this.xs[i] + Math.sin(t * 3 + this.ph[i]) * unit * 0.006;

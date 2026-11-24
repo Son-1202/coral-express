@@ -53,7 +53,7 @@ export class BeachPainter implements Painter {
     const sink = Math.max(0, front.y - SEA_Y + 0.05);
     const camY = phase === 'dive' ? sink * 0.9 : 0;
 
-    this.sky(g, w, h, t, camX);
+    this.sky(g, w, h, t, camX, camY);
     g.setTransform(h, 0, 0, h, -camX * h, -camY * h);
 
     // beach + seabed
@@ -95,8 +95,12 @@ export class BeachPainter implements Painter {
     }
   }
 
-  private sky(g: CanvasRenderingContext2D, w: number, h: number, t: number, camX: number): void {
+  private sky(g: CanvasRenderingContext2D, w: number, h: number, t: number, camX: number, camY: number): void {
     g.setTransform(1, 0, 0, 1, 0, 0);
+    g.fillStyle = '#f6c6a0';
+    g.fillRect(0, 0, w, h);
+    // the backdrop scrolls up with the sinking camera (slightly slower: parallax)
+    g.setTransform(1, 0, 0, 1, 0, -camY * h * 0.9);
     const sky = g.createLinearGradient(0, 0, 0, h * 0.62);
     sky.addColorStop(0, '#f6c6a0');
     sky.addColorStop(0.55, '#f9e2b8');
@@ -124,7 +128,7 @@ export class BeachPainter implements Painter {
     sea.addColorStop(0, '#5fc4bd');
     sea.addColorStop(1, '#1f7f8c');
     g.fillStyle = sea;
-    g.fillRect(0, h * 0.6, w, h * 0.4);
+    g.fillRect(0, h * 0.6, w, h * 2.4);
   }
 
   private rails(g: CanvasRenderingContext2D, camX: number, aspect: number): void {
@@ -225,6 +229,7 @@ export class BeachPainter implements Painter {
     g.fillStyle = 'rgba(220,255,245,0.06)';
     for (let i = 0; i < 6; i++) {
       const rx = Math.floor(camX) + i * 0.45 + Math.sin(t * 0.4 + i) * 0.05;
+      if (rx < x0) continue;
       g.beginPath();
       g.moveTo(rx, SEA_Y);
       g.lineTo(rx + 0.08, SEA_Y);

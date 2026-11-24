@@ -67,7 +67,7 @@ export class UnderwaterPainter implements Painter {
       return { fish: f, mover, img, color: `hsl(${hashHue(f.species)} 65% 60%)`, size: sz };
     });
     for (let i = 0; i < (this.o.wildSwarms ?? 2); i++) {
-      this.actors.push({ fish: null, mover: createMover('swarm', 900 + i, b, { size: h * 0.012, count: 60 }), img: null, color: i % 2 ? '#dfe9ee' : '#f2d77a', size: h * 0.012 });
+      this.actors.push({ fish: null, mover: createMover('swarm', 900 + i, b, { size: h * 0.0065, count: 60 }), img: null, color: i % 2 ? '#dfe9ee' : '#f2d77a', size: h * 0.0065 });
     }
   }
 
