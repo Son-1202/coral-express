@@ -87,6 +87,14 @@ export interface LifetimeStats {
   fishBought: number;
   levelsBought: number;
   playSeconds: number;
+  /** T-06 income sources (shells credited via earn()). */
+  sightShells: number;
+  requestShells: number;
+  offlineShells: number;
+  offlineSeconds: number;
+  /** Shells lost to the Seagull Thief. */
+  sightLosses: number;
+  requestsCompleted: number;
 }
 
 export interface PermanentState {
@@ -107,6 +115,51 @@ export interface PermanentState {
   endless: boolean;
   reachedTerminals: LineId[];
   resets: number;
+  /** Request ids ever completed (kept across resets; never offered again). */
+  requestHistory: string[];
+}
+
+// ---------------- T-06 meta state ----------------
+export interface ActiveSight {
+  id: string;
+  startedAt: number;
+  /** Sim time the sight ends; null = until its next-arrival modifier is consumed. */
+  until: number | null;
+  requiresTap: boolean;
+}
+export interface SightState {
+  active: ActiveSight | null;
+  /** Sim time of the next sight start; < 0 = not scheduled yet. */
+  nextAt: number;
+}
+
+export type SpecialKind = 'levelDiscount' | 'shinyEgg' | 'freeSlot' | 'cosmetic';
+export interface TodaysSpecial {
+  kind: SpecialKind;
+  /** Shells, fixed when the market opens. */
+  price: number;
+  /** levelDiscount: the discounted species. */
+  species?: string;
+  /** cosmetic: the backdrop id unlocked. */
+  cosmetic?: string;
+  sold: boolean;
+}
+export interface MarketState {
+  station: number;
+  /** '' = not built yet (rebuilt on load). */
+  stationId: string;
+  /** Fish stall: signature species first, then up to 2 from earlier stations. */
+  fish: string[];
+  /** Decor & plants stall (3 seeded ids). */
+  decor: string[];
+  special: TodaysSpecial | null;
+  /** Request ids on this station's board. */
+  requests: string[];
+}
+export interface RequestBoard {
+  ids: string[];
+  /** Arrivals since the board was (re)built, incl. that one. */
+  visits: number;
 }
 
 export interface SimState {
@@ -145,6 +198,16 @@ export interface SimState {
   permanent: PermanentState;
   /** Accumulator for the once-per-second "income" event. */
   incomeWindow: { seconds: number; amount: number };
+  sight: SightState;
+  market: MarketState;
+  /** Per station id, this run. */
+  requestBoards: Record<string, RequestBoard>;
+  /** Species → remaining discounted level-ups (Today's Special). */
+  levelDiscounts: Record<string, number>;
+  /** Shiny Eggs: `any` = next fish purchase of any species; `species` = per species. */
+  shinyEggs: { any: number; species: string[] };
+  /** Fish Shells earned per species this run (E1 dominance metric). */
+  speciesShells: Record<string, number>;
 }
 
 export interface SaveData {
@@ -178,8 +241,13 @@ export type Action =
   | ({ type: 'placeDecor'; carId: string; decorId: string } & DecorPlacement)
   | ({ type: 'moveDecor'; carId: string; index: number } & Partial<DecorPlacement>)
   | { type: 'removeDecor'; carId: string; index: number }
-  | { type: 'setCosmetic'; carId: string; kind: CosmeticKind; value: string };
-// T-06 adds: tapSight, buySpecial, acceptRequest, depotReset, buyUpgrade, chooseLine.
+  | { type: 'setCosmetic'; carId: string; kind: CosmeticKind; value: string }
+  | { type: 'tapSight' }
+  /** target: species id (shinyEgg) or car id (freeSlot); ignored otherwise. */
+  | { type: 'buySpecial'; target?: string }
+  | { type: 'buyUpgrade'; id: string }
+  /** The only way to choose a line (B4.9). mascotName defaults to nickname / species name. */
+  | { type: 'depotReset'; mascotFishId: string; mascotName?: string; nextLine: LineId };
 
 export type ActionType = Action['type'];
 
@@ -187,7 +255,8 @@ export type FailReason =
   | 'unknownSpecies' | 'unknownFish' | 'unknownCar' | 'unknownDecor' | 'unknownCosmetic'
   | 'unavailable' | 'cantAfford' | 'noSlot' | 'maxLevel' | 'maxCarriages' | 'maxSlots'
   | 'habitatLocked' | 'sameHabitat' | 'sameCar' | 'trackComplete' | 'cooldown'
-  | 'noCopy' | 'noCapacity' | 'badIndex' | 'locked' | 'invalid';
+  | 'noCopy' | 'noCapacity' | 'badIndex' | 'locked' | 'invalid'
+  | 'noSight' | 'soldOut' | 'owned' | 'notReady' | 'noCandidate';
 
 export type ActionResult = { ok: true } | { ok: false; reason: FailReason };
 
@@ -218,7 +287,16 @@ export type SimEvent =
   | { type: 'ending'; line: LineId }
   | { type: 'income'; amount: number; seconds: number }
   | { type: 'decorChanged'; carId: string }
-  | { type: 'cosmeticChanged'; carId: string; kind: CosmeticKind; value: string };
+  | { type: 'cosmeticChanged'; carId: string; kind: CosmeticKind; value: string }
+  | { type: 'sightStart'; sightId: string; until: number | null; requiresTap: boolean }
+  /** shells: gained (+) or lost (−) when it ended; fishId for a Stowaway. */
+  | { type: 'sightEnd'; sightId: string; tapped: boolean; shells: number; fishId?: string }
+  | { type: 'market'; station: number; stationId: string }
+  | { type: 'specialBought'; kind: SpecialKind; cost: number; target?: string }
+  | { type: 'requestCompleted'; requestId: string; stationId: string; passenger: string; carId: string; shells: number; rewardType: string; rewardRef?: string }
+  | { type: 'upgradeBought'; id: string; tickets: number }
+  | { type: 'depotReset'; tickets: number; totalTicketsEarned: number; line: LineId; mascotSpecies: string; oldFriend: boolean }
+  | { type: 'offline'; seconds: number; shells: number; stationsVisited: number };
 
 export type SimEventType = SimEvent['type'];
 
@@ -270,4 +348,11 @@ export interface SimStats {
   totalSps: number;
   /** Fare the next arrival would pay right now (incl. next-arrival modifiers). */
   nextFare: number;
+}
+
+export interface OfflineResult {
+  /** Seconds credited (after the cap). */
+  seconds: number;
+  shells: number;
+  stationsVisited: number;
 }

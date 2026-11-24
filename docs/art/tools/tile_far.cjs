@@ -2,7 +2,7 @@
 // usage: node docs/art/tools/tile_far.cjs <in.png> <out.png> <overlapPx> [finalWidth=2752] [preview.jpg]
 const sharp = require('sharp');
 const [,, inp, out, oArg, fwArg, prev] = process.argv;
-const O = +oArg, FW = +(fwArg || 2752);
+const O = +oArg, FWmax = +(fwArg || 2752);
 (async () => {
   const { data, info } = await sharp(inp).removeAlpha().raw().toBuffer({ resolveWithObject: true });
   const W = info.width, H = info.height, NW = W - O;

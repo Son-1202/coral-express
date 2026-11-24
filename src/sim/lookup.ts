@@ -2,6 +2,7 @@
 import type {
   DecorEffect, DecorPool, GameData, Habitat, LineDef, LineId, SpeciesDef, UpgradeDef,
 } from '../data/schema';
+import { EMPTY_STORY, type RequestDef, type StoryData } from './story';
 
 /** Decor items and plain plant sprites share one shape for placement/appeal. */
 export interface DecorLike {
@@ -11,6 +12,7 @@ export interface DecorLike {
   capacity: number;
   appeal: number;
   effects: DecorEffect[];
+  isPlant: boolean;
 }
 
 export interface DataIndex {
@@ -21,23 +23,26 @@ export interface DataIndex {
   upgrades: Map<string, UpgradeDef>;
   /** Highest line id (its terminal triggers the ending). */
   maxLine: LineId;
+  story: StoryData;
+  requests: Map<string, RequestDef>;
 }
 
-export function buildIndex(data: GameData): DataIndex {
+export function buildIndex(data: GameData, story: StoryData = EMPTY_STORY): DataIndex {
   const species = new Map(data.species.map((s) => [s.id, s] as const));
   const decor = new Map<string, DecorLike>();
   for (const d of data.decor) {
-    decor.set(d.id, { id: d.id, pool: d.pool, baseCost: d.baseCost, capacity: d.capacity, appeal: d.appeal, effects: d.effects });
+    decor.set(d.id, { id: d.id, pool: d.pool, baseCost: d.baseCost, capacity: d.capacity, appeal: d.appeal, effects: d.effects, isPlant: d.isPlant });
   }
   // Plant sprites that are not already a decor item are placeable as +appeal decor.
   for (const p of data.plants) {
     if (p.decorId || decor.has(p.id)) continue;
-    decor.set(p.id, { id: p.id, pool: p.pool, baseCost: p.baseCost, capacity: p.capacity, appeal: p.appeal, effects: [] });
+    decor.set(p.id, { id: p.id, pool: p.pool, baseCost: p.baseCost, capacity: p.capacity, appeal: p.appeal, effects: [], isPlant: true });
   }
   const lines = new Map(data.lines.map((l) => [l.id, l] as const));
   const upgrades = new Map(data.upgrades.map((u) => [u.id, u] as const));
   const maxLine = data.lines.reduce<LineId>((m, l) => (l.id > m ? l.id : m), 1);
-  return { data, species, decor, lines, upgrades, maxLine };
+  const requests = new Map(story.requests.map((r) => [r.id, r] as const));
+  return { data, species, decor, lines, upgrades, maxLine, story, requests };
 }
 
 export function lineDef(idx: DataIndex, line: LineId): LineDef {

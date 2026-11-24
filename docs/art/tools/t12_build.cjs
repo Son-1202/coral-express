@@ -9,8 +9,9 @@ const out = keys.map((k, i) => {
   const prompt = P.STYLE + '. ' + P.REFNOTE + ' ' + (isFrame ? '' : P.SHEET + ' ') + P[k];
   const n = Object.keys(nano).find(p => k.startsWith(p));
   const params = n
-    ? { model: 'nano_banana_pro', aspect_ratio: nano[n], resolution: '2k', prompt, medias: REF }
-    : { model: 'gpt_image_2_6', aspect_ratio: gpt[Object.keys(gpt).find(p => k.startsWith(p))], quality: 'medium', prompt, medias: REF };
+    // nano_banana_pro + reference returned a copy of the style bible twice (see PROMPTS_T-12.md) -> gpt_image_2_6 2k
+    ? { model: 'gpt_image_2_6', aspect_ratio: nano[n], quality: 'medium', resolution: '2k', prompt, medias: REF }
+    : { model: 'gpt_image_2_6', aspect_ratio: gpt[Object.keys(gpt).find(p => k.startsWith(p))], quality: 'medium', ...(isFrame ? { resolution: '2k' } : {}), prompt, medias: REF };
   return { index: i, params };
 });
 console.log(JSON.stringify(out));

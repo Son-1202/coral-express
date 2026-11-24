@@ -1,22 +1,12 @@
 // Train shuttle, arrivals, fares, station visits, terminals (SPEC B4.2, B4.16).
 import type { Ctx } from './ctx';
-import { fareBaseMult, stationMult } from './income';
 import { stationId } from './lookup';
+import { openMarket } from './market';
+import { fareAt, fareModifierMult } from './rates';
+import { updateRequests } from './requests';
 import { legSeconds } from './upgrades';
 
-/** Product of active timed fare modifiers (optionally incl. next-arrival ones). */
-export function fareModifierMult(ctx: Ctx, includeNextArrival: boolean): number {
-  let m = 1;
-  for (const mod of ctx.state.modifiers) {
-    if (mod.kind === 'fareMult' || (includeNextArrival && mod.kind === 'nextArrivalFareMult')) m *= mod.value;
-  }
-  return m;
-}
-
-/** Fare that an arrival at `station` would pay right now (without modifiers). */
-export function fareAt(ctx: Ctx, station: number): number {
-  return ctx.model().totalAppeal * fareBaseMult(ctx.idx, ctx.state, ctx.fx()) * stationMult(ctx.idx, station);
-}
+export { fareAt, fareModifierMult } from './rates';
 
 export function addStamp(ctx: Ctx, kind: 'station' | 'species' | 'shiny', ref: string): void {
   const id = `${kind}:${ref}`;
@@ -25,8 +15,11 @@ export function addStamp(ctx: Ctx, kind: 'station' | 'species' | 'shiny', ref: s
   ctx.emit({ type: 'stamp', stampId: id, kind, ref });
 }
 
-/** Market bookkeeping, first-visit stamp and postcard for a station. */
-export function visitStation(ctx: Ctx, station: number): void {
+/**
+ * Station visit: first-visit stamp + postcard, request board (completions only on a
+ * real arrival) and that station's market (open until the next arrival).
+ */
+export function visitStation(ctx: Ctx, station: number, arrived = false): void {
   const s = ctx.state;
   s.marketStation = station;
   if (!s.visitedThisRun.includes(station)) s.visitedThisRun.push(station);
@@ -37,6 +30,8 @@ export function visitStation(ctx: Ctx, station: number): void {
     const finalTerminal = s.currentLine === ctx.idx.maxLine && station === ctx.idx.data.config.stationsPerLine;
     ctx.emit({ type: 'postcard', stationId: sid, suppressToast: finalTerminal });
   }
+  updateRequests(ctx, sid, arrived);
+  openMarket(ctx, station);
 }
 
 function arrive(ctx: Ctx, station: number): void {
@@ -54,7 +49,7 @@ function arrive(ctx: Ctx, station: number): void {
   }
   s.lifetime.arrivals++;
   ctx.emit({ type: 'fare', amount, station });
-  visitStation(ctx, station);
+  visitStation(ctx, station, true);
   if (station === ctx.idx.data.config.stationsPerLine) reachTerminal(ctx);
 }
 
