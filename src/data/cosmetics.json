@@ -1,0 +1,193 @@
+{
+  "sand": [
+    {
+      "id": "sand_cream",
+      "name": "Cream",
+      "hex": "#f2e2bd"
+    },
+    {
+      "id": "sand_pink",
+      "name": "Coral Pink",
+      "hex": "#f2c4b8"
+    },
+    {
+      "id": "sand_white",
+      "name": "Shell White",
+      "hex": "#f7f4ec"
+    },
+    {
+      "id": "sand_black",
+      "name": "Black Sand",
+      "hex": "#3a3534"
+    },
+    {
+      "id": "sand_jade",
+      "name": "Jade Grit",
+      "hex": "#9cc8a8"
+    }
+  ],
+  "paints": [
+    {
+      "id": "paint_seafoam",
+      "name": "Seafoam",
+      "hex": "#8fd1b8"
+    },
+    {
+      "id": "paint_cream",
+      "name": "Cream",
+      "hex": "#f4ead2"
+    },
+    {
+      "id": "paint_brass",
+      "name": "Brass",
+      "hex": "#c9a24a"
+    },
+    {
+      "id": "paint_navy",
+      "name": "Harbour Navy",
+      "hex": "#2b3f63"
+    },
+    {
+      "id": "paint_red",
+      "name": "Boathouse Red",
+      "hex": "#b5403a"
+    },
+    {
+      "id": "paint_lemon",
+      "name": "Lemon",
+      "hex": "#f6d860"
+    },
+    {
+      "id": "paint_lilac",
+      "name": "Lilac",
+      "hex": "#b9a3d6"
+    },
+    {
+      "id": "paint_charcoal",
+      "name": "Charcoal",
+      "hex": "#3b3a3c"
+    }
+  ],
+  "backdrops": [
+    {
+      "id": "backdrop_reef_0",
+      "name": "Reef Default",
+      "habitat": "reef",
+      "tint": "#f6e7c8",
+      "isDefault": true,
+      "unlockable": false
+    },
+    {
+      "id": "backdrop_reef_1",
+      "name": "Reef Dawn",
+      "habitat": "reef",
+      "tint": "#ff9e9e",
+      "isDefault": false,
+      "unlockable": true
+    },
+    {
+      "id": "backdrop_reef_2",
+      "name": "Reef Dusk",
+      "habitat": "reef",
+      "tint": "#57d3d0",
+      "isDefault": false,
+      "unlockable": true
+    },
+    {
+      "id": "backdrop_mangrove_0",
+      "name": "Mangrove Default",
+      "habitat": "mangrove",
+      "tint": "#8a7a4f",
+      "isDefault": true,
+      "unlockable": false
+    },
+    {
+      "id": "backdrop_mangrove_1",
+      "name": "Mangrove Dawn",
+      "habitat": "mangrove",
+      "tint": "#6b5a3a",
+      "isDefault": false,
+      "unlockable": true
+    },
+    {
+      "id": "backdrop_mangrove_2",
+      "name": "Mangrove Dusk",
+      "habitat": "mangrove",
+      "tint": "#a8b06a",
+      "isDefault": false,
+      "unlockable": true
+    },
+    {
+      "id": "backdrop_kelp_0",
+      "name": "Kelp Default",
+      "habitat": "kelp",
+      "tint": "#2f5d3a",
+      "isDefault": true,
+      "unlockable": false
+    },
+    {
+      "id": "backdrop_kelp_1",
+      "name": "Kelp Cathedral",
+      "habitat": "kelp",
+      "tint": "#c9a43c",
+      "isDefault": false,
+      "unlockable": true
+    },
+    {
+      "id": "backdrop_kelp_2",
+      "name": "Kelp Dusk",
+      "habitat": "kelp",
+      "tint": "#5c8a4a",
+      "isDefault": false,
+      "unlockable": true
+    },
+    {
+      "id": "backdrop_polar_0",
+      "name": "Polar Default",
+      "habitat": "polar",
+      "tint": "#dff3fb",
+      "isDefault": true,
+      "unlockable": false
+    },
+    {
+      "id": "backdrop_polar_1",
+      "name": "Polar Aurora",
+      "habitat": "polar",
+      "tint": "#ffffff",
+      "isDefault": false,
+      "unlockable": true
+    },
+    {
+      "id": "backdrop_polar_2",
+      "name": "Polar Dusk",
+      "habitat": "polar",
+      "tint": "#8fc6e0",
+      "isDefault": false,
+      "unlockable": true
+    },
+    {
+      "id": "backdrop_vent_0",
+      "name": "Vent Default",
+      "habitat": "vent",
+      "tint": "#2e2b2b",
+      "isDefault": true,
+      "unlockable": false
+    },
+    {
+      "id": "backdrop_vent_1",
+      "name": "Ember Glow",
+      "habitat": "vent",
+      "tint": "#c4572a",
+      "isDefault": false,
+      "unlockable": true
+    },
+    {
+      "id": "backdrop_vent_2",
+      "name": "Vent Dusk",
+      "habitat": "vent",
+      "tint": "#4fb39a",
+      "isDefault": false,
+      "unlockable": true
+    }
+  ]
+}

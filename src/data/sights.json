@@ -1,0 +1,8 @@
+[
+  { "id": "dolphin_race", "name": "Dolphin Race", "durationSeconds": 8, "requiresTap": true, "effects": [], "tapReward": { "type": "fishIncomeSeconds", "seconds": 60 }, "missPenalty": null },
+  { "id": "seagull_thief", "name": "Seagull Thief", "durationSeconds": 6, "requiresTap": true, "effects": [], "tapReward": { "type": "none" }, "missPenalty": { "type": "loseShellsFraction", "value": 0.05 } },
+  { "id": "whale_breach", "name": "Whale Breach", "durationSeconds": 20, "requiresTap": false, "effects": [{ "type": "fishIncomeMult", "value": 2 }, { "type": "fareMult", "value": 2 }], "tapReward": null, "missPenalty": null },
+  { "id": "festival_station", "name": "Festival Station", "durationSeconds": null, "requiresTap": false, "effects": [{ "type": "nextArrivalFareMult", "value": 5 }], "tapReward": null, "missPenalty": null },
+  { "id": "stowaway", "name": "Stowaway", "durationSeconds": 8, "requiresTap": true, "effects": [], "tapReward": { "type": "freeFish", "source": "ownedHabitatSpecies", "needsFreeSlot": true }, "missPenalty": null },
+  { "id": "sea_fog", "name": "Sea Fog", "durationSeconds": 30, "requiresTap": false, "effects": [{ "type": "fareMult", "value": 0.5 }, { "type": "fishIncomeMult", "value": 1.5 }], "tapReward": null, "missPenalty": null }
+]

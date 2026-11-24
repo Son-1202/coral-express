@@ -1,0 +1,16 @@
+[
+  { "id": "sea_glass", "name": "Sea-Glass Pebbles", "pool": "l1", "baseCost": 150, "capacity": 1, "appeal": 2, "isPlant": false, "effects": [] },
+  { "id": "seagrass_tuft", "name": "Seagrass Tuft", "pool": "l1", "baseCost": 200, "capacity": 1, "appeal": 1, "isPlant": true, "plantId": "reef_3", "sway": { "freq": 2.4, "amp": 0.04 }, "effects": [] },
+  { "id": "sea_fan", "name": "Pink Sea Fan", "pool": "l1", "baseCost": 900, "capacity": 1, "appeal": 2, "isPlant": true, "plantId": "reef_1", "sway": { "freq": 0.8, "amp": 0.01 }, "effects": [] },
+  { "id": "treasure_chest", "name": "Bubbling Chest", "pool": "l1", "baseCost": 2000, "capacity": 2, "appeal": 5, "isPlant": false, "effects": [{ "type": "carIncome", "value": 0.1 }] },
+  { "id": "mangrove_root", "name": "Driftwood Root", "pool": "l1", "baseCost": 6000, "capacity": 2, "appeal": 4, "isPlant": false, "effects": [{ "type": "habitatIncome", "habitat": "mangrove", "value": 0.1 }] },
+  { "id": "coral_castle", "name": "Coral Castle", "pool": "l1", "baseCost": 40000, "capacity": 3, "appeal": 10, "isPlant": false, "effects": [{ "type": "hide" }] },
+  { "id": "kelp_strand", "name": "Giant Kelp Strand", "pool": "l2", "baseCost": 1.5e6, "capacity": 1, "appeal": 3, "isPlant": true, "plantId": "kelp_1", "sway": { "freq": 0.6, "amp": 0.12 }, "effects": [] },
+  { "id": "sunken_rowboat", "name": "Sunken Rowboat", "pool": "l2", "baseCost": 8e6, "capacity": 3, "appeal": 12, "isPlant": false, "effects": [] },
+  { "id": "ice_arch", "name": "Ice Arch", "pool": "l2", "baseCost": 4e7, "capacity": 2, "appeal": 10, "isPlant": false, "effects": [{ "type": "habitatIncome", "habitat": "polar", "value": 0.1 }] },
+  { "id": "brass_diver", "name": "Brass Diver Statue", "pool": "l2", "baseCost": 9e7, "capacity": 2, "appeal": 15, "isPlant": false, "effects": [{ "type": "frenzySeconds", "value": 15 }] },
+  { "id": "tube_garden", "name": "Tubeworm Garden", "pool": "l3", "baseCost": 5e11, "capacity": 1, "appeal": 6, "isPlant": true, "plantId": "vent_1", "sway": { "freq": 1.0, "amp": 0.03 }, "effects": [] },
+  { "id": "basalt_pillars", "name": "Basalt Pillars", "pool": "l3", "baseCost": 3e12, "capacity": 2, "appeal": 14, "isPlant": false, "effects": [{ "type": "habitatIncome", "habitat": "vent", "value": 0.1 }] },
+  { "id": "captains_wheel", "name": "Captain's Wheel", "pool": "l3", "baseCost": 2e13, "capacity": 3, "appeal": 25, "isPlant": false, "effects": [{ "type": "bondBonusPP", "value": 0.2 }] },
+  { "id": "wren_photo", "name": "Wren's Framed Photo", "pool": "reward", "baseCost": null, "capacity": 1, "appeal": 5, "isPlant": false, "memento": true, "effects": [] }
+]

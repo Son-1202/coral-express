@@ -1,0 +1,10 @@
+[
+  { "id": "season_pass", "name": "Season Pass", "cost": 2, "effects": [{ "type": "offline", "capHours": 12, "rate": 0.7 }] },
+  { "id": "spare_change", "name": "Spare Change", "cost": 2, "effects": [{ "type": "startShellsPerTicket", "value": 500 }] },
+  { "id": "express_engine", "name": "Express Engine", "cost": 3, "effects": [{ "type": "legSeconds", "value": 30 }] },
+  { "id": "fishmonger", "name": "Fishmonger's Favor", "cost": 3, "effects": [{ "type": "speciesCostMult", "value": 0.75 }] },
+  { "id": "double_decker", "name": "Double Decker", "cost": 4, "effects": [{ "type": "startSlots", "value": 5 }] },
+  { "id": "brass_bell", "name": "Brass Bell", "cost": 4, "effects": [{ "type": "sightFrequencyMult", "value": 1.5 }] },
+  { "id": "ticket_printer", "name": "Ticket Printer", "cost": 5, "effects": [{ "type": "fareMult", "value": 2 }] },
+  { "id": "matchmaker", "name": "Matchmaker", "cost": 6, "effects": [{ "type": "pairBonusPP", "value": 0.25 }, { "type": "communityBonusPP", "value": 0.5 }] }
+]

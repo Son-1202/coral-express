@@ -1,0 +1,22 @@
+[
+  { "id": "reef_1", "name": "Sea Fan", "habitat": "reef", "pool": "l1", "baseCost": 900, "capacity": 1, "appeal": 2, "decorId": "sea_fan", "sway": { "freq": 0.8, "amp": 0.01 } },
+  { "id": "reef_2", "name": "Staghorn Coral", "habitat": "reef", "pool": "l1", "baseCost": 120, "capacity": 1, "appeal": 1, "sway": { "freq": 0.5, "amp": 0.005 } },
+  { "id": "reef_3", "name": "Sea Grass", "habitat": "reef", "pool": "l1", "baseCost": 200, "capacity": 1, "appeal": 1, "decorId": "seagrass_tuft", "sway": { "freq": 2.4, "amp": 0.04 } },
+  { "id": "reef_4", "name": "Bubble Coral", "habitat": "reef", "pool": "l1", "baseCost": 120, "capacity": 1, "appeal": 1, "sway": { "freq": 0.7, "amp": 0.01 } },
+  { "id": "mangrove_1", "name": "Mangrove Shoots", "habitat": "mangrove", "pool": "l1", "baseCost": 120, "capacity": 1, "appeal": 1, "sway": { "freq": 1.2, "amp": 0.02 } },
+  { "id": "mangrove_2", "name": "Red Algae", "habitat": "mangrove", "pool": "l1", "baseCost": 120, "capacity": 1, "appeal": 1, "sway": { "freq": 1.6, "amp": 0.05 } },
+  { "id": "mangrove_3", "name": "Turtle Grass", "habitat": "mangrove", "pool": "l1", "baseCost": 120, "capacity": 1, "appeal": 1, "sway": { "freq": 2.2, "amp": 0.04 } },
+  { "id": "mangrove_4", "name": "Sponge", "habitat": "mangrove", "pool": "l1", "baseCost": 120, "capacity": 1, "appeal": 1, "sway": { "freq": 0.5, "amp": 0.005 } },
+  { "id": "kelp_1", "name": "Tall Kelp Strand", "habitat": "kelp", "pool": "l2", "baseCost": 1.5e6, "capacity": 1, "appeal": 3, "decorId": "kelp_strand", "sway": { "freq": 0.6, "amp": 0.12 } },
+  { "id": "kelp_2", "name": "Kelp Cluster", "habitat": "kelp", "pool": "l2", "baseCost": 8e5, "capacity": 1, "appeal": 1, "sway": { "freq": 0.7, "amp": 0.09 } },
+  { "id": "kelp_3", "name": "Bull Kelp", "habitat": "kelp", "pool": "l2", "baseCost": 8e5, "capacity": 1, "appeal": 1, "sway": { "freq": 0.65, "amp": 0.1 } },
+  { "id": "kelp_4", "name": "Sea Lettuce", "habitat": "kelp", "pool": "l2", "baseCost": 8e5, "capacity": 1, "appeal": 1, "sway": { "freq": 1.8, "amp": 0.04 } },
+  { "id": "polar_1", "name": "Ice-Weed", "habitat": "polar", "pool": "l2", "baseCost": 8e5, "capacity": 1, "appeal": 1, "sway": { "freq": 1.0, "amp": 0.03 } },
+  { "id": "polar_2", "name": "Frost Anemone", "habitat": "polar", "pool": "l2", "baseCost": 8e5, "capacity": 1, "appeal": 1, "sway": { "freq": 0.9, "amp": 0.02 } },
+  { "id": "polar_3", "name": "Polar Sponge", "habitat": "polar", "pool": "l2", "baseCost": 8e5, "capacity": 1, "appeal": 1, "sway": { "freq": 0.4, "amp": 0.005 } },
+  { "id": "polar_4", "name": "White Sea Pen", "habitat": "polar", "pool": "l2", "baseCost": 8e5, "capacity": 1, "appeal": 1, "sway": { "freq": 0.8, "amp": 0.015 } },
+  { "id": "vent_1", "name": "Tube Garden", "habitat": "vent", "pool": "l3", "baseCost": 5e11, "capacity": 1, "appeal": 6, "decorId": "tube_garden", "sway": { "freq": 1.0, "amp": 0.03 } },
+  { "id": "vent_2", "name": "Sulfur Bloom", "habitat": "vent", "pool": "l3", "baseCost": 2e11, "capacity": 1, "appeal": 1, "sway": { "freq": 1.4, "amp": 0.03 } },
+  { "id": "vent_3", "name": "Jade Mineral Spire", "habitat": "vent", "pool": "l3", "baseCost": 2e11, "capacity": 1, "appeal": 1, "sway": { "freq": 0.3, "amp": 0.0 } },
+  { "id": "vent_4", "name": "Ash Fern", "habitat": "vent", "pool": "l3", "baseCost": 2e11, "capacity": 1, "appeal": 1, "sway": { "freq": 1.2, "amp": 0.05 } }
+]
