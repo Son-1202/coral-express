@@ -14,7 +14,7 @@
 | Ticket | Role | Effort | Status |
 |---|---|---|---|
 | T-00 Preflight + skeleton | PM | high | done |
-| T-01 Scaffold + diorama | DEV | medium | in progress |
+| T-01 Scaffold + diorama | DEV | medium | done |
 | T-02 Data files + schema | CONTENT | medium | done |
 | T-03 Story text | CONTENT | medium | done |
 | T-04 Style bible candidates | ART | medium | done (B chosen) |

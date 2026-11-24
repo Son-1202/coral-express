@@ -16,7 +16,7 @@ const O = +oArg, FW = +(fwArg || 2752);
     }
   }
   const img = sharp(o, { raw: { width: NW, height: H, channels: 3 } });
-  const fh = Math.round(H * FW / NW);
+  const FW = Math.min(FWmax, NW); const fh = Math.round(H * FW / NW); // never upscale
   await img.clone().resize(FW, fh, { kernel: 'lanczos3' }).png().toFile(out);
   if (prev) { // 2x tiled preview
     const t = await sharp(out).resize({ width: 800 }).toBuffer(); const m = await sharp(t).metadata();
