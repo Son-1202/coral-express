@@ -24,10 +24,10 @@
 | T-10 Lines 2–3 art | ART | medium | done |
 | T-11 Music + ambience | ART | medium | done |
 | T-16 Painterly set + shiny | ART | medium | done |
-| T-17 Cinematic video clips | ART | medium | in progress |
+| T-17 Cinematic video clips | ART | medium | done |
 | T-18 Audio + ending + video player | DEV | medium | in progress |
 | T-16 Painterly set + shiny | ART | medium | done |
-| T-17 Cinematic video clips | ART | medium | in progress |
+| T-17 Cinematic video clips | ART | medium | done |
 | T-18 Audio + ending + video player | DEV | medium | in progress |
 | T-12 Sprite sheets | ART | medium | done |
 | T-06 Sim meta (sights, depot, offline, save, markets, requests) | DEV | high | done |
