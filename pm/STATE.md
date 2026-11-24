@@ -22,7 +22,8 @@
 | T-09 Line 1 hero art | ART | medium | in progress |
 | T-05 Sim core | DEV | high | done |
 | T-10 Lines 2–3 art | ART | medium | in progress |
-| T-11 Music + ambience | ART | medium | in progress |
+| T-11 Music + ambience | ART | medium | done |
+| T-12 Sprite sheets | ART | medium | in progress |
 | T-06 Sim meta (sights, depot, offline, save, markets, requests) | DEV | high | in progress |
 | T-07 Bots + balance.ts | DEV | high | next |
 
