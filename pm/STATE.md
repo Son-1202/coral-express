@@ -19,9 +19,9 @@
 | T-03 Story text | CONTENT | medium | done |
 | T-04 Style bible candidates | ART | medium | done (B chosen) |
 | T-08 Pixelize pipeline | DEV | medium | done |
-| T-09 Line 1 hero art | ART | medium | in progress |
+| T-09 Line 1 hero art | ART | medium | done (station regen pending) |
 | T-05 Sim core | DEV | high | done |
-| T-10 Lines 2–3 art | ART | medium | in progress |
+| T-10 Lines 2–3 art | ART | medium | done |
 | T-11 Music + ambience | ART | medium | done |
 | T-12 Sprite sheets | ART | medium | in progress |
 | T-06 Sim meta (sights, depot, offline, save, markets, requests) | DEV | high | in progress |
@@ -36,3 +36,4 @@ See pm/CREDITS.md.
 ## Known issues
 - l3s6 postcard must not toast on arrival (D-011).
 - 2026-11-24 ~05:55–09:10 UTC: subagents T-06/T-09/T-10/T-12 hit the 5-hour usage limit; resumed at 09:10 via SendMessage with work on disk intact.
+- Art known issues: station/l3 has painted rails (crop or regenerate in art-fix pass); station scale differs L1 vs L2/L3 (normalize in render).
