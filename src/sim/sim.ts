@@ -1,65 +1,64 @@
 // createSim: fixed-tick deterministic game-rules engine (SPEC C). No DOM / Three.
 import type { GameData } from '../data/schema';
 import { priceAction, runAction } from './actions';
-import { earn } from './actionCheck';
 import { createCtx, type Ctx } from './ctx';
+import { canDepotReset, placeMascot, projectedTickets } from './depot';
 import { buildIndex } from './lookup';
+import { openMarket } from './market';
+import { advanceOffline } from './offline';
+import {
+  arrivalSeconds, creditFishIncome, cycleStations, fareAt, fareModifierMult, fishModifierMult, frenzyMult, nextStation,
+} from './rates';
 import { migrateSave } from './save';
+import { sightSystem, startSight } from './sights';
 import { blankState, startRun } from './state';
-import { fareAt, fareModifierMult, tickTrain } from './train';
-import { TICK, type Action, type ActionResult, type CarInfo, type SaveData, type SimEvent, type SimState, type SimStats } from './types';
-import { legSeconds } from './upgrades';
+import type { StoryData } from './story';
+import { tickTrain } from './train';
+import {
+  TICK, type Action, type ActionResult, type CarInfo, type OfflineResult, type SaveData, type SimEvent, type SimState, type SimStats,
+} from './types';
 
 export interface SimOptions {
   seed: number;
-  save?: SaveData;
-  /** Wall-clock ms at creation (offline catch-up is T-06; compare with save.savedAt). */
+  /** A SaveData, its JSON string, or anything else (invalid → fresh game). */
+  save?: unknown;
+  /** Wall-clock ms at creation. With a save that has savedAt, offline time is applied once. */
   now?: number;
+  /** Story content (src/story/requests.json). Omitted → no Passenger Requests. */
+  story?: StoryData;
 }
 
 export interface Sim {
   readonly state: SimState;
   advance(seconds: number): void;
+  /** Offline catch-up (capped); emits an `offline` event. */
+  advanceOffline(seconds: number): OfflineResult;
   act(a: Action): ActionResult;
   price(a: Action): number | null;
   drainEvents(): SimEvent[];
   stats(): SimStats;
   carInfo(carId: string): CarInfo;
+  canDepotReset(): boolean;
+  projectedTickets(): number;
+  /** Debug: start a Sight now (false if unknown id or one is active). */
+  triggerSight(id: string): boolean;
+  /** Offline result applied while loading (opts.now − save.savedAt), else null. */
+  readonly offlineReport: OfflineResult | null;
   /** `now` (wall-clock ms) is stored as savedAt; omitted → null (keeps output deterministic). */
   serialize(now?: number): SaveData;
 }
 
-/** Per-tick system hook (T-06: sights, requests …). Runs after income + train each tick. */
+/** Per-tick system hook (sights are built in). Runs after income + train each tick. */
 export type TickSystem = (ctx: Ctx, dt: number) => void;
 
 export interface SimInternals { sim: Sim; ctx: Ctx; systems: TickSystem[] }
 
 const EPS = 1e-9;
 
-function fishModifierMult(ctx: Ctx): number {
-  let m = 1;
-  for (const mod of ctx.state.modifiers) if (mod.kind === 'fishIncomeMult') m *= mod.value;
-  return m;
-}
-
-/** Current fish Shells/s of one car (frenzy + timed modifiers applied). */
-function carSps(ctx: Ctx, carId: string, base: number): number {
-  const fr = ctx.state.frenzy[carId];
-  const frenzy = fr && ctx.state.time < fr.activeUntil - EPS ? ctx.idx.data.config.frenzy.mult : 1;
-  return base * frenzy;
-}
-
-function currentFishSps(ctx: Ctx): number {
-  let sps = 0;
-  for (const c of ctx.model().cars) sps += carSps(ctx, c.carId, c.baseSps);
-  return sps * fishModifierMult(ctx);
-}
-
 function tick(ctx: Ctx, systems: TickSystem[]): void {
   const s = ctx.state;
   const dt = TICK;
-  const inc = currentFishSps(ctx) * dt;
-  if (inc > 0) { earn(ctx, inc); s.lifetime.fishShells += inc; }
+  const inc = creditFishIncome(ctx, dt);
   s.incomeWindow.seconds += dt;
   s.incomeWindow.amount += inc;
   if (s.incomeWindow.seconds >= 1 - EPS) {
@@ -78,33 +77,38 @@ function tick(ctx: Ctx, systems: TickSystem[]): void {
   if (s.modifiers.length) s.modifiers = s.modifiers.filter((m) => m.until === null || m.until > s.time + EPS);
 }
 
-/** Stations visited in one full shuttle cycle over track 1..n (n ≥ 2). */
-function cycleStations(n: number): number[] {
-  const out: number[] = [];
-  for (let k = 2; k <= n; k++) out.push(k);
-  for (let k = n - 1; k >= 1; k--) out.push(k);
-  return out;
-}
-
-function nextStation(s: SimState): number {
-  const tr = s.train;
-  if (tr.phase === 'moving') return tr.toStation;
-  let dir = tr.dir;
-  if (dir === 1 && tr.fromStation >= s.builtTo) dir = -1;
-  else if (dir === -1 && tr.fromStation <= 1) dir = 1;
-  return Math.min(Math.max(tr.fromStation + dir, 1), s.builtTo);
+/** Drop references the data no longer knows (renamed species etc.) so a save never crashes. */
+function sanitize(ctx: Ctx): void {
+  const s = ctx.state;
+  for (const [id, f] of Object.entries(s.fish)) {
+    if (!ctx.idx.species.has(f.species) || !s.carriages.some((c) => c.id === f.carId)) delete s.fish[id];
+  }
+  for (const c of s.carriages) {
+    c.fish = c.fish.filter((id) => s.fish[id]?.carId === c.id);
+    c.decor = c.decor.filter((d) => ctx.idx.decor.has(d.id));
+  }
+  if (!ctx.idx.lines.has(s.currentLine)) s.currentLine = 1;
 }
 
 export function createSimInternal(data: GameData, opts: SimOptions): SimInternals {
-  const idx = buildIndex(data);
-  const fresh = !opts.save;
-  const state = opts.save ? migrateSave(opts.save).state : blankState(opts.seed);
+  const idx = buildIndex(data, opts.story);
+  const save = opts.save === undefined ? null : migrateSave(opts.save, opts.seed);
+  const state = save ? save.state : blankState(opts.seed);
   const ctx = createCtx(idx, state);
-  if (fresh) startRun(ctx, 1);
-  const systems: TickSystem[] = [];
+  if (state.carriages.length === 0) {
+    startRun(ctx, 1);
+    placeMascot(ctx);
+  } else {
+    sanitize(ctx);
+    ctx.invalidate();
+    if (state.market.stationId === '') openMarket(ctx, state.marketStation);
+  }
+  const systems: TickSystem[] = [sightSystem];
+  let offlineReport: OfflineResult | null = null;
 
   const sim: Sim = {
     get state() { return ctx.state; },
+    get offlineReport() { return offlineReport; },
     advance(seconds) {
       if (!Number.isFinite(seconds) || seconds <= 0) return;
       const s = ctx.state;
@@ -115,6 +119,7 @@ export function createSimInternal(data: GameData, opts: SimOptions): SimInternal
       }
       if (s.tickAcc < 0) s.tickAcc = 0;
     },
+    advanceOffline: (seconds) => advanceOffline(ctx, seconds),
     act: (a) => runAction(ctx, a),
     price: (a) => priceAction(ctx, a),
     drainEvents() {
@@ -124,13 +129,12 @@ export function createSimInternal(data: GameData, opts: SimOptions): SimInternal
     },
     stats() {
       const s = ctx.state;
-      const fishSps = currentFishSps(ctx);
+      const fishSps = ctx.model().cars.reduce((sum, c) => sum + c.baseSps * frenzyMult(ctx, c.carId), 0) * fishModifierMult(ctx);
       const stations = cycleStations(s.builtTo);
       let sum = 0;
       for (const k of stations) sum += fareAt(ctx, k);
       const farePerArrival = (sum / stations.length) * fareModifierMult(ctx, false);
-      const cycle = legSeconds(idx, ctx.fx()) + idx.data.config.stopSeconds;
-      const fareSps = farePerArrival / cycle;
+      const fareSps = farePerArrival / arrivalSeconds(ctx);
       const nextFare = fareAt(ctx, nextStation(s)) * fareModifierMult(ctx, true);
       return { fishSps, farePerArrival, fareSps, totalSps: fishSps + fareSps, nextFare };
     },
@@ -141,26 +145,32 @@ export function createSimInternal(data: GameData, opts: SimOptions): SimInternal
       if (!car || !m) throw new Error(`sim: unknown car ${carId}`);
       const fr = s.frenzy[carId];
       const mod = fishModifierMult(ctx);
-      const frenzyMult = carSps(ctx, carId, 1);
+      const fm = frenzyMult(ctx, carId);
       return {
         carId,
-        income: m.baseSps * frenzyMult * mod,
+        income: m.baseSps * fm * mod,
         appeal: m.appeal,
         activeBonds: m.bonds.active,
         possibleBonds: m.bonds.possible,
-        fish: m.fish.map((f) => ({ ...f, sps: f.sps * frenzyMult * mod })),
+        fish: m.fish.map((f) => ({ ...f, sps: f.sps * fm * mod })),
         slotsUsed: car.fish.length,
         slots: car.slots,
         decorUsed: m.decorUsed,
         decorCapacity: m.decorCapacity,
-        frenzyActive: frenzyMult > 1,
+        frenzyActive: fm > 1,
         frenzyReadyIn: fr ? Math.max(0, fr.cooldownUntil - s.time) : 0,
       };
     },
+    canDepotReset: () => canDepotReset(ctx),
+    projectedTickets: () => projectedTickets(ctx),
+    triggerSight: (id) => startSight(ctx, id),
     serialize(now) {
       return { version: ctx.state.version, savedAt: now ?? null, state: JSON.parse(JSON.stringify(ctx.state)) as SimState };
     },
   };
+  if (save && save.savedAt !== null && opts.now !== undefined && opts.now > save.savedAt) {
+    offlineReport = advanceOffline(ctx, (opts.now - save.savedAt) / 1000);
+  }
   return { sim, ctx, systems };
 }
 

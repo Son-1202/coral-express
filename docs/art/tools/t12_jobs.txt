@@ -8,3 +8,10 @@ foliage_l1 672c660d-0779-40e8-a60c-1fbc3affd61a gpt_image_2_6 2k 1.75
 foliage_l2 ec7dcfcd-c601-4833-aa68-ab2599129494 gpt_image_2_6 2k 1.75
 foliage_l3 f9fbdb76-cc39-482d-8fb4-342a53c44d85 gpt_image_2_6 2k 1.75
 props_l1 c6121914-0791-4313-9efc-95f85832cfdd gpt_image_2_6 4:3 2k 1.75
+plants_mangrove 1ab31ca4-753a-40e4-a28c-150aa354701a gpt_image_2_6 2k 1.75
+plants_kelp f3aa6e57-dcfb-4e59-bef8-f545868fd426 gpt_image_2_6 2k 1.75
+plants_polar 25b5f32a-1e9d-4a95-8c27-ae14c96074e8 gpt_image_2_6 2k 1.75
+plants_vent 279240dc-69ba-4996-bf86-aae97498a5d3 gpt_image_2_6 2k 1.75
+decor_b a21233a2-fd30-4063-87ba-ba8afac69438 gpt_image_2_6 2k 1.75
+props_l2 c4b48e2e-4677-4cfa-8849-1ec33b5f21da gpt_image_2_6 4:3 2k 1.75
+rb_plants_reef aac05d7f-fa44-493e-ae8c-997db47ff11c image_background_remover ? ok

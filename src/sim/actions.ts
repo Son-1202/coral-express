@@ -6,6 +6,9 @@ import {
 } from './actionsCar';
 import { checkBuyFish, checkFeed, checkLevelFish, checkMoveFish, checkSellFish } from './actionsFish';
 import type { Ctx } from './ctx';
+import { checkBuyUpgrade, checkDepotReset } from './depot';
+import { checkBuySpecial } from './market';
+import { checkTapSight } from './sights';
 import type { Action, ActionResult, ActionType } from './types';
 
 export type ActionChecker<T extends ActionType> = (ctx: Ctx, a: Extract<Action, { type: T }>) => Check;
@@ -26,6 +29,10 @@ export const ACTIONS: ActionTable = {
   moveDecor: checkMoveDecor,
   removeDecor: checkRemoveDecor,
   setCosmetic: checkSetCosmetic,
+  tapSight: checkTapSight,
+  buySpecial: checkBuySpecial,
+  buyUpgrade: checkBuyUpgrade,
+  depotReset: checkDepotReset,
 };
 
 export function checkAction(ctx: Ctx, a: Action): Check {

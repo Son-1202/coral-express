@@ -2,6 +2,9 @@
 export { createSim, createSimInternal } from './sim';
 export type { Sim, SimOptions, SimInternals, TickSystem } from './sim';
 export * from './types';
+export type { StoryData, RequestDef, RequestCondition, RequestReward } from './story';
 export { buildIndex, stationId } from './lookup';
 export type { DataIndex } from './lookup';
 export type { Ctx } from './ctx';
+export { migrateSave } from './save';
+export { SPECIAL_MIN_PRICE } from './market';

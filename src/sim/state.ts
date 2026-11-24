@@ -36,7 +36,7 @@ function defaultPermanent(): PermanentState {
   return {
     tickets: 0, totalTicketsEarned: 0, upgrades: [], openedLines: [1], stamps: [], postcards: [],
     unlockedCosmetics: [], mascot: null, oldFriendStreak: 0, oldFriend: false, endless: false,
-    reachedTerminals: [], resets: 0,
+    reachedTerminals: [], resets: 0, requestHistory: [],
   };
 }
 
@@ -45,18 +45,25 @@ export function blankState(seed: number): SimState {
   return {
     version: SAVE_VERSION, time: 0, tickAcc: 0, ticks: 0, rngState: seedToState(seed), nextId: 1,
     shells: 0, runShells: 0,
-    lifetime: { shellsEarned: 0, fishShells: 0, fareShells: 0, arrivals: 0, fishBought: 0, levelsBought: 0, playSeconds: 0 },
+    lifetime: {
+      shellsEarned: 0, fishShells: 0, fareShells: 0, arrivals: 0, fishBought: 0, levelsBought: 0, playSeconds: 0,
+      sightShells: 0, requestShells: 0, offlineShells: 0, offlineSeconds: 0, sightLosses: 0, requestsCompleted: 0,
+    },
     currentLine: 1, builtTo: 2, marketStation: 1, visitedThisRun: [], terminalReachedThisRun: false,
     train: { fromStation: 1, toStation: 1, phase: 'stopped', t: 0, dir: 1 },
     carriages: [], fish: {}, copiesOwned: {}, speciesBoughtThisRun: [], decorOwned: {}, decorBought: {},
     frenzy: {}, modifiers: [], permanent: defaultPermanent(), incomeWindow: { seconds: 0, amount: 0 },
+    sight: { active: null, nextAt: -1 },
+    market: { station: 1, stationId: '', fish: [], decor: [], special: null, requests: [] },
+    requestBoards: {}, levelDiscounts: {}, shinyEggs: { any: 0, species: [] }, speciesShells: {},
   };
 }
 
 /**
  * Start a run on `line`: resets Shells, fish, carriages (except Heritage, which keeps
  * habitat/decor/cosmetics but loses fish and extra slots), track and train.
- * Permanent progress is untouched. Mascot placement is T-06's job.
+ * Permanent progress and Shiny Eggs are untouched; request boards, level discounts and
+ * per-species stats reset. Mascot placement: `placeMascot` (depot.ts).
  */
 export function startRun(ctx: Ctx, line: LineId): void {
   const s = ctx.state;
@@ -78,6 +85,9 @@ export function startRun(ctx: Ctx, line: LineId): void {
   s.decorBought = {};
   s.frenzy = {};
   s.modifiers = [];
+  s.requestBoards = {};
+  s.levelDiscounts = {};
+  s.speciesShells = {};
   s.shells = cfg.startShells + ctx.fx().startShellsPerTicket * s.permanent.totalTicketsEarned;
   s.runShells = 0;
   s.builtTo = Math.min(cfg.startTrackStation, cfg.stationsPerLine);
