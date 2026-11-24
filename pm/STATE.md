@@ -25,12 +25,12 @@
 | T-11 Music + ambience | ART | medium | done |
 | T-16 Painterly set + shiny | ART | medium | done |
 | T-17 Cinematic video clips | ART | medium | done |
-| T-18 Audio + ending + video player | DEV | medium | in progress |
+| T-18 Audio + ending + video player | DEV | medium | done (wiring via T-19) |
 | T-20 Balance tuning (E1 green) | DEV+CONTENT | high | in progress |
 | T-19 Render fixes, living world, depot scene, loading | DEV | medium | in progress |
 | T-16 Painterly set + shiny | ART | medium | done |
 | T-17 Cinematic video clips | ART | medium | done |
-| T-18 Audio + ending + video player | DEV | medium | in progress |
+| T-18 Audio + ending + video player | DEV | medium | done (wiring via T-19) |
 | T-20 Balance tuning (E1 green) | DEV+CONTENT | high | in progress |
 | T-19 Render fixes, living world, depot scene, loading | DEV | medium | in progress |
 | T-12 Sprite sheets | ART | medium | done |
@@ -51,3 +51,4 @@ See pm/CREDITS.md.
 - 2026-11-24 ~13:5x–14:10 UTC: second usage-limit stop (T-07, T-13, T-14, T-15, T-16); all resumed at 14:11. Mitigation: keep ≤ 4 concurrent subagents from now on.
 - T-15 leftovers for polish: fish don't route around decor / hide in castle.
 - T-14 gaps: market Shells/s gain ignores bonds; ending/credits screen not built (→ T-18).
+- Polish: ending beach segment uses plain procedural backdrop → use l3 far/dusk art.
