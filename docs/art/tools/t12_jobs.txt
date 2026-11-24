@@ -21,3 +21,7 @@ wildlife_b 695cc3da-51ef-43d1-a54f-196b836cb8c2 gpt_image_2_6 2k transparent 1.7
 wildlife_c 2b2b0e74-b1a7-49c4-b3a5-9e1a718549f3 gpt_image_2_6 2k transparent 1.75
 passengers_b 0492c54c-9c64-4d21-8188-511965ec6093 gpt_image_2_6 3:2 1k transparent 1
 sights 332642de-7366-48d4-8f85-f5866491461f gpt_image_2_6 16:9 1k transparent 1
+rb_decor_a 9daeb456-a484-4106-82e3-49fc7b4f311c image_background_remover 1
+rb_plants_vent 06d998e3-9c04-4fda-81a4-84fdf49e4d75 image_background_remover 1
+rb_foliage_l1 c70449b2-00f7-48df-a465-432c0f1e6dde image_background_remover 1
+rb_foliage_l2 e045583a-fc85-4f32-86f8-e81d416a6252 image_background_remover 1
