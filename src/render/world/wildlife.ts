@@ -41,8 +41,9 @@ const SKY_Z = -10;
 /**
  * Breach lane (manta): just behind the verge art, with an arc that clears the
  * L3 palms/monstera (backlog: at the old sea depth, z −14, it was hidden).
+ * T-24: peak lowered (3.8 → 2.7) so the whole leap stays inside the tilt-shift sharp band.
  */
-const JUMP = { z: -5.5, y0: 0.2, height: 3.8 };
+const JUMP = { z: -5.5, y0: 0.2, height: 2.7 };
 
 interface Actor {
   spec: Spec;

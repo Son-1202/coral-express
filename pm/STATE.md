@@ -66,4 +66,5 @@ See pm/CREDITS.md.
 - Polish: ending beach segment uses plain procedural backdrop → use l3 far/dusk art.
 - 2026-11-24 ~18:xx UTC: third usage-limit stop (T-19, T-20, T-21); resumed 2026-11-25 02:55 UTC.
 - Polish backlog: foreground lens garden + white fence are Line-1 style on every Line (use per-Line near art/colors); L3 flamingo/manta hidden behind palms; endless-mode toast after ending not wired.
+- PRODUCER BUG (2026-11-25): train hovers above the rails (wheels on grass strip, rails drawn lower/in front) → T-24 top priority.
 - 2026-11-25 ~03:30 UTC: fourth usage-limit stop (T-20, T-22a/b/c). Resumed T-20 + T-22c at 03:40; T-22a/T-22b queued to resume when a slot frees (keep ≤ 2–3 concurrent to stretch the 5-h window).
