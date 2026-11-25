@@ -72,8 +72,11 @@ See pm/CREDITS.md.
 - 2026-11-25 ~03:30 UTC: fourth usage-limit stop (T-20, T-22a/b/c). Resumed T-20 + T-22c at 03:40; T-22a/T-22b queued to resume when a slot frees (keep ≤ 2–3 concurrent to stretch the 5-h window).
 - PRODUCER BUG (2026-11-25): train motion not smooth (judder in screen recording) → FIXED in T-25 (D-030).
 
+| T-26 Fix: Stamp Book & UI use real art (producer bug) | DEV | high | in progress |
+
 ## Ship summary (2026-11-25)
 - All tickets T-00…T-25 done. Build green, 179 unit tests, E2E 10/10 local + live.
 - E1 balance 12/14 (D-028 accepted deviations: offline speed-up, species dominance).
 - Credits: 532.21 spent, 469.79 left.
 - Known issues: see docs/qa/FINAL_QA.md (all low).
+- PRODUCER BUG (2026-11-25): Stamp Book shows placeholders instead of postcard/station art → T-26.
