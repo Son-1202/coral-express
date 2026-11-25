@@ -1,28 +1,11 @@
-// T-22c: depot 0-ticket guard, phone toast limits, bond-aware market gain.
+// T-22c: phone toast limits (depot hint replaced by T-33's checklist, see t33.test.ts), bond-aware market gain.
 import { describe, expect, it } from 'vitest';
 import { loadGameData } from '../../../src/data/schema';
 import { createSim } from '../../../src/sim';
-import { depotResetHint, fishGain, fishGainWithBonds } from '../../../src/ui/helpers';
+import { fishGain, fishGainWithBonds } from '../../../src/ui/helpers';
 import { MAX_TOASTS, toastLimits } from '../../../src/ui/toasts';
 
 const data = loadGameData();
-const fmt = (n: number) => String(n);
-
-describe('depotResetHint', () => {
-  const base = { runShells: 2e6, minRunShells: 1e6, terminalReached: true, projectedTickets: 3, fmt };
-  it('is null when a reset would grant Tickets', () => {
-    expect(depotResetHint(base)).toBeNull();
-  });
-  it('blocks a 0-Ticket reset (QA bug 2)', () => {
-    expect(depotResetHint({ ...base, projectedTickets: 0 })).toBe('Earn more Shells for at least 1 Ticket.');
-  });
-  it('lists the run rules first', () => {
-    expect(depotResetHint({ ...base, runShells: 10, terminalReached: false, projectedTickets: 0 })).toBe(
-      'To reset: earn 1000000 Shells this run (10 so far) and reach a terminal.',
-    );
-  });
-});
-
 describe('toastLimits', () => {
   it('caps phones at 2 and dismisses faster', () => {
     expect(toastLimits(844)).toEqual({ max: 2, msScale: 0.6 });

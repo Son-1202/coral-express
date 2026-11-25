@@ -14,6 +14,8 @@ export interface PanelView {
   render(body: HTMLElement): void;
   /** Sim event types that should trigger a re-render while open. */
   watch: string[];
+  /** Optional cheap in-place refresh of live numbers (~2.5 Hz while open; must not re-render). */
+  tick?(): void;
 }
 
 export interface UiCtx {

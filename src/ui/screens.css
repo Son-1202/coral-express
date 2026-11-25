@@ -160,6 +160,15 @@ button.ui-line-card { cursor: pointer; }
 .ui-reset-mult { font-size: 14px; } .ui-reset-mult b { font-family: var(--font-num); font-weight: 400; } .ui-reset-mult .up { color: var(--seafoam-deep); }
 .ui-reset .ui-item-desc { text-align: center; }
 .ui-reset-hint { color: #a4442f; text-align: center; }
+/* T-33: reset checklist right above the Depot Reset button */
+.ui-checklist { list-style: none; margin: 0 0 8px; padding: 8px 10px; display: flex; flex-direction: column; gap: 5px; background: #fffaf0; border: 2px solid var(--line); border-radius: 8px; }
+.ui-check { display: flex; align-items: flex-start; gap: 8px; font-size: 13.5px; line-height: 1.3; color: var(--ink); }
+.ui-check > i { position: relative; flex: none; width: 18px; height: 18px; margin-top: 1px; border-radius: 4px; border: 2px solid #c9b48a; background: #fff; }
+.ui-check.ok > i { border-color: var(--seafoam-deep); background: var(--seafoam-deep); }
+.ui-check.ok > i::after { content: ''; position: absolute; left: 4px; top: 0; width: 5px; height: 10px; border: solid #fff; border-width: 0 3px 3px 0; transform: rotate(45deg); }
+.ui-check.no > span { color: #a4442f; }
+.ui-check-sum { margin-top: 2px; padding-top: 6px; border-top: 1px dashed var(--line); font-size: 13.5px; line-height: 1.3; color: var(--ink-soft); }
+.ui-check-sum.ready { color: var(--seafoam-deep); font-weight: 600; }
 .ui-mascots { display: grid; grid-template-columns: repeat(auto-fill, minmax(78px, 1fr)); gap: 6px; }
 .ui-mascot { position: relative; min-height: 70px; padding: 4px; border-radius: 8px; border: 2px solid var(--line); background: var(--card); cursor: pointer; color: var(--ink); }
 .ui-mascot > span { display: flex; flex-direction: column; align-items: center; gap: 2px; }

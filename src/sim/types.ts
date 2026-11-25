@@ -346,6 +346,26 @@ export interface CarInfo {
   frenzyReadyIn: number;
 }
 
+/** Depot Reset preview (T-33): the checklist + grant the Depot panel shows. */
+export interface DepotPreview {
+  /** Same as `canDepotReset()`. */
+  eligible: boolean;
+  terminalReached: boolean;
+  /** Furthest station index the train reached this run (1 at the start). */
+  furthestStation: number;
+  /** Terminal station index (config.stationsPerLine). */
+  terminalStation: number;
+  runShells: number;
+  minRunShells: number;
+  /** Tickets the reset grants (= `projectedTickets()` once runShells ≥ minRunShells; below it, the grant at the gate, ≥ 1). */
+  tickets: number;
+  /** Run Shells at which the grant becomes `tickets + 1`. */
+  nextTicketAt: number;
+  /** Ticket income multiplier now and after this reset. */
+  incomeMult: number;
+  incomeMultAfter: number;
+}
+
 export interface SimStats {
   fishSps: number;
   /** Average fare per arrival over one full shuttle cycle of the built track. */

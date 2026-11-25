@@ -1,9 +1,9 @@
 // Depot: reset (Tickets preview + new multiplier), Mascot picker, Line picker, upgrades, lifetime stats.
 import type { LineId } from '../data/schema';
 import { iconImg, lineCover } from './art';
-import { speciesName } from './content';
+import { speciesName, stationName } from './content';
 import { btn, fishIcon, h, TICKET } from './dom';
-import { defaultMascotName, depotResetHint, describeUpgrade, formatDuration, lineLockText } from './helpers';
+import { defaultMascotName, depotChecklist, describeUpgrade, formatDuration, lineLockText } from './helpers';
 import { confirmDialog } from './modal';
 import { carLabel } from './cars';
 import { costButton, type PanelView, type UiCtx } from './panel';
@@ -14,37 +14,34 @@ let mascotName = '';
 let nameTouched = false;
 let nextLine: LineId = 1;
 
+/** Live parts of the open Depot panel, refreshed in place by `tick()` (no re-render: keeps input focus). */
+interface Live {
+  card: HTMLElement;
+  list: HTMLElement;
+  go: HTMLButtonElement;
+  hasMascot: boolean;
+  sig: string;
+}
+let live: Live | null = null;
+
 export function depotPanel(ctx: UiCtx): PanelView {
   const { api } = ctx;
   return {
     id: 'depot',
     title: () => 'The Depot',
-    subtitle: () => `Tickets ${ctx.fmt(api.sim.state.permanent.tickets)} · income ×${(1 + api.data.config.ticketIncomePerTicket * api.sim.state.permanent.totalTicketsEarned).toFixed(1)}`,
+    subtitle: () => `Tickets ${ctx.fmt(api.sim.state.permanent.tickets)} · income ×${api.sim.depotPreview().incomeMult.toFixed(1)}`,
     watch: ['upgradeBought', 'depotReset', 'terminalReached', 'lineOpened', 'purchase', 'sale'],
+    tick() {
+      if (live && live.go.isConnected) updateLive(ctx, live);
+    },
     render(body) {
       const s = api.sim.state;
       const p = s.permanent;
       const c = api.data.config;
-      const proj = api.sim.projectedTickets();
-      // QA bug 2: a reset that would grant 0 Tickets is never offered.
-      const ready = api.sim.canDepotReset() && proj > 0;
-      const curMult = 1 + c.ticketIncomePerTicket * p.totalTicketsEarned;
-      const newMult = 1 + c.ticketIncomePerTicket * (p.totalTicketsEarned + proj);
 
-      // reset card
-      const reset = h('div.ui-card.ui-reset' + (ready ? '.ready' : ''));
-      reset.append(
-        h('div.ui-reset-tickets', null, h('span', { html: TICKET }), h('b', { text: `+${ctx.fmt(proj)}` }), h('small', { text: 'Tickets' })),
-        h('div.ui-reset-mult', { html: `income <b>×${curMult.toFixed(1)}</b> → <b class="up">×${newMult.toFixed(1)}</b>` }),
-      );
-      const hint = depotResetHint({
-        runShells: s.runShells,
-        minRunShells: c.depotReset.minRunShells,
-        terminalReached: s.terminalReachedThisRun,
-        projectedTickets: proj,
-        fmt: ctx.fmt,
-      });
-      if (hint) reset.append(h('p.ui-item-desc.ui-reset-hint', { text: hint }));
+      // reset card (filled by updateLive from the sim's depotPreview)
+      const reset = h('div.ui-card.ui-reset');
+      const checklist = h('ul.ui-checklist', { 'aria-label': 'Depot Reset checklist' });
 
       // mascot picker
       // one candidate per species (+ shiny variant): its highest-level fish
@@ -96,12 +93,13 @@ export function depotPanel(ctx: UiCtx): PanelView {
         );
       }
 
-      const go = btn('ui-brass big' + (ready && chosen ? '' : ' off'), h('span', { html: `${TICKET} Depot Reset` }), () => {
-        if (!ready || !chosen) return;
+      const go = btn('ui-brass big', h('span', { html: `${TICKET} Depot Reset` }), () => {
+        const pv = api.sim.depotPreview();
+        if (!pv.eligible || !chosen) return;
         const body2 = h(
           'div.ui-confirm-body',
           null,
-          h('p', { html: `You'll gain <b>${ctx.fmt(proj)} Tickets</b> and income goes to <b>×${newMult.toFixed(1)}</b>.` }),
+          h('p', { html: `You'll gain <b>${ctx.fmt(pv.tickets)} Ticket${pv.tickets === 1 ? '' : 's'}</b> and income goes to <b>×${pv.incomeMultAfter.toFixed(1)}</b>.` }),
           h('p', null, fishIcon(api.data, chosen.species, chosen.shiny, 32), ` ${mascotName || speciesName(api.data, chosen.species)} rides on as Mascot in the Heritage Carriage.`),
           h('p.ui-item-desc', { text: 'Shells, fish, carriages and track go to the depot pools. Stamps, postcards, upgrades and the Heritage Carriage stay.' }),
         );
@@ -115,7 +113,9 @@ export function depotPanel(ctx: UiCtx): PanelView {
             if (r.ok) ctx.close();
           },
         });
-      }, { disabled: !ready || !chosen, ...(hint ? { title: hint } : {}) });
+      });
+      live = { card: reset, list: checklist, go, hasMascot: !!chosen, sig: '' };
+      updateLive(ctx, live);
 
       body.append(
         reset,
@@ -125,8 +125,8 @@ export function depotPanel(ctx: UiCtx): PanelView {
         h('p.ui-hint', { text: friend }),
         h('h3.ui-sec', { text: 'Next line' }),
         lines,
+        checklist,
         go,
-        ...(hint ? [h('p.ui-hint.ui-reset-hint', { text: hint })] : []),
       );
 
       // upgrades
@@ -164,4 +164,30 @@ export function depotPanel(ctx: UiCtx): PanelView {
       body.append(h('h3.ui-sec', { text: 'Lifetime' }), h('dl.ui-stats', null, ...stats.flatMap(([k, v]) => [h('dt', { text: k }), h('dd', { text: v })])));
     },
   };
+}
+
+/** Refresh the reset card, checklist and button from the sim (cheap no-op when nothing changed). */
+function updateLive(ctx: UiCtx, l: Live): void {
+  const { api } = ctx;
+  const pv = api.sim.depotPreview();
+  const line = api.sim.state.currentLine;
+  const cl = depotChecklist(pv, ctx.fmt, (i) => stationName(line, i));
+  const ready = pv.eligible && l.hasMascot;
+  const sig = [ready, cl.summary, ...cl.rows.map((r) => `${r.ok}${r.text}`)].join('|');
+  if (sig === l.sig) return;
+  l.sig = sig;
+  l.card.classList.toggle('ready', ready);
+  l.card.replaceChildren(
+    h('div.ui-reset-tickets', null, h('span', { html: TICKET }), h('b', { text: `+${ctx.fmt(pv.tickets)}` }), h('small', { text: pv.tickets === 1 ? 'Ticket' : 'Tickets' })),
+    h('div.ui-reset-mult', { html: `income <b>×${pv.incomeMult.toFixed(1)}</b> → <b class="up">×${pv.incomeMultAfter.toFixed(1)}</b>` }),
+    h('p.ui-item-desc', { text: `Next Ticket at ${ctx.fmt(pv.nextTicketAt)} Shells this run` }),
+  );
+  l.list.replaceChildren(
+    ...cl.rows.map((r) => h(`li.ui-check${r.ok ? '.ok' : '.no'}`, null, h('i', { 'aria-hidden': 'true' }), h('span', { text: r.text }))),
+    h('li.ui-check-sum' + (pv.eligible ? '.ready' : ''), { text: cl.summary }),
+  );
+  l.go.disabled = !ready;
+  l.go.classList.toggle('off', !ready);
+  if (cl.blocked) l.go.title = cl.blocked;
+  else l.go.removeAttribute('title');
 }

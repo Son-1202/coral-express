@@ -1,6 +1,6 @@
 // Pure UI helpers (no DOM). Unit-tested in tests/unit/ui/helpers.test.ts.
 import type { GameData, SpeciesDef, UpgradeDef } from '../data/schema';
-import type { CarInfo, Carriage, SimState } from '../sim';
+import type { CarInfo, Carriage, DepotPreview, SimState } from '../sim';
 
 /** Seconds until `cost` is affordable at `sps`: 0 = now, null = never (no income). */
 export function affordableIn(cost: number, shells: number, sps: number): number | null {
@@ -135,23 +135,40 @@ export function lineHabitats(data: GameData, line: number): string[] {
   return out;
 }
 
+export interface DepotCheckRow {
+  ok: boolean;
+  text: string;
+}
+
+export interface DepotChecklist {
+  /** The two reset conditions (terminal this run, run Shells), each ✓/✗. */
+  rows: DepotCheckRow[];
+  /** "Reset now: +N Tickets · income ×A → ×B · next Ticket at X Shells" (or "When ready: …"). */
+  summary: string;
+  /** Short reason the button is disabled (null when a reset is allowed). */
+  blocked: string | null;
+}
+
 /**
- * Why the Depot Reset is not available yet, or null when it is. A reset that would grant
- * 0 Tickets is blocked too (QA bug 2), even when the sim's run rules are met.
+ * T-33: Depot Reset checklist from the sim's `depotPreview()`. All numbers come from the sim;
+ * `stationLabel(index)` names a station of the current Line.
  */
-export function depotResetHint(o: {
-  runShells: number;
-  minRunShells: number;
-  terminalReached: boolean;
-  projectedTickets: number;
-  fmt: (n: number) => string;
-}): string | null {
-  const need: string[] = [];
-  if (o.runShells < o.minRunShells) need.push(`earn ${o.fmt(o.minRunShells)} Shells this run (${o.fmt(o.runShells)} so far)`);
-  if (!o.terminalReached) need.push('reach a terminal');
-  if (need.length) return `To reset: ${need.join(' and ')}.`;
-  if (!(o.projectedTickets > 0)) return 'Earn more Shells for at least 1 Ticket.';
-  return null;
+export function depotChecklist(pv: DepotPreview, fmt: (n: number) => string, stationLabel: (index: number) => string): DepotChecklist {
+  const t = pv.terminalStation;
+  const far = pv.terminalReached ? t : pv.furthestStation;
+  const term: DepotCheckRow = {
+    ok: pv.terminalReached,
+    text: `Reach the terminal (Station ${t} · ${stationLabel(t)}) this run` + (pv.terminalReached ? '' : ` — furthest so far: Station ${far} · ${stationLabel(far)}`),
+  };
+  const shells: DepotCheckRow = {
+    ok: pv.runShells >= pv.minRunShells,
+    text: `Earn ${fmt(pv.minRunShells)} Shells this run: ${fmt(pv.runShells)} / ${fmt(pv.minRunShells)}`,
+  };
+  const n = pv.tickets;
+  const grant = `+${fmt(n)} Ticket${n === 1 ? '' : 's'}`;
+  const summary = `${pv.eligible ? 'Reset now' : 'When ready'}: ${grant} · income ×${pv.incomeMult.toFixed(1)} → ×${pv.incomeMultAfter.toFixed(1)} · next Ticket at ${fmt(pv.nextTicketAt)} Shells`;
+  const missing = [term, shells].filter((r) => !r.ok).map((r) => (r === term ? `reach Station ${t}` : `earn ${fmt(pv.minRunShells - pv.runShells)} more Shells this run`));
+  return { rows: [term, shells], summary, blocked: pv.eligible ? null : `To reset: ${missing.join(' and ')}.` };
 }
 
 export interface GainEstimate {

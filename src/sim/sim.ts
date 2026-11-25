@@ -2,7 +2,7 @@
 import type { GameData } from '../data/schema';
 import { priceAction, runAction } from './actions';
 import { createCtx, type Ctx } from './ctx';
-import { canDepotReset, placeMascot, projectedTickets } from './depot';
+import { canDepotReset, depotPreview, placeMascot, projectedTickets } from './depot';
 import { buildIndex } from './lookup';
 import { openMarket } from './market';
 import { advanceOffline } from './offline';
@@ -15,7 +15,7 @@ import { blankState, startRun } from './state';
 import type { StoryData } from './story';
 import { tickTrain } from './train';
 import {
-  TICK, type Action, type ActionResult, type CarInfo, type OfflineResult, type SaveData, type SimEvent, type SimState, type SimStats,
+  TICK, type Action, type ActionResult, type CarInfo, type DepotPreview, type OfflineResult, type SaveData, type SimEvent, type SimState, type SimStats,
 } from './types';
 
 export interface SimOptions {
@@ -40,6 +40,8 @@ export interface Sim {
   carInfo(carId: string): CarInfo;
   canDepotReset(): boolean;
   projectedTickets(): number;
+  /** T-33: reset checklist, grant, income multipliers and next-Ticket threshold. */
+  depotPreview(): DepotPreview;
   /** Debug: start a Sight now (false if unknown id or one is active). */
   triggerSight(id: string): boolean;
   /** Offline result applied while loading (opts.now − save.savedAt), else null. */
@@ -163,6 +165,7 @@ export function createSimInternal(data: GameData, opts: SimOptions): SimInternal
     },
     canDepotReset: () => canDepotReset(ctx),
     projectedTickets: () => projectedTickets(ctx),
+    depotPreview: () => depotPreview(ctx),
     triggerSight: (id) => startSight(ctx, id),
     serialize(now) {
       return { version: ctx.state.version, savedAt: now ?? null, state: JSON.parse(JSON.stringify(ctx.state)) as SimState };

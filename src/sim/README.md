@@ -25,7 +25,7 @@ const sim2 = createSim(data, { seed: 0, save, now: Date.now(), story }); // load
 | `carInfo(id)` | income, appeal, active bonds, possible bonds (`missing` species), per-fish `{sps, habitatMult, bondMult, appeal}`, slots used/total, decor used/capacity, `frenzyActive`, `frenzyReadyIn`. Throws on unknown id. |
 | `serialize(now?)` | `{version: 1, savedAt, state}`. **`now` param added** (wall-clock ms → `savedAt`, default `null`) so output stays deterministic. |
 | `advanceOffline(s)` | T-06. Cap 8 h (Season Pass 12 h), rate 50% (70%) × (base fish Sps + base fare rate) × t; frenzy/Sight buffs ignored and expired; train position untouched. Returns `{seconds, shells, stationsVisited}`. |
-| `canDepotReset()` / `projectedTickets()` | T-06. runShells ≥ `depotReset.minRunShells` and a terminal reached this run; `floor(sqrt(runShells / divisor))`, divisor = current Line's `ticketDivisor` (T-20) or `depotReset.divisor`. |
+| `canDepotReset()` / `projectedTickets()` | T-06. runShells ≥ `depotReset.minRunShells` and a terminal reached this run; `floor(sqrt(runShells / divisor))`, divisor = current Line's `ticketDivisor` (T-20) or `depotReset.divisor`; at least 1 once runShells ≥ `minRunShells` (T-33). `depotPreview()` (T-33): checklist, grant, income ×before/after, next-Ticket threshold for the Depot panel. |
 | `triggerSight(id)` | T-06 debug hook (`window.__debug.triggerSight`). |
 | `offlineReport` | Offline result applied by `createSim({save, now})`, else `null`. |
 | `migrateSave(raw, seed?)` | (exported) SaveData / JSON string / bare v0 state → current SaveData; junk → fresh blank state; missing fields filled from defaults; newer version **throws**. |
@@ -86,7 +86,7 @@ Extension points for T-06/T-07 (exported from `index.ts`):
 ### T-20 rule changes (balance tuning; see docs/content/TUNING.md)
 26. **Fares scale with fish output** (data alone could not reach fares 25–50%: appeal is O(10) while fish output spans 13 orders of magnitude). Fare at station k = Σ_car `fareAppeal(appeal_car)` × car base fish Sps × `fareAppealFactor` × stationMult(k) × Ticket Printer × endless (× timed fare modifiers). Car base Sps already holds Tickets, bonds, habitat, decor, whale, Old Friend; `lines[].fareMult` now only prices carriages. `fareAppeal(A)` = A·H/(A+H) with `config.fareAppealHalf` = H (saturating; absent → linear A). `TrainModel.fareWeight` = Σ fareAppeal(A)·Sps. An empty car pays nothing.
 27. **Lines open after N terminal runs**: `lines[].opensAfterRuns` (default 1). `permanent.terminalRuns[line]` counts runs that reached that terminal (once per run); `terminalReached.firstTime` and `reachedTerminals` keep their meaning; the ending still fires on the first `maxLine` terminal.
-28. **Per-Line Ticket divisor**: `lines[].ticketDivisor` (optional) replaces `depotReset.divisor` for runs on that Line.
+28. **Per-Line Ticket divisor**: `lines[].ticketDivisor` (optional) replaces `depotReset.divisor` for runs on that Line. T-33: an eligible reset (≥ `minRunShells` + terminal this run) grants `max(1, …)` Tickets, so the gate the player sees is the real gate.
 29. `config.todaysSpecial.minPrice` is now in the schema (D-023).
 
 ## Events

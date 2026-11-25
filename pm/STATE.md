@@ -85,4 +85,4 @@ See pm/CREDITS.md.
 - PRODUCER REQUEST (2026-11-25): soften tilt-shift → DONE in T-28 (focusArea 0.56→0.90, offset −0.10→+0.05, kernel MEDIUM/SMALL→SMALL/VERY_SMALL, grain 0.08→0.048).
 - PRODUCER BUG (2026-11-25): placeholder Shells/s icon, plant decor leaf placeholder, Turtle Grass overflowing → FIXED in T-29 + T-30.
 - PRODUCER BUG (2026-11-25): foreground band (bushes, planter, fence, wall, grass, small trees) still procedural → FIXED in T-31 + T-32 (D-031).
-- PRODUCER BUG (2026-11-25): Depot Reset blocked (~8M run Shells for 1st Ticket on L1, no explanation) → T-33.
+- PRODUCER BUG (2026-11-25): Depot Reset blocked (~8M run Shells for 1st Ticket on L1, no explanation) → FIXED in T-33 (D-032).

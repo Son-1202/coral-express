@@ -175,6 +175,7 @@ export function mountUI(root: HTMLElement, api: GameApi, opts: MountOpts = {}): 
     if (costTimer >= 0.4 && host.current) {
       costTimer = 0;
       host.body.querySelectorAll<HTMLElement>('[data-cost]').forEach((b) => refreshCost(ctx, b));
+      host.current.tick?.();
     }
   };
   const formatFor = () => api.getSettings().numberFormat;

@@ -1,7 +1,7 @@
 # Balance tuning log (T-20, E1)
 
 Harness: `npx tsx scripts/balance.ts --games N` (greedy, random, bondNever, greedyOffline). Debug aids added in T-20: `scripts/balance/trace.ts` (one line per track / terminal / reset per game) and `scripts/balance/peek.ts` (greedy's top candidates and car layout at minute T).
-Final numbers: `docs/qa/balance_report.md` (1000 games per bot, 390 s): **12/14 PASS**, 2 accepted deviations below. Start point (T-07): 1/14 PASS.
+T-20 final numbers (1000 games per bot, 390 s): **12/14 PASS**, 2 accepted deviations below. Start point (T-07): 1/14 PASS. `docs/qa/balance_report.md` now holds the T-33 regeneration (200 games per bot, `--games 200`): still **12/14**, same two deviations (see T-33 below).
 
 ## Diagnosis that drove the strategy
 1. **Reset count was structurally 2.** A Depot Reset needs a terminal reached *this run*, and greedy rides the newest opened Line, so the only possible path was L1 → L2 → L3 (2 resets), whatever the Ticket curve. → rule: Lines open after their previous terminal was reached in `opensAfterRuns` runs (2): L1, L1, L2, L2, L3 = **4 resets**, exactly, in every game.
@@ -57,3 +57,8 @@ Sim unit tests now use a frozen SPEC-era fixture (`tests/unit/sim/fixtureData.ts
 - UI `src/ui/trackMap.ts` says "Reach the Line N terminal" for locked Lines; with `opensAfterRuns` 2 it should read e.g. "Reach the Line 1 terminal in 2 runs (1/2)" from `permanent.terminalRuns` (DEV/UI).
 - Offline carry-over rule (see deviations) if the 15–35% target matters.
 - 5000-game confirmation would take ~30 min on this shared box (1000 games ≈ 6–7 min); 1000 was run.
+
+## T-33: Ticket floor for an eligible Depot Reset (producer bug)
+- **Problem:** the reset gate is `runShells ≥ depotReset.minRunShells` (1M) + a terminal reached this run, but with the T-20 Line 1 `ticketDivisor` (8e6) the grant `floor(sqrt(runShells / 8e6))` stayed 0 until ~8M run Shells, and the T-22c guard disabled the button at 0 Tickets without saying why. Bots never noticed (greedy waits for ≥ 3 Tickets); a real player at ~1.2K/s waited well over an hour.
+- **Rule (`src/sim/depot.ts`):** Tickets = `floor(sqrt(runShells / divisor))`, but `max(1, …)` once `runShells ≥ minRunShells`. `projectedTickets()` returns the same number (the preview is the real grant). New `sim.depotPreview()` gives the Depot panel the checklist (terminal this run + furthest station, run Shells vs the gate), the grant (below the gate: the grant at the gate, ≥ 1), income ×before/after and the next-Ticket threshold `(tickets+1)² × divisor`. No data changes. Tests: `tests/unit/sim/t33depot.test.ts`, `tests/unit/ui/t33.test.ts`.
+- **Balance (200 games per bot, before vs after):** all 14 E1 rows numerically identical, **12/14 PASS** both times. Expected: greedy's reset rule (`resetTarget`: ≥ 3 first, then ≥ 2× total) never asks for fewer than 3 Tickets, and random's row measures only the time to its first reset. No bot or divisor change needed.
