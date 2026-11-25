@@ -7,6 +7,17 @@ import { paintPlatformFace, paintPlatformTop, paintStationBuilding, STATION_BUIL
 
 /** Station art is drawn at this many pixels per world unit (chunkier than the train: it sits further back). */
 const STATION_PX = 72;
+/**
+ * Per-line normalisation (render only): pixels per world unit, so the three
+ * stations read at one scale next to the train (L2's house is painted larger),
+ * and the fraction of the image cropped off the bottom (L3 has painted rails
+ * under its deck that would read as a second track).
+ */
+export const STATION_FIT: Record<number, { px: number; cropBottom: number }> = {
+  1: { px: STATION_PX, cropBottom: 0 },
+  2: { px: 92, cropBottom: 0 },
+  3: { px: 76, cropBottom: 0.25 },
+};
 const PLATFORM_H = 0.42;
 
 /** Render-only layout of each line's station art: lamp positions (fractions of the image, from top-left). */
@@ -74,8 +85,10 @@ export class StationView {
     topGeo.rotateX(-Math.PI / 2);
     const top = new THREE.Mesh(topGeo, new THREE.MeshBasicMaterial({ map: toTexture(paintPlatformTop(), true) }));
     top.position.set(0, PLATFORM_H - 0.02, -1.42);
-    this.buildingMat = new THREE.MeshBasicMaterial({ transparent: true, alphaTest: 0.5 });
+    // opaque pass + alpha cut-out: depth-tested behind the train, never sorted over it
+    this.buildingMat = new THREE.MeshBasicMaterial({ transparent: false, alphaTest: 0.5 });
     this.building = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), this.buildingMat);
+    this.building.renderOrder = -2;
     this.building.position.z = LAYER_Z.station;
     // sign on two posts, right of the building
     this.signTex = toTexture(paintSign(''));
@@ -102,6 +115,10 @@ export class StationView {
     const tex = art
       ? sharedTexture(path, () => paintStationBuilding(90 + this.seed), { pixel: true })
       : sharedTexture(`proc:station:${this.seed}`, () => paintStationBuilding(90 + this.seed), { pixel: true });
+    const crop = art ? (STATION_FIT[line]?.cropBottom ?? 0) : 0;
+    // texture is shared by the 3 platforms: the crop is per line, so setting it here is idempotent
+    tex.repeat.y = 1 - crop;
+    tex.offset.y = crop;
     this.buildingMat.map = tex;
     this.buildingMat.needsUpdate = true;
     for (const g of this.glows) this.group.remove(g);
@@ -140,13 +157,16 @@ export class StationView {
     const iw = img?.width ?? 1;
     const ih = img?.height ?? 1;
     const isArt = iw >= 200;
-    const w = isArt ? iw / STATION_PX : STATION_BUILDING.w;
-    const h = isArt ? ih / STATION_PX : STATION_BUILDING.h;
+    const fit = STATION_FIT[this.line] ?? { px: STATION_PX, cropBottom: 0 };
+    const w = isArt ? iw / fit.px : STATION_BUILDING.w;
+    const h = isArt ? (ih * (1 - fit.cropBottom)) / fit.px : STATION_BUILDING.h;
     this.building.scale.set(w, h, 1);
     this.building.position.set(isArt ? -0.6 : 0, (isArt ? PLATFORM_H - 0.12 : PLATFORM_H - 0.05) + h / 2, LAYER_Z.station);
     for (const g of this.glows) {
       const l = g.userData.lamp as { x: number; y: number };
-      g.position.set(this.building.position.x + (l.x - 0.5) * w, this.building.position.y + (0.5 - l.y) * h, LAYER_Z.station + 0.05);
+      // lamp y is a fraction of the uncropped image
+      const ly = isArt ? l.y / (1 - fit.cropBottom) : l.y;
+      g.position.set(this.building.position.x + (l.x - 0.5) * w, this.building.position.y + (0.5 - ly) * h, LAYER_Z.station + 0.05);
       (g.material as THREE.MeshBasicMaterial).opacity = night * 0.9;
       g.visible = night > 0.02;
     }

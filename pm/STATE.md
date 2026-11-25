@@ -54,3 +54,4 @@ See pm/CREDITS.md.
 - T-15 leftovers for polish: fish don't route around decor / hide in castle.
 - T-14 gaps: market Shells/s gain ignores bonds; ending/credits screen not built (→ T-18).
 - Polish: ending beach segment uses plain procedural backdrop → use l3 far/dusk art.
+- 2026-11-24 ~18:xx UTC: third usage-limit stop (T-19, T-20, T-21); resumed 2026-11-25 02:55 UTC.
