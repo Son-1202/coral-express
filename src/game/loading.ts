@@ -19,6 +19,9 @@ export function bootUrls(line: number, habitats: string[]): string[] {
     ...habitats.map((h) => ({ p: interiorPath(h), webp: true })),
     ...[1, 2, 3, 4].map((k) => ({ p: `/scenery/l${line}_props_${k}.png` })),
     ...[1, 2, 3].map((k) => ({ p: `/scenery/l${line}_foliage_${k}.png` })),
+    // T-31 foreground & track kit (T-32 swap)
+    { p: '/scenery/trackbed.png', webp: true },
+    ...['wall', 'ground', 'lens_1', 'lens_2', 'lens_3', 'planter'].map((k) => ({ p: `/scenery/l${line}_${k}.png`, webp: true })),
   ];
   return [...new Set(paths.filter((x) => hasFile(x.p)).map((x) => fileUrl(x.p, !!x.webp)))];
 }

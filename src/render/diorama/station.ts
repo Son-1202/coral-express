@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { PATHS, hasFile, sharedTexture } from '../../assets';
+import { PATHS, fileUrl, hasFile, sharedTexture } from '../../assets';
 import { makeCanvas, toTexture } from '../paint/canvas';
 import { LIVERY } from '../paint/palette';
 import { LAYER_Z, WORLD } from './config';
@@ -28,6 +28,55 @@ const LAMPS: Record<number, { x: number; y: number }[]> = {
   2: [{ x: 0.295, y: 0.53 }],
   3: [{ x: 0.5, y: 0.35 }],
 };
+
+/**
+ * T-32: platform face/top cut from each Line's own station art (source pixels x0,y0,x1,y1 of
+ * `station/l<n>.png`): L1 the sandstone plinth, L2/L3 the wooden deck planks. Tiled along the
+ * 13-unit platform at the art's aspect (pixel art: nearest filtering). Render layout only.
+ */
+type Rect = readonly [number, number, number, number];
+export const PLATFORM_CROP: Record<number, { face: Rect; top: Rect }> = {
+  1: { face: [125, 173, 305, 201], top: [125, 172, 305, 185] },
+  2: { face: [40, 300, 200, 318], top: [40, 300, 200, 318] },
+  3: { face: [185, 178, 278, 193], top: [185, 178, 278, 193] },
+};
+const cropCache = new Map<number, { face: THREE.Texture; top: THREE.Texture }>();
+const cropWaiters = new Map<number, ((t: { face: THREE.Texture; top: THREE.Texture }) => void)[]>();
+
+function cropTex(img: HTMLImageElement, r: Rect, worldW: number, worldH: number): THREE.Texture {
+  const [x0, y0, x1, y1] = r;
+  const c = makeCanvas(x1 - x0, y1 - y0);
+  c.ctx.drawImage(img, x0, y0, c.w, c.h, 0, 0, c.w, c.h);
+  const t = toTexture(c, true);
+  t.wrapS = THREE.RepeatWrapping;
+  t.repeat.x = Math.max(1, Math.round(worldW / ((worldH * c.w) / c.h)));
+  return t;
+}
+
+/** Calls `cb` with the Line's platform crop textures once its station art has loaded (shared by all platforms). */
+function platformCrops(line: number, cb: (t: { face: THREE.Texture; top: THREE.Texture }) => void): void {
+  const done = cropCache.get(line);
+  if (done) return cb(done);
+  const r = PLATFORM_CROP[line];
+  const path = PATHS.station(line);
+  if (!r || !hasFile(path)) return;
+  const waiting = cropWaiters.get(line);
+  if (waiting) {
+    waiting.push(cb);
+    return;
+  }
+  cropWaiters.set(line, [cb]);
+  const img = new Image();
+  img.onload = () => {
+    const L = WORLD.platformLength;
+    const t = { face: cropTex(img, r.face, L, PLATFORM_H), top: cropTex(img, r.top, L, 0.4) };
+    cropCache.set(line, t);
+    for (const w of cropWaiters.get(line) ?? []) w(t);
+    cropWaiters.delete(line);
+  };
+  img.onerror = () => cropWaiters.delete(line);
+  img.src = fileUrl(path);
+}
 
 let glowTex: THREE.Texture | null = null;
 function glowTexture(): THREE.Texture {
@@ -74,6 +123,11 @@ export class StationView {
   private readonly sign: THREE.Mesh;
   private readonly signTex: THREE.CanvasTexture;
   private readonly glows: THREE.Mesh[] = [];
+  /** Procedural platform (fallback until/unless the Line's station art crop is available). */
+  private static procFace: THREE.Texture | null = null;
+  private static procTop: THREE.Texture | null = null;
+  private readonly faceMat = new THREE.MeshBasicMaterial({ map: (StationView.procFace ??= toTexture(paintPlatformFace(), true)) });
+  private readonly topMat = new THREE.MeshBasicMaterial({ map: (StationView.procTop ??= toTexture(paintPlatformTop(), true)) });
   private line = 0;
   private name = '';
   /** Odometer slot this platform currently represents. */
@@ -81,11 +135,11 @@ export class StationView {
 
   constructor(private readonly seed: number) {
     const L = WORLD.platformLength;
-    const face = new THREE.Mesh(new THREE.PlaneGeometry(L, PLATFORM_H), new THREE.MeshBasicMaterial({ map: toTexture(paintPlatformFace(), true) }));
+    const face = new THREE.Mesh(new THREE.PlaneGeometry(L, PLATFORM_H), this.faceMat);
     face.position.set(0, PLATFORM_H / 2 - 0.02, -0.72);
     const topGeo = new THREE.PlaneGeometry(L, 1.4);
     topGeo.rotateX(-Math.PI / 2);
-    const top = new THREE.Mesh(topGeo, new THREE.MeshBasicMaterial({ map: toTexture(paintPlatformTop(), true) }));
+    const top = new THREE.Mesh(topGeo, this.topMat);
     top.position.set(0, PLATFORM_H - 0.02, -1.42);
     // opaque pass + alpha cut-out: depth-tested behind the train, never sorted over it
     this.buildingMat = new THREE.MeshBasicMaterial({ transparent: false, alphaTest: 0.5 });
@@ -124,6 +178,13 @@ export class StationView {
     tex.offset.y = crop;
     this.buildingMat.map = tex;
     this.buildingMat.needsUpdate = true;
+    this.faceMat.map = StationView.procFace;
+    this.topMat.map = StationView.procTop;
+    platformCrops(line, (t) => {
+      if (this.line !== line) return;
+      this.faceMat.map = t.face;
+      this.topMat.map = t.top;
+    });
     for (const g of this.glows) this.group.remove(g);
     this.glows.length = 0;
     const lamps = art ? (LAMPS[line] ?? []) : [{ x: 0.2, y: 0.4 }, { x: 0.8, y: 0.4 }];

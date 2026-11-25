@@ -23,11 +23,17 @@ export const ASSETS = {
 
 export type AssetKey = keyof typeof ASSETS;
 
+export type ForeKind = 'wall' | 'ground' | 'lens_1' | 'lens_2' | 'lens_3' | 'planter';
+
 /** Dynamic manifest paths (all relative to `assets/`). */
 export const PATHS = {
   fish: (id: string, shiny = false) => `/fish/${id}${shiny ? '_shiny' : ''}.png`,
   interior: (habitat: string) => `/train/interior_${habitat}.png`,
   scenery: (line: number, layer: 'far' | 'mid' | 'near') => `/scenery/l${line}_${layer}.png`,
+  /** T-31/T-32 painted foreground band per Line: wall, ground (fence + meadow), lens clumps, planter. */
+  fore: (line: number, kind: ForeKind) => `/scenery/l${line}_${kind}.png`,
+  /** T-31/T-32 shared ballast + sleepers (seen from above; rails stay code-drawn). */
+  trackbed: '/scenery/trackbed.png',
   station: (line: number) => `/station/l${line}.png`,
   passenger: (n: number) => `/passengers/p${n}.png`,
   sight: (id: string) => `/sights/${id}.png`,

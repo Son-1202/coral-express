@@ -12,6 +12,9 @@ import { paintVergeBack } from './paintNear';
 import { buildForeground, type ForeSet } from './foreground';
 import { buildLineArt, hasLineArt } from './lineArt';
 import { StationView } from './station';
+import { PATHS } from '../../assets';
+import { loadArt, repeatX } from './artTex';
+import { fitRepeat } from './foreFit';
 
 function aspectH(canvas: HTMLCanvasElement, w: number): number {
   return (w * canvas.height) / canvas.width;
@@ -26,8 +29,9 @@ const LINE_FOG: Record<number, { color: string; near: number; far: number }> = {
 
 /**
  * The side-on coastal diorama. Real per-Line scenery art (`scenery/l<n>_*`)
- * replaces the procedural sky/sea/cliffs when present; the procedural track,
- * wall and garden always stay. Platforms repeat every `stationSpacing`.
+ * replaces the procedural sky/sea/cliffs when present; the track bed and the
+ * foreground band (foreground.ts) use the T-31 painted kit, with the procedural
+ * painters only as a fallback for missing files. Platforms repeat every `stationSpacing`.
  */
 export class Diorama {
   readonly scene = new THREE.Scene();
@@ -85,7 +89,14 @@ export class Diorama {
 
     // track bed + front rail (shared); verge, wall, garden and near layers are per Line (foreground.ts)
     const bedDepth = WORLD.trackFrontZ - WORLD.trackBackZ;
-    this.add({ width: 24, height: bedDepth, y: WORLD.groundY, z: (WORLD.trackFrontZ + WORLD.trackBackZ) / 2, horizontal: true, textures: [toTexture(paintTrackBed(61), true)] });
+    // T-32: painted ballast + sleepers (scenery/trackbed) seen from above; procedural only if the file is missing.
+    const bed = { width: 24, height: bedDepth, y: WORLD.groundY, z: (WORLD.trackFrontZ + WORLD.trackBackZ) / 2, horizontal: true };
+    loadArt(
+      PATHS.trackbed,
+      (img, tex) => this.add({ ...bed, textures: [repeatX(tex, fitRepeat(24, img.naturalWidth, img.naturalHeight, bedDepth).repeat)] }),
+      () => this.add({ ...bed, textures: [toTexture(paintTrackBed(61), true)] }),
+      { anisotropy: 16, maxW: 1280 },
+    );
     // T-24: the rail stands ON the bed directly in front of the train (stage: train at y RAIL_TOP, z 0.1), so the
     // wheels sit on the rail head instead of hovering over a grass strip with the rail drawn lower in front.
     this.add({ width: 24, height: RAIL_TOP, y: 0, z: RAIL_Z, textures: [toTexture(paintRailSide(), true)], renderOrder: 2 });
@@ -158,7 +169,7 @@ export class Diorama {
     for (const l of this.common) l.update(cx);
     const set = this.lineSets.get(this.line);
     if (set) for (const l of set.layers) l.update(cx);
-    for (const l of this.foreSets.get(this.line)?.layers ?? []) l.update(cx);
+    this.foreSets.get(this.line)?.update(camera);
     this.fogMult += (this.fogTarget - this.fogMult) * Math.min(1, dt * 0.8);
     const f = LINE_FOG[this.line] ?? LINE_FOG[1];
     if (f) {
