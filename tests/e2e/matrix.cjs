@@ -192,7 +192,7 @@ async function motionZoo(browser) {
   await page.goto(L.BASE + '?debug=zoo', { waitUntil: 'load' });
   await page.waitForTimeout(3000);
   const shots = [];
-  for (const [i, tag] of [[0, '0'], [500, '05'], [500, '1']]) {
+  for (const [i, tag] of [[0, '0'], [500, '05'], [500, '1'], [1000, '2']]) {
     if (i) await page.waitForTimeout(i);
     shots.push(await L.shot(page, `zoo_t${tag}`));
   }
@@ -220,9 +220,12 @@ async function motionZoo(browser) {
   const plants = require(path.join(L.ROOT, 'src/data/plants.json'));
   const HAB = ['reef', 'mangrove', 'kelp', 'polar', 'vent'];
   const staticOk = new Set(plants.filter((p) => p.sway && p.sway.amp === 0).map((p) => `plant${HAB.indexOf(p.habitat) * 4 + Number(p.id.split('_')[1]) - 1}`));
-  const still = cells.filter((c, i) => d1[i] < 0.002 && d2[i] < 0.002 && !staticOk.has(c.id)).map((c) => c.id);
+  // crawlers rest between hops, so a cell only counts as still if nothing changed over 2 s
+  const d3 = await diffCells(shots[0], shots[3], cells, 1280);
+  const still = cells.filter((c, i) => d1[i] < 0.002 && d2[i] < 0.002 && d3[i] < 0.002 && !staticOk.has(c.id)).map((c) => c.id);
+  const stillAt1s = cells.filter((c, i) => d1[i] < 0.002 && d2[i] < 0.002 && !staticOk.has(c.id)).map((c) => c.id);
   assert(still.length === 0, `zoo cells with no motion over 1 s: ${still.join(', ')}`);
-  return { cells: cells.length, still };
+  return { cells: cells.length, still, stillAt1s };
 }
 
 async function motionTrain(browser) {

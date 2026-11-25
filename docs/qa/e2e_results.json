@@ -1,0 +1,231 @@
+{
+ "when": "2026-11-25T03:16:12.804Z",
+ "totalSeconds": 306,
+ "pass": false,
+ "results": [
+  {
+   "name": "smoke",
+   "pass": true,
+   "details": {
+    "buttons": [
+     "New Game",
+     "Settings"
+    ]
+   },
+   "seconds": 7.8,
+   "consoleErrors": []
+  },
+  {
+   "name": "session",
+   "pass": true,
+   "details": {
+    "firstBuy": {
+     "button": "Buy Free",
+     "fish": 1,
+     "shells": 150.125
+    },
+    "feedChanged": true,
+    "panels": {
+     "m": "Lemonbay Halt",
+     "t": "Track Map",
+     "s": "Stamp Book",
+     "d": "The Depot"
+    },
+    "reset": {
+     "ticketsBefore": 0,
+     "tickets": 0,
+     "mascot": {
+      "species": "pebble_damsel",
+      "shiny": false,
+      "nickname": "Pebble Damsel"
+     },
+     "line": 1
+    },
+    "warnings": [
+     "Depot Reset granted 0 Tickets after skipTo(depotReset)"
+    ],
+    "line2": {
+     "line": 2,
+     "builtTo": 2,
+     "endless": false
+    },
+    "line3": {
+     "line": 3,
+     "builtTo": 2,
+     "endless": false
+    },
+    "afterWin": {
+     "shells": 400.6048360655738,
+     "runShells": 432.5645491803279,
+     "line": 3,
+     "builtTo": 6,
+     "fish": 1,
+     "cars": 1,
+     "tickets": 0,
+     "openedLines": [
+      1,
+      2,
+      3
+     ],
+     "endless": true,
+     "mascot": {
+      "species": "pebble_damsel",
+      "shiny": false,
+      "nickname": "Pebble Damsel"
+     },
+     "terminal": true,
+     "arrivals": 25,
+     "fishBought": 1
+    },
+    "endingShown": true,
+    "endingSkipped": true,
+    "endless": true
+   },
+   "seconds": 32,
+   "consoleErrors": []
+  },
+  {
+   "name": "offline",
+   "pass": true,
+   "details": {
+    "titleTxt": "Continue away 1h New Game Settings",
+    "popup": "While you were away The train kept rolling… Time away 1h Shells earned 451 Stations visited 70 Collect"
+   },
+   "seconds": 27.7,
+   "consoleErrors": []
+  },
+  {
+   "name": "saveLoad",
+   "pass": true,
+   "details": {
+    "before": {
+     "shells": 12495,
+     "runShells": 0,
+     "line": 1,
+     "builtTo": 2,
+     "fish": 2,
+     "cars": 1,
+     "tickets": 0,
+     "openedLines": [
+      1
+     ],
+     "endless": false,
+     "mascot": null,
+     "terminal": false,
+     "arrivals": 0,
+     "fishBought": 0
+    },
+    "reloaded": {
+     "shells": 12497.609690622172,
+     "runShells": 2.6096906221719456,
+     "line": 1,
+     "builtTo": 2,
+     "fish": 2,
+     "cars": 1,
+     "tickets": 0,
+     "openedLines": [
+      1
+     ],
+     "endless": false,
+     "mascot": null,
+     "terminal": false,
+     "arrivals": 0,
+     "fishBought": 0
+    },
+    "corrupted": {
+     "shells": 150,
+     "runShells": 0,
+     "line": 1,
+     "builtTo": 2,
+     "fish": 0,
+     "cars": 1,
+     "tickets": 0,
+     "openedLines": [
+      1
+     ],
+     "endless": false,
+     "mascot": null,
+     "terminal": false,
+     "arrivals": 0,
+     "fishBought": 0
+    }
+   },
+   "seconds": 23.7,
+   "consoleErrors": []
+  },
+  {
+   "name": "tankView",
+   "pass": true,
+   "details": {
+    "active": true,
+    "decorPlaced": 1,
+    "photo": true,
+    "exited": true,
+    "escMs": 3427
+   },
+   "seconds": 28.4,
+   "consoleErrors": []
+  },
+  {
+   "name": "matrix",
+   "pass": true,
+   "details": {
+    "count": 28,
+    "carDetailBonds": "Clownfish + Carpet Anemone +100% Reef Family +200%"
+   },
+   "seconds": 115.3,
+   "consoleErrors": []
+  },
+  {
+   "name": "phone",
+   "pass": true,
+   "details": {
+    "panelWidthPct": 40,
+    "smallTouchTargets": 1,
+    "rotateCard": "rotate-card"
+   },
+   "seconds": 17,
+   "consoleErrors": []
+  },
+  {
+   "name": "ending",
+   "pass": true,
+   "details": {
+    "beach": "beach",
+    "postcard": "postcard",
+    "panorama": "panorama",
+    "theEnd": "theEnd",
+    "credits": "credits"
+   },
+   "seconds": 13,
+   "consoleErrors": []
+  },
+  {
+   "name": "motionZoo",
+   "pass": false,
+   "error": "assert: zoo cells with no motion over 1 s: species11",
+   "seconds": 5,
+   "consoleErrors": []
+  },
+  {
+   "name": "motionTrain",
+   "pass": true,
+   "details": {
+    "line1": {
+     "phase": "moving",
+     "changed": "75.4%"
+    },
+    "line2": {
+     "phase": "moving",
+     "changed": "99.9%"
+    },
+    "line3": {
+     "phase": "moving",
+     "changed": "61.5%"
+    }
+   },
+   "seconds": 35.6,
+   "consoleErrors": []
+  }
+ ]
+}

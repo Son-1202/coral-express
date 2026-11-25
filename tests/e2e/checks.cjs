@@ -129,6 +129,8 @@ async function sessionInner(browser, out) {
   out.endingShown = ending;
   if (ending) {
     await page.waitForTimeout(3500);
+    out.endingBeat = await page.evaluate(() => document.querySelector('.ending').dataset.beat);
+    await L.shot(page, 'ending_ingame');
     await page.evaluate(() => document.querySelector('.ending-skip') && document.querySelector('.ending-skip').click());
     const gone = await page.waitForSelector('.ending', { state: 'detached', timeout: 8000 }).then(() => true).catch(() => false);
     out.endingSkipped = gone;
