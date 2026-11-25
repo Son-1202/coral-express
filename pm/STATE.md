@@ -1,7 +1,7 @@
 # PM STATE — Coral Express
 
 **Phase:** 8 Ship (final)
-**Live URL:** https://coral-express.vercel.app (auto-deploys from main; first green deploy = T-01 efa824a)
+**Live URL:** https://coral-express.vercel.app (auto-deploys from main)
 **Repo:** https://github.com/Son-1202/coral-express (branch `main`)
 
 ## Preflight (2026-11-24)
@@ -71,3 +71,9 @@ See pm/CREDITS.md.
 - PRODUCER BUG (2026-11-25): train hovers above the rails (wheels on grass strip, rails drawn lower/in front) → FIXED in T-24 (wheel bottom 469.7 px vs rail top 470.4 px; PM verified at 2×).
 - 2026-11-25 ~03:30 UTC: fourth usage-limit stop (T-20, T-22a/b/c). Resumed T-20 + T-22c at 03:40; T-22a/T-22b queued to resume when a slot frees (keep ≤ 2–3 concurrent to stretch the 5-h window).
 - PRODUCER BUG (2026-11-25): train motion not smooth (judder in screen recording) → FIXED in T-25 (D-030).
+
+## Ship summary (2026-11-25)
+- All tickets T-00…T-25 done. Build green, 179 unit tests, E2E 10/10 local + live.
+- E1 balance 12/14 (D-028 accepted deviations: offline speed-up, species dominance).
+- Credits: 532.21 spent, 469.79 left.
+- Known issues: see docs/qa/FINAL_QA.md (all low).
