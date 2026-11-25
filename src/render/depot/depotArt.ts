@@ -81,22 +81,31 @@ export function findDoorway(img: Rgba, darkLum = 72): Region | null {
     if (a < 200) continue;
     if (lum(data[i * 4]!, data[i * 4 + 1]!, data[i * 4 + 2]!) < darkLum) hit[i] = 1;
   }
-  const reg = largestRegion(w, h, hit, (r, n) => r.y + r.h >= h * 0.7 && r.w >= w * 0.12 && r.h >= h * 0.18 && n >= r.w * r.h * 0.35);
+  // erode first: the baked 1 px dark outline links every dark detail of the sprite into one
+  // network; the doorway is the only big *solid* dark area
+  const core = erode(w, h, hit, 2);
+  const reg = largestRegion(w, h, core, (r, n) => r.y + r.h >= h * 0.7 && r.w >= w * 0.1 && r.h >= h * 0.15 && n >= r.w * r.h * 0.35);
   if (!reg) return null;
-  const { x, y, w: rw, h: rh } = reg.rect;
-  const bottom = y + rh - 1;
+  // grow back by the erosion radius (+1 for the arch's own outline)
+  const g = 3;
+  const x = Math.max(0, reg.rect.x - g);
+  const y = Math.max(0, reg.rect.y - g);
+  const rw = Math.min(w - x, reg.rect.w + 2 * g);
+  const bottom = Math.min(h - 1, reg.rect.y + reg.rect.h - 1 + g);
+  const grown = dilate(w, h, reg.mask, g);
   const mask = new Uint8Array(w * h);
   let count = 0;
   for (let cx = x; cx < x + rw; cx++) {
     let top = -1;
-    for (let cy = y; cy <= bottom; cy++) if (reg.mask[cy * w + cx]) { top = cy; break; }
+    for (let cy = y; cy <= bottom; cy++) if (grown[cy * w + cx] && hit[cy * w + cx]) { top = cy; break; }
     if (top < 0) continue;
     for (let cy = top; cy <= bottom; cy++) {
       mask[cy * w + cx] = 1;
       count++;
     }
   }
-  return { rect: reg.rect, mask, count };
+  const rect = { x, y, w: rw, h: bottom - y + 1 };
+  return { rect, mask, count };
 }
 
 /** Sea-water colour test: opaque, blue/green dominant over red, not too dark or grey. */
@@ -115,9 +124,9 @@ export interface WaterBand {
 
 /**
  * The pool's water: the biggest water-coloured blob; `inner` is the band of rows and columns
- * (inside its bbox) that are at least `fill` water, so a sprite kept inside it is in the water.
+ * (inside its bbox) whose columns are at least `fill` water, so a sprite kept inside it is in the water.
  */
-export function findWater(img: Rgba, fill = 0.72): WaterBand | null {
+export function findWater(img: Rgba, fill = 0.97): WaterBand | null {
   const { data, width: w, height: h } = img;
   const hit = new Uint8Array(w * h);
   for (let i = 0; i < w * h; i++) if (isWater(data[i * 4]!, data[i * 4 + 1]!, data[i * 4 + 2]!, data[i * 4 + 3]!)) hit[i] = 1;
@@ -126,29 +135,57 @@ export function findWater(img: Rgba, fill = 0.72): WaterBand | null {
   const reg = largestRegion(w, h, closed, (r) => r.w >= w * 0.2 && r.h >= h * 0.06);
   if (!reg) return null;
   const { x, y, w: rw, h: rh } = reg.rect;
-  // rows that are mostly water across the middle 60 % of the bbox
-  const cx0 = x + Math.floor(rw * 0.2);
-  const cx1 = x + Math.ceil(rw * 0.8);
-  const rows: number[] = [];
+  // lily pads / kelp floating on the water are holes in the water mask: fill them (fish swim under)
+  const wet = new Uint8Array(w * h);
+  for (let i = 0; i < w * h; i++) wet[i] = reg.mask[i]! & hit[i]!;
+  // morphological closing bridges caustic highlight lines that touch the rim
+  const solid = fillHoles(w, h, erode(w, h, dilate(w, h, wet, 3), 3));
+  const isW = (cx: number, cy: number) => solid[cy * w + cx] === 1;
+  const rowFill: number[] = [];
   for (let cy = y; cy < y + rh; cy++) {
     let n = 0;
-    for (let cx = cx0; cx < cx1; cx++) n += reg.mask[cy * w + cx]! & hit[cy * w + cx]! ? 1 : 0;
-    if (n >= (cx1 - cx0) * fill) rows.push(cy);
+    for (let cx = x; cx < x + rw; cx++) n += isW(cx, cy) ? 1 : 0;
+    rowFill.push(n / rw);
   }
-  if (rows.length < 3) return null;
-  const ry0 = rows[0]!;
-  const ry1 = rows[rows.length - 1]!;
-  let ix0 = -1;
-  let ix1 = -1;
-  for (let cx = x; cx < x + rw; cx++) {
-    let n = 0;
-    for (let cy = ry0; cy <= ry1; cy++) n += hit[cy * w + cx] ? 1 : 0;
-    if (n >= (ry1 - ry0 + 1) * fill) {
-      if (ix0 < 0) ix0 = cx;
-      ix1 = cx;
+  let peak = 0;
+  rowFill.forEach((f, i) => {
+    if (f > rowFill[peak]!) peak = i;
+  });
+  // largest (almost) all-water rectangle: try row bands of decreasing height around the widest
+  // row, keep the columns that are water in ≥ `fill` of the band, maximise the area
+  let best: PxRect | null = null;
+  for (let thr = 0.3; thr <= 0.96; thr += 0.04) {
+    let a = peak;
+    let b = peak;
+    while (a > 0 && rowFill[a - 1]! >= thr) a--;
+    while (b < rh - 1 && rowFill[b + 1]! >= thr) b++;
+    const ry0 = y + a;
+    const ry1 = y + b;
+    const bandH = ry1 - ry0 + 1;
+    if (bandH < 3) continue;
+    const colOk = (cx: number) => {
+      let n = 0;
+      for (let cy = ry0; cy <= ry1; cy++) n += isW(cx, cy) ? 1 : 0;
+      return n >= bandH * fill;
+    };
+    // widest run of good columns
+    let runX = -1;
+    let runW = 0;
+    for (let cx = x, s0 = -1; cx <= x + rw; cx++) {
+      if (cx < x + rw && colOk(cx)) {
+        if (s0 < 0) s0 = cx;
+      } else if (s0 >= 0) {
+        if (cx - s0 > runW) {
+          runW = cx - s0;
+          runX = s0;
+        }
+        s0 = -1;
+      }
     }
+    if (runW < 3) continue;
+    if (!best || runW * bandH > best.w * best.h) best = { x: runX, y: ry0, w: runW, h: bandH };
   }
-  if (ix0 < 0) return null;
+  if (!best) return null;
   const mask = new Uint8Array(w * h);
   let count = 0;
   for (let i = 0; i < w * h; i++)
@@ -156,7 +193,49 @@ export function findWater(img: Rgba, fill = 0.72): WaterBand | null {
       mask[i] = 1;
       count++;
     }
-  return { region: { rect: reg.rect, mask, count }, inner: { x: ix0, y: ry0, w: ix1 - ix0 + 1, h: ry1 - ry0 + 1 } };
+  return { region: { rect: reg.rect, mask, count }, inner: best };
+}
+
+/** Mask with every enclosed hole filled (pixels not reachable from the border through non-mask). */
+function fillHoles(w: number, h: number, m: Uint8Array): Uint8Array {
+  const outside = new Uint8Array(w * h);
+  const stack: number[] = [];
+  const push = (i: number) => {
+    if (!m[i] && !outside[i]) {
+      outside[i] = 1;
+      stack.push(i);
+    }
+  };
+  for (let x = 0; x < w; x++) {
+    push(x);
+    push((h - 1) * w + x);
+  }
+  for (let y = 0; y < h; y++) {
+    push(y * w);
+    push(y * w + w - 1);
+  }
+  while (stack.length) {
+    const i = stack.pop()!;
+    const x = i % w;
+    if (x > 0) push(i - 1);
+    if (x < w - 1) push(i + 1);
+    if (i >= w) push(i - w);
+    if (i < w * (h - 1)) push(i + w);
+  }
+  const out = new Uint8Array(w * h);
+  for (let i = 0; i < w * h; i++) out[i] = outside[i] ? 0 : 1;
+  return out;
+}
+
+function erode(w: number, h: number, m: Uint8Array, r: number): Uint8Array {
+  const out = new Uint8Array(w * h);
+  for (let y = r; y < h - r; y++)
+    for (let x = r; x < w - r; x++) {
+      let ok = 1;
+      for (let dy = -r; dy <= r && ok; dy++) for (let dx = -r; dx <= r; dx++) if (!m[(y + dy) * w + x + dx]) { ok = 0; break; }
+      out[y * w + x] = ok;
+    }
+  return out;
 }
 
 function dilate(w: number, h: number, m: Uint8Array, r: number): Uint8Array {

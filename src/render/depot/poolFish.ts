@@ -119,7 +119,6 @@ export class PoolFish {
   }
 
   update(dt: number, t: number): void {
-    const w = this.water;
     for (const j of this.jumpers) {
       const u = clamp01((t - j.t0) / j.dur);
       if (t < j.t0) continue;
@@ -162,7 +161,6 @@ export class PoolFish {
       d.mesh.position.y = d.y0 + d.vy * a - 9 * a * a;
       d.mesh.visible = d.mesh.position.y > d.y0 - 0.05 && a < 1;
     }
-    void w;
   }
 
   /** Keep every sprite of the fish (incl. swarm companions) inside the water rectangle. */

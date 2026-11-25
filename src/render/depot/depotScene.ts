@@ -1,12 +1,14 @@
 import * as THREE from 'three';
 import type { SimState } from '../../sim';
-import { makeCanvas, toTexture } from '../paint/canvas';
-import { PATHS, hasFile, sharedTexture } from '../../assets';
+import type { FarVariant } from '../../assets';
 import { clamp01, smoothstep } from '../anim/ease';
 import { Train, type SpeciesMotion } from '../train/train';
-import { fishSize, fishTexture } from '../train/fishView';
-import { DEPOT_PALETTE, paintPillar, paintPool, paintRails, paintShedBack, paintShedRoof } from './paintDepot';
+import { DEPOT_PALETTE } from './paintDepot';
 import { DepotOverlay } from './overlay';
+import { DepotSet, SIDING_Z, TRAIN_Y, type SetLayout } from './depotSet';
+import { PoolFish } from './poolFish';
+import { preloadDepotArt } from './depotLoad';
+import { sidingSlots } from './depotArt';
 
 /** One carriage of the run that just ended (captured before the sim state is swapped). */
 export interface DepotCar {
@@ -22,39 +24,45 @@ export interface DepotSnapshot {
 
 /** Beat times (s). Render-only choreography (SPEC B4.9). */
 const T = { arrive: 2.2, uncouple: 2.3, perCar: 0.28, carRoll: 1.6, leave: 4.7, fadeOut: 6.4, end: 7.3 };
-const SIDING_Z = -2.6;
+const CAR_GAP = 0.12;
+
+/** Scene time-of-day phase (0 morning … 0.75 night, as timeOfDay.ts) → far-scenery variant. */
+export function farVariant(tod: number | undefined): FarVariant {
+  if (tod === undefined) return 'day';
+  const p = ((tod % 1) + 1) % 1;
+  if (p < 0.125 || p >= 0.92) return 'morning';
+  if (p < 0.4) return 'day';
+  if (p < 0.6) return 'dusk';
+  return 'night';
+}
 
 interface Rolling {
   car: THREE.Group;
+  /** Train-local X when coupled. */
   x0: number;
+  /** World X on the siding (against the buffer / the car before it). */
+  xEnd: number;
   start: number;
   fishOut: boolean;
   layer: THREE.Object3D;
   fish: DepotCar['fish'];
 }
 
-interface PoolFish {
-  mesh: THREE.Mesh;
-  from: THREE.Vector3;
-  to: THREE.Vector3;
-  t0: number;
-  ph: number;
-}
-
 /**
- * Depot Reset scene (~7 s, skippable): the train pulls into an engine shed in the
- * Line's colours, the non-Heritage carriages uncouple and roll back onto a siding,
- * their fish hop into the depot pool to rest, and the locomotive leaves with the
- * Heritage carriage only. Then `onDone(line)` (→ Stage.onRunStart).
+ * Depot Reset scene (~7 s, skippable): the train pulls into the engine shed's doorway, the
+ * non-Heritage carriages uncouple and roll back onto the siding up to the buffer stop, their
+ * fish hop into the depot pool and swim there, and the locomotive leaves with the Heritage
+ * carriage only. Then `onDone(line)` (→ Stage.onRunStart).
  */
 export class DepotScene {
   readonly scene = new THREE.Scene();
   readonly camera = new THREE.PerspectiveCamera(28, 16 / 9, 0.1, 400);
   private train: Train | null = null;
   private readonly world = new THREE.Group();
-  private readonly pondFish = new THREE.Group();
+  private readonly set = new DepotSet();
+  private poolFish: PoolFish | null = null;
   private rolling: Rolling[] = [];
-  private pool: PoolFish[] = [];
+  private layout: SetLayout | null = null;
   private t = 0;
   private stopX = 0;
   private lastX = 0;
@@ -62,14 +70,15 @@ export class DepotScene {
   private line = 1;
   private onDone: ((line: number) => void) | null = null;
   private overlay: DepotOverlay | null = null;
-  private poolAt = new THREE.Vector3();
   active = false;
 
   constructor(
     private readonly host: HTMLElement,
     private readonly motionOf: SpeciesMotion,
   ) {
-    this.scene.add(this.world, this.pondFish);
+    this.scene.add(this.set.group, this.world);
+    // T-35: fetch + analyse the depot art early so the first reset already uses it
+    void preloadDepotArt();
   }
 
   /** Seconds into the scene (debug / screenshots). */
@@ -77,14 +86,20 @@ export class DepotScene {
     return this.t;
   }
 
-  play(snap: DepotSnapshot, line: number, onDone: (line: number) => void): void {
+  /** Debug / tests: world positions of the fish swimming in the pool, and the water rectangle. */
+  get pool(): { fish: THREE.Vector3[]; water: SetLayout['water'] | null } {
+    return { fish: this.poolFish?.positions() ?? [], water: this.layout?.water ?? null };
+  }
+
+  /** `tod`: day phase in [0,1) (timeOfDay.ts) — picks the Line's far-scenery variant. */
+  play(snap: DepotSnapshot, line: number, onDone: (line: number) => void, tod?: number): void {
     this.stop();
     this.active = true;
     this.t = 0;
     this.line = line;
     this.onDone = onDone;
-    this.build(snap);
-    this.overlay = new DepotOverlay(this.host, () => this.skip(), snap.cars.length - (snap.heritageId ? 1 : 0), this.pool.length);
+    const fish = this.build(snap, farVariant(tod));
+    this.overlay = new DepotOverlay(this.host, () => this.skip(), this.rolling.length, fish);
   }
 
   /** Jump to the fade-out. */
@@ -98,16 +113,18 @@ export class DepotScene {
   }
 
   private stop(): void {
+    this.poolFish?.dispose();
+    this.poolFish = null;
     this.world.clear();
-    this.pondFish.clear();
+    this.set.group.clear();
     this.rolling = [];
-    this.pool = [];
     this.train = null;
+    this.layout = null;
     this.overlay?.dispose();
     this.overlay = null;
   }
 
-  private build(snap: DepotSnapshot): void {
+  private build(snap: DepotSnapshot, tod: FarVariant): number {
     const pal = DEPOT_PALETTE[this.line] ?? DEPOT_PALETTE[1]!;
     this.scene.background = new THREE.Color(pal.sky);
     // order: Heritage right behind the locomotive, then the rest of the run
@@ -121,86 +138,50 @@ export class DepotScene {
     // Train.sync only reads carriages[].{id,habitat,fish} and fish[id].{species,shiny,carId}
     train.sync(fake as unknown as SimState);
     this.train = train;
-    const len = train.length;
-    // the shed houses the locomotive + Heritage carriage; the rest of the rake sticks out to the left
-    const front = (train.centers[0] ?? 0) - (train.centers[1] ?? -4.5);
-    const shedW = Math.max(8.5, front * 2 + 4.5);
-    const wallH = 3.4;
-    this.stopX = shedW / 2 - 0.8;
-    // T-24: rail head (row 2 of paintRails on the 0.34-tall strip at y 0.04) is at y ≈ 0.1675; art wheels end at
-    // BODY_LIFT 0.05 above the group, so 0.11 rests them on the rail head (was 0.18: hovering ~0.06 above it).
-    train.group.position.set(-len - 22, 0.11, 0);
+    const locoW = -(train.centers[0] ?? -1.54) * 2;
+    const locoH = train.roofY - train.group.position.y;
+    const rollingCars = cars.filter((c) => c.id !== snap.heritageId).length;
+    const L = this.set.build({ line: this.line, tod, locoW, locoH, carW: train.carWidth, trainLen: train.length, rolling: rollingCars });
+    this.layout = L;
+    this.stopX = L.stopX;
+    // T-24: wheels on the rail head (do not change)
+    train.group.position.set(this.stopX - train.length - 22, TRAIN_Y, 0);
     this.lastX = train.group.position.x;
     this.world.add(train.group, train.steam.group);
 
-    // ground + tracks (main and siding)
-    const ground = new THREE.Mesh(new THREE.PlaneGeometry(400, 24), new THREE.MeshBasicMaterial({ color: pal.ground }));
-    ground.rotation.x = -Math.PI / 2;
-    ground.position.set(0, 0, 1.9 - 12);
-    const bankCol = new THREE.Color(pal.ground).multiplyScalar(0.78);
-    const bank = new THREE.Mesh(new THREE.PlaneGeometry(400, 60), new THREE.MeshBasicMaterial({ color: bankCol }));
-    bank.position.set(0, -30, 1.9);
-    const railsTex = toTexture(paintRails(), true);
-    railsTex.wrapS = THREE.RepeatWrapping;
-    railsTex.repeat.x = 60;
-    const main = new THREE.Mesh(new THREE.PlaneGeometry(400, 0.34), new THREE.MeshBasicMaterial({ map: railsTex, transparent: true, alphaTest: 0.5 }) /* T-24: clear top rows were drawn black */);
-    main.position.set(0, 0.04, 0.02);
-    const siding = main.clone();
-    siding.position.set(-200 - shedW / 2 + 2, 0.04, SIDING_Z);
-    this.world.add(ground, bank, main, siding);
+    this.poolFish = new PoolFish(L.water, this.motionOf, L.fishOrder);
+    this.world.add(this.poolFish.group);
 
-    // engine shed (cut-away): back wall, roof, front posts
-    const back = new THREE.Mesh(new THREE.PlaneGeometry(shedW, wallH), new THREE.MeshBasicMaterial({ map: toTexture(paintShedBack(pal, Math.round(shedW * 34), 128), true) }));
-    back.position.set(0, wallH / 2, -1.4);
-    const roofH = 1.3;
-    const roof = new THREE.Mesh(new THREE.PlaneGeometry(shedW * 1.08, roofH), new THREE.MeshBasicMaterial({ map: toTexture(paintShedRoof(pal, Math.round(shedW * 36), 64), true), transparent: true, alphaTest: 0.5 }));
-    roof.position.set(0, wallH + roofH / 2 - 0.25, -0.6);
-    const pillarTex = toTexture(paintPillar(pal), true);
-    for (const px of [-shedW / 2, shedW / 2]) {
-      const p = new THREE.Mesh(new THREE.PlaneGeometry(0.3, wallH + 0.1), new THREE.MeshBasicMaterial({ map: pillarTex }));
-      p.position.set(px, (wallH + 0.1) / 2, 0.9);
-      this.world.add(p);
-    }
-    // the Line's painted horizon behind the yard
-    const farPath = PATHS.scenery(this.line, 'far');
-    if (hasFile(farPath)) {
-      const tex = sharedTexture(farPath, () => makeCanvas(2, 2).canvas, { webp: true });
-      const far = new THREE.Mesh(new THREE.PlaneGeometry(320, 144), new THREE.MeshBasicMaterial({ map: tex, fog: false }));
-      far.position.set(0, 8, -70);
-      this.world.add(far);
-    }
-    this.world.add(back, roof);
-
-    // depot pool (foreground, left of the shed)
-    const pool = new THREE.Mesh(new THREE.PlaneGeometry(6, 1.9), new THREE.MeshBasicMaterial({ map: toTexture(paintPool(), true), transparent: true, alphaTest: 0.5 }));
-    this.poolAt.set(-shedW / 2 - 4.5, 0.7, 2.3);
-    pool.position.copy(this.poolAt);
-    this.world.add(pool);
-
-    // carriages that will roll to the siding
-    // rear-most carriage uncouples first so the rake peels away one by one
-    for (let i = train.cars.length - 1; i >= 0; i--) {
-      const cv = train.cars[i];
-      const dc = cars[i];
-      if (!cv || !dc || dc.id === snap.heritageId) continue;
-      this.rolling.push({ car: cv.group, x0: cv.group.position.x, start: T.uncouple + this.rolling.length * T.perCar, fishOut: false, layer: cv.fishLayer, fish: dc.fish });
-    }
-    // frame the stopped train + pool
-    const minX = Math.min(this.stopX - len - 1, this.poolAt.x - 4);
-    const maxX = this.stopX + 3;
-    const cx = (minX + maxX) / 2;
-    const halfW = Math.max(7, (maxX - minX) / 2 + 0.6);
-    this.fit(cx, halfW);
+    // rear-most carriage uncouples first so the rake peels away one by one; it ends against the buffer
+    const order: number[] = [];
+    for (let i = train.cars.length - 1; i >= 0; i--) if (cars[i] && cars[i]!.id !== snap.heritageId) order.push(i);
+    const slots = sidingSlots(L.bufferFaceX, train.carWidth, CAR_GAP, order.length);
+    let fish = 0;
+    order.forEach((i, k) => {
+      const cv = train.cars[i]!;
+      const dc = cars[i]!;
+      fish += dc.fish.length;
+      this.rolling.push({ car: cv.group, x0: cv.group.position.x, xEnd: slots[k]!, start: T.uncouple + k * T.perCar, fishOut: false, layer: cv.fishLayer, fish: dc.fish });
+    });
+    const f = L.frame;
+    this.fit(f.x0, f.x1, f.y0, f.y1);
+    this.set.settle(this.camera.position);
+    return fish;
   }
 
-  private fit(cx: number, halfW: number): void {
+  /** Frame the world box [x0,x1]×[y0,y1] (at z≈0), leaving room for the caption card on top. */
+  private fit(x0: number, x1: number, y0: number, y1: number): void {
     const c = this.camera;
     const tanH = Math.tan(THREE.MathUtils.degToRad(c.fov / 2));
-    const distW = halfW / (tanH * c.aspect);
-    const distH = 3.2 / tanH;
-    const d = Math.max(distW, distH);
-    c.position.set(cx, 2.6 + d * 0.08, d);
-    c.lookAt(cx, 2.3, 0);
+    const cx = (x0 + x1) / 2;
+    // caption card covers the top ~22 % of the screen: give the box the lower ~78 %
+    const top = y1 + (y1 - y0) * 0.3;
+    const halfW = (x1 - x0) / 2 + 0.4;
+    const halfH = (top - y0) / 2 + 0.2;
+    const d = Math.max(halfW / (tanH * c.aspect), halfH / tanH);
+    const cy = (top + y0) / 2;
+    c.position.set(cx, cy + d * 0.08, d);
+    c.lookAt(cx, cy, 0);
     c.updateProjectionMatrix();
   }
 
@@ -214,7 +195,7 @@ export class DepotScene {
     this.t += dt;
     const t = this.t;
     const train = this.train;
-    // 1. pull in and stop inside the shed (ease out)
+    // 1. pull into the shed doorway and stop (ease out)
     const startX = this.stopX - train.length - 22;
     let x: number;
     if (t < T.arrive) x = startX + (this.stopX - startX) * (1 - Math.pow(1 - t / T.arrive, 3));
@@ -225,35 +206,25 @@ export class DepotScene {
     const acc = dt > 0 ? (v - this.lastV) / dt : 0;
     this.lastX = x;
     this.lastV = v;
-    // 2. uncoupled carriages roll back onto the siding (they stay behind when the loco leaves)
+    // 2. uncoupled carriages roll back onto the siding up to the buffer (they stay when the loco leaves)
     for (const r of this.rolling) {
       const u = clamp01((t - r.start) / T.carRoll);
+      // ease-in-out roll; the last 8 % is a little bump-and-settle against the car ahead / buffer
       const e = smoothstep(u);
       const worldX0 = this.stopX + r.x0;
-      // in train-local space: hold still until uncoupled, then roll left + switch to the siding
-      const wx = t < r.start ? x + r.x0 : worldX0 - e * 3.2;
+      const settle = u > 0.92 ? Math.sin(((u - 0.92) / 0.08) * Math.PI) * 0.03 : 0;
+      const wx = t < r.start ? x + r.x0 : worldX0 + (r.xEnd - worldX0) * e + settle;
       r.car.position.x = wx - x;
-      r.car.position.z = e * SIDING_Z;
+      r.car.position.z = smoothstep(clamp01(u * 1.6)) * SIDING_Z;
       if (!r.fishOut && t > r.start + 0.5) {
         r.fishOut = true;
         this.releaseFish(r);
       }
     }
+    // wheels turn with each car's own roll (Train.update drives them from the loco's travel)
     train.update(dt, t, Math.abs(v), acc);
-    // 3. fish hop into the pool and bob there
-    for (const f of this.pool) {
-      const u = clamp01((t - f.t0) / 0.9);
-      const m = f.mesh;
-      if (u < 1) {
-        m.position.lerpVectors(f.from, f.to, smoothstep(u));
-        m.position.y += Math.sin(u * Math.PI) * 2.2;
-        m.rotation.z = (0.5 - u) * 2;
-      } else {
-        m.position.set(f.to.x + Math.sin(t * 0.9 + f.ph) * 0.25, f.to.y + Math.sin(t * 2.2 + f.ph) * 0.05, f.to.z);
-        m.rotation.z = Math.sin(t * 1.6 + f.ph) * 0.12;
-        m.scale.x = Math.abs(m.scale.x) * (Math.cos(t * 0.9 + f.ph) >= 0 ? 1 : -1);
-      }
-    }
+    // 3. fish hop into the pool and swim there
+    this.poolFish?.update(dt, t);
     this.overlay?.update(t, T);
     if (t >= T.end) {
       const done = this.onDone;
@@ -269,16 +240,7 @@ export class DepotScene {
     const from = new THREE.Vector3();
     r.layer.getWorldPosition(from);
     r.fish.forEach((f, i) => {
-      const tex = fishTexture(f.species, f.shiny);
-      const sz = fishSize(tex);
-      const mesh = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({ map: tex, transparent: true, alphaTest: 0.4 }));
-      const k = 1.15;
-      mesh.scale.set(sz.w * k, sz.h * k, 1);
-      const n = this.pool.length;
-      const to = new THREE.Vector3(this.poolAt.x + (((n * 0.37) % 1) - 0.5) * 3.8, this.poolAt.y - 0.1 + (((n * 0.61) % 1) - 0.5) * 0.45, this.poolAt.z + 0.05 + n * 0.001);
-      this.pool.push({ mesh, from: from.clone().add(new THREE.Vector3((i % 3) * 0.4 - 0.4, 0, 0.2)), to, t0: this.t + i * 0.12, ph: n * 1.7 });
-      mesh.position.copy(from);
-      this.pondFish.add(mesh);
+      this.poolFish?.add(f, from.clone().add(new THREE.Vector3((i % 3) * 0.4 - 0.4, 0, 0.2)), this.t + i * 0.12);
     });
   }
 
