@@ -150,7 +150,8 @@ export class Train {
       }
     }
     const link = new THREE.Mesh(new THREE.PlaneGeometry(GAP + 0.16, 0.06), new THREE.MeshBasicMaterial({ color: '#34474c' }));
-    link.position.set(g.w / 2 + GAP / 2, this.art ? 18 * ART_PX : 0.26, -0.01);
+    // T-24: coupling bar at buffer height (car art buffers ~31 px above the wheel line), not floating by the rails
+    link.position.set(g.w / 2 + GAP / 2, this.art ? BODY_LIFT + 31 * ART_PX : 0.26, -0.01);
     group.add(link);
     const hit = new THREE.Mesh(this.hitGeo, new THREE.MeshBasicMaterial({ visible: false }));
     hit.position.set(0, BODY_LIFT + g.h / 2, 0.05);

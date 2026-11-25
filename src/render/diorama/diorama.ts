@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { toTexture } from '../paint/canvas';
 import { SUNNY } from '../paint/palette';
-import { WORLD, LAYER_Z } from './config';
+import { WORLD, LAYER_Z, RAIL_TOP, RAIL_Z } from './config';
 import { TileLayer } from './tileLayer';
 import { createSea } from './sea';
 import { paintSky, paintClouds } from './paintSky';
@@ -86,7 +86,9 @@ export class Diorama {
     // track bed + front rail (shared); verge, wall, garden and near layers are per Line (foreground.ts)
     const bedDepth = WORLD.trackFrontZ - WORLD.trackBackZ;
     this.add({ width: 24, height: bedDepth, y: WORLD.groundY, z: (WORLD.trackFrontZ + WORLD.trackBackZ) / 2, horizontal: true, textures: [toTexture(paintTrackBed(61), true)] });
-    this.add({ width: 24, height: 0.25, y: -0.03, z: 0.56, textures: [toTexture(paintRailSide(), true)], renderOrder: 2 });
+    // T-24: the rail stands ON the bed directly in front of the train (stage: train at y RAIL_TOP, z 0.1), so the
+    // wheels sit on the rail head instead of hovering over a grass strip with the rail drawn lower in front.
+    this.add({ width: 24, height: RAIL_TOP, y: 0, z: RAIL_Z, textures: [toTexture(paintRailSide(), true)], renderOrder: 2 });
 
     this.veilMat = new THREE.MeshBasicMaterial({ color: '#e8eef0', transparent: true, opacity: 0, depthWrite: false, fog: false });
     this.veil = new THREE.Mesh(new THREE.PlaneGeometry(200, 120), this.veilMat);

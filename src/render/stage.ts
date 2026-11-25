@@ -5,7 +5,7 @@ import { nextStation } from '../sim/rates';
 import stationsJson from '../story/stations.json';
 import { Diorama } from './diorama/diorama';
 import { CameraRig } from './diorama/cameraRig';
-import { WORLD } from './diorama/config';
+import { RAIL_TOP, WORLD } from './diorama/config';
 import { Train } from './train/train';
 import { Post, FpsGuard, type Quality } from './post/post';
 import { Particles } from './fx/particles';
@@ -96,7 +96,8 @@ export class Stage implements GameView {
     this.train = new Train((id) => species.get(id) ?? 'darter');
     this.depot = new DepotScene(canvas.parentElement ?? document.body, (id) => species.get(id) ?? 'darter');
     const scene = this.diorama.scene;
-    this.train.group.position.set(0, 0.2, 0.1);
+    // T-24: art wheels end at BODY_LIFT (0.05) above the group origin; sink 0.08 so the wheel rims tuck ~2 px behind the rail head (it is drawn in front).
+    this.train.group.position.set(0, RAIL_TOP - 0.08, 0.1);
     scene.add(this.train.group, this.train.steam.group, this.particles.group, this.passengers.group);
     this.coins = new CoinFlight(this.rig.camera, canvas);
     this.sights = new SightFx({

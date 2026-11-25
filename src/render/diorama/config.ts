@@ -31,3 +31,8 @@ export const LAYER_Z = {
   near: 3.6,
   nearFront: 7.5,
 } as const;
+
+/** T-24: rail head height above the track bed; the train's wheels stand on it (stage.ts sets train y = RAIL_TOP). */
+export const RAIL_TOP = 0.2;
+/** T-24: Z of the side-on rail strip — just in front of the train (z 0.1) and its wheel sprites. */
+export const RAIL_Z = 0.17;

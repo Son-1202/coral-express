@@ -127,7 +127,9 @@ export class DepotScene {
     const shedW = Math.max(8.5, front * 2 + 4.5);
     const wallH = 3.4;
     this.stopX = shedW / 2 - 0.8;
-    train.group.position.set(-len - 22, 0.18, 0);
+    // T-24: rail head (row 2 of paintRails on the 0.34-tall strip at y 0.04) is at y ≈ 0.1675; art wheels end at
+    // BODY_LIFT 0.05 above the group, so 0.11 rests them on the rail head (was 0.18: hovering ~0.06 above it).
+    train.group.position.set(-len - 22, 0.11, 0);
     this.lastX = train.group.position.x;
     this.world.add(train.group, train.steam.group);
 
@@ -141,7 +143,7 @@ export class DepotScene {
     const railsTex = toTexture(paintRails(), true);
     railsTex.wrapS = THREE.RepeatWrapping;
     railsTex.repeat.x = 60;
-    const main = new THREE.Mesh(new THREE.PlaneGeometry(400, 0.34), new THREE.MeshBasicMaterial({ map: railsTex }));
+    const main = new THREE.Mesh(new THREE.PlaneGeometry(400, 0.34), new THREE.MeshBasicMaterial({ map: railsTex, transparent: true, alphaTest: 0.5 }) /* T-24: clear top rows were drawn black */);
     main.position.set(0, 0.04, 0.02);
     const siding = main.clone();
     siding.position.set(-200 - shedW / 2 + 2, 0.04, SIDING_Z);

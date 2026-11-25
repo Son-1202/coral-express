@@ -22,13 +22,8 @@ export function paintTrackBed(seed: number): HTMLCanvasElement {
     ctx.fillStyle = SUNNY.wood;
     ctx.fillRect(x + 2, 14, 6, 44);
   }
-  // rails (back and front)
-  for (const ry of [22, 50]) {
-    ctx.fillStyle = SUNNY.rail;
-    ctx.fillRect(0, ry, w, 4);
-    ctx.fillStyle = SUNNY.railTop;
-    ctx.fillRect(0, ry, w, 1);
-  }
+  // T-24: no painted rails here — the rail is the side-on strip standing on the bed under the wheels
+  // (a painted front rail read as a second, lower track in front of the train).
   // grass edges
   for (let x = 0; x < w; x += 2) {
     ctx.fillStyle = r() < 0.5 ? SUNNY.grass : SUNNY.grassDark;
