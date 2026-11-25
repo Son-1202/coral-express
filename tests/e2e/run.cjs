@@ -3,6 +3,9 @@
 // Writes docs/qa/e2e_results.json.
 const fs = require('node:fs');
 const path = require('node:path');
+// `--url=https://host/` runs against a deployed build instead of vite preview (T-23).
+const urlArg = process.argv.find((a) => a.startsWith('--url='));
+if (urlArg) process.env.E2E_BASE = urlArg.slice(6).replace(/\/?$/, '/');
 const L = require('./lib.cjs');
 const C = require('./checks.cjs');
 const M = require('./matrix.cjs');
@@ -21,7 +24,7 @@ const ALL = {
 };
 
 (async () => {
-  const want = process.argv.slice(2);
+  const want = process.argv.slice(2).filter((a) => !a.startsWith('--'));
   const names = want.length ? want : Object.keys(ALL);
   const t0 = Date.now();
   const srv = await L.startServer();
@@ -48,7 +51,10 @@ const ALL = {
   L.stopServer(srv);
   const total = Math.round((Date.now() - t0) / 1000);
   const out = { when: new Date().toISOString(), totalSeconds: total, pass: results.every((r) => r.pass), results };
-  if (!want.length) fs.writeFileSync(path.join(L.ROOT, 'docs/qa/e2e_results.json'), JSON.stringify(out, null, 1));
+  if (urlArg) {
+    out.base = L.BASE;
+    fs.writeFileSync(path.join(L.ROOT, 'docs/qa/e2e_results_live.json'), JSON.stringify(out, null, 1));
+  } else if (!want.length) fs.writeFileSync(path.join(L.ROOT, 'docs/qa/e2e_results.json'), JSON.stringify(out, null, 1));
   else fs.writeFileSync(path.join(L.ROOT, `docs/qa/e2e_results_partial.json`), JSON.stringify(out, null, 1));
   console.log(`${out.pass ? 'ALL PASS' : 'FAILURES'} in ${total}s`);
   process.exit(out.pass ? 0 : 1);

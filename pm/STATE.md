@@ -34,6 +34,7 @@
 | T-22c Fix: UI typography, phone, depot guard | DEV | high | done |
 | T-24 Final polish (+ train-on-rails fix) | DEV | medium | done |
 | T-23 Final QA on live build | QA | medium | in progress |
+| T-25 Fix: smooth train motion (producer bug) | DEV | high | in progress |
 | T-16 Painterly set + shiny | ART | medium | done |
 | T-17 Cinematic video clips | ART | medium | done |
 | T-18 Audio + ending + video player | DEV | medium | done (wiring via T-19) |
@@ -45,6 +46,7 @@
 | T-22c Fix: UI typography, phone, depot guard | DEV | high | done |
 | T-24 Final polish (+ train-on-rails fix) | DEV | medium | done |
 | T-23 Final QA on live build | QA | medium | in progress |
+| T-25 Fix: smooth train motion (producer bug) | DEV | high | in progress |
 | T-12 Sprite sheets | ART | medium | done |
 | T-06 Sim meta (sights, depot, offline, save, markets, requests) | DEV | high | done |
 | T-07 Bots + balance.ts | DEV | high | done (1/14 green) |
@@ -68,3 +70,4 @@ See pm/CREDITS.md.
 - Polish backlog: foreground lens garden + white fence are Line-1 style on every Line (use per-Line near art/colors); L3 flamingo/manta hidden behind palms; endless-mode toast after ending not wired.
 - PRODUCER BUG (2026-11-25): train hovers above the rails (wheels on grass strip, rails drawn lower/in front) → FIXED in T-24 (wheel bottom 469.7 px vs rail top 470.4 px; PM verified at 2×).
 - 2026-11-25 ~03:30 UTC: fourth usage-limit stop (T-20, T-22a/b/c). Resumed T-20 + T-22c at 03:40; T-22a/T-22b queued to resume when a slot frees (keep ≤ 2–3 concurrent to stretch the 5-h window).
+- PRODUCER BUG (2026-11-25): train motion not smooth (judder in screen recording) → T-25.
