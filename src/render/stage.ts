@@ -251,7 +251,7 @@ export class Stage implements GameView {
       })),
     };
     this.depot.resize(window.innerWidth / window.innerHeight);
-    this.depot.play(snap, line, (l) => this.onRunStart?.(l));
+    this.depot.play(snap, line, (l) => this.onRunStart?.(l), this.timeOverride ?? dayPhase(this.game.sim.state.time));
   }
 
   /** UI `itemFly`: sparkle + bubble pop where the bought item lands. */
