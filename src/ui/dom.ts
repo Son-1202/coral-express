@@ -81,15 +81,6 @@ export function passengerIcon(sprite: number, tint?: string, size = 56): HTMLEle
   return wrap;
 }
 
-/** Decor / plant icon. */
-export function decorIcon(id: string, isPlant: boolean, size = 36): HTMLElement {
-  const wrap = h('span.ui-decor', { style: `--s:${size}px` });
-  const path = isPlant && !hasFile(PATHS.decor(id)) ? PATHS.plant(id) : PATHS.decor(id);
-  if (hasFile(path)) wrap.append(h('img', { src: fileUrl(path), alt: '', draggable: 'false' }));
-  else wrap.append(h(isPlant ? 'i.ui-decor-ph.plant' : 'i.ui-decor-ph'));
-  return wrap;
-}
-
 export const SHELL = '<i class="ui-shell" aria-hidden="true"></i>';
 export const TICKET = '<i class="ui-ticket" aria-hidden="true"></i>';
 

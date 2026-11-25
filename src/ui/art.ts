@@ -2,7 +2,7 @@
 // Pure resolvers take an injectable `exists` (node-testable, like offline.awayArt);
 // `paintedImg` builds a lazy <img> inside a fixed-aspect box so panels never jump,
 // with webp → png → procedural fallback.
-import { fileUrl, hasFile } from '../assets';
+import { fileUrl, hasFile, PATHS } from '../assets';
 import { h } from './dom';
 import './art.css';
 
@@ -30,6 +30,30 @@ export function wrenArt(exists: Exists = hasFile): string | null {
 export function iconArt(name: string, exists: Exists = hasFile): string | null {
   const p = `/icons/${name}.png`;
   return exists(p) ? p : null;
+}
+
+/** Minimal data shape for `decorArt` (GameData satisfies it). */
+export interface DecorArtData {
+  decor: readonly { id: string; plantId?: string }[];
+  plants: readonly { id: string }[];
+}
+
+/**
+ * Thumbnail art for a decor / plant id (T-29). Same precedence as the Tank View tray
+ * (render/tank/models `iconFor`): a plant-decor (`plantId`, e.g. seagrass_tuft → reef_3) or a
+ * plant id (`reef_3`) uses `plants/<plantId>`, then `decor/<id>`; plain decor uses `decor/<id>`.
+ */
+export function decorArt(data: DecorArtData, id: string, exists: Exists = hasFile): string | null {
+  const plantId = data.decor.find((d) => d.id === id)?.plantId ?? (data.plants.some((p) => p.id === id) ? id : undefined);
+  const cands = plantId ? [PATHS.plant(plantId), PATHS.decor(id)] : [PATHS.decor(id)];
+  return cands.find((p) => exists(p)) ?? null;
+}
+
+/** Sight → its sprite in `sights/` (same mapping as the Tank View / world sights), or null. */
+const SIGHT_ART: Record<string, string> = { dolphin_race: 'dolphin', seagull_thief: 'gull', whale_breach: 'whale' };
+export function sightArt(sightId: string, exists: Exists = hasFile): string | null {
+  const cands = [PATHS.sight(sightId), PATHS.sight(SIGHT_ART[sightId] ?? sightId)];
+  return cands.find((p) => exists(p)) ?? null;
 }
 
 /** Candidate URLs for a png path: the webp twin first (when shipped), then the png. */
@@ -76,6 +100,27 @@ export function iconImg(name: string, cls = 'ui-ico'): HTMLImageElement | null {
   const p = iconArt(name);
   if (!p) return null;
   return h(`img.${cls}`, { loading: 'lazy', decoding: 'async', alt: '', draggable: 'false', src: fileUrl(p) });
+}
+
+/**
+ * Decor / plant thumbnail (T-29): the real sprite contained in a fixed square box, bottom-aligned
+ * (see `.ui-decor` in panels.css), else the procedural leaf / rock placeholder.
+ */
+export function decorIcon(data: DecorArtData, id: string, size = 36): HTMLElement {
+  const wrap = h('span.ui-decor', { style: `--s:${size}px` });
+  const path = decorArt(data, id);
+  if (path) wrap.append(h('img', { src: fileUrl(path), alt: '', draggable: 'false' }));
+  else {
+    const plant = data.plants.some((p) => p.id === id) || !!data.decor.find((d) => d.id === id)?.plantId;
+    wrap.append(h(plant ? 'i.ui-decor-ph.plant' : 'i.ui-decor-ph'));
+  }
+  return wrap;
+}
+
+/** Small contained sprite in a square box (toast sights, …), or null when the file is missing. */
+export function spriteBox(path: string | null, cls: string): HTMLElement | null {
+  if (!path) return null;
+  return h(`span.ui-sprite.${cls}`, null, h('img', { src: fileUrl(path), alt: '', draggable: 'false' }));
 }
 
 /** Procedural sky/sea/sand postcard block (only when no painting exists). */

@@ -1,7 +1,7 @@
 // Toast stack (postcards, stamps, requests, bonds, milestones) driven by sim events.
 import { NOTES, speciesName, station } from './content';
-import { lineCoverArt, postcardArt, toastArt } from './art';
-import { fishIcon, h } from './dom';
+import { iconArt, lineCoverArt, postcardArt, sightArt, spriteBox, toastArt } from './art';
+import { fishIcon, h, passengerIcon } from './dom';
 import { showPostcard } from './modal';
 import type { ToastSpec, UiCtx } from './panel';
 
@@ -125,7 +125,9 @@ export function wireToasts(ctx: UiCtx, toasts: Toasts): () => void {
       }
     }),
     api.on('requestCompleted', (e) => {
-      toasts.push({ kind: 'request', title: `${e.passenger} is delighted!`, text: e.shells > 0 ? `Request met · +${ctx.fmt(e.shells)} Shells` : 'Request met', ms: 5500 });
+      const r = api.story.requests.find((x) => x.id === e.requestId);
+      const icon = r ? passengerIcon(r.passenger.sprite, undefined, 34) : undefined;
+      toasts.push({ kind: 'request', title: `${e.passenger} is delighted!`, text: e.shells > 0 ? `Request met · +${ctx.fmt(e.shells)} Shells` : 'Request met', ms: 5500, icon });
     }),
     api.on('bondFormed', (e) => {
       const name = e.kind === 'community' ? data.bonds.communities.find((c) => c.id === e.bondId)?.name ?? 'Community' : e.species.map((s) => speciesName(data, s)).join(' + ');
@@ -142,12 +144,12 @@ export function wireToasts(ctx: UiCtx, toasts: Toasts): () => void {
     }),
     api.on('depotReset', (e) => {
       const n = NOTES.firstDepotReset;
-      toasts.push({ kind: 'info', title: `+${ctx.fmt(e.tickets)} Tickets`, text: e.oldFriend ? 'Old Friend! +25% forever' : 'A fresh run begins', ms: 6000, onClick: n && api.sim.state.permanent.resets === 1 ? () => showPostcard('l1s1', n.text, 'From the Depot', 1) : undefined });
+      toasts.push({ kind: 'info', icon: spriteBox(iconArt('ticket'), 'ui-toast-sprite') ?? undefined, title: `+${ctx.fmt(e.tickets)} Tickets`, text: e.oldFriend ? 'Old Friend! +25% forever' : 'A fresh run begins', ms: 6000, onClick: n && api.sim.state.permanent.resets === 1 ? () => showPostcard('l1s1', n.text, 'From the Depot', 1) : undefined });
     }),
     api.on('sightEnd', (e) => {
       if (e.shells === 0) return;
       const s = data.sights.find((x) => x.id === e.sightId);
-      toasts.push({ kind: 'sight', title: s?.name ?? 'Sight', text: e.shells > 0 ? `+${ctx.fmt(e.shells)} Shells` : `−${ctx.fmt(-e.shells)} Shells` });
+      toasts.push({ kind: 'sight', icon: spriteBox(sightArt(e.sightId), 'ui-toast-sprite') ?? undefined, title: s?.name ?? 'Sight', text: e.shells > 0 ? `+${ctx.fmt(e.shells)} Shells` : `−${ctx.fmt(-e.shells)} Shells` });
     }),
   ];
   return () => offs.forEach((o) => o());

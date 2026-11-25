@@ -54,7 +54,8 @@ export class Hud {
       return s.querySelector('.hud-num') as HTMLElement;
     };
     this.shells = stat('shells', iconHtml('shell', '<i class="shell"></i>'), 'Shells');
-    this.sps = stat('sps', '<i class="wave"></i>', 'Shells/s');
+    // T-29: painted `icons/shells_per_sec` (ART T-30) when shipped, else the procedural dot
+    this.sps = stat('sps', iconHtml('shells_per_sec', '<i class="wave"></i>'), 'Shells/s');
     this.tickets = stat('tickets', iconHtml('ticket', '<i class="ticket"></i>'), 'Tickets');
     const prog = el(
       'div',

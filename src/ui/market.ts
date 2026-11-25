@@ -2,7 +2,8 @@
 import type { Habitat } from '../data/schema';
 import type { CarInfo } from '../sim';
 import { conditionText, decorInfo, rewardText, speciesName, station } from './content';
-import { btn, decorIcon, fishIcon, h, habitatName, passengerIcon } from './dom';
+import { decorIcon } from './art';
+import { btn, fishIcon, h, habitatName, passengerIcon } from './dom';
 import { defaultTargetCar, fishGainWithBonds, lineHabitats, partnersOf } from './helpers';
 import { costButton, type PanelView, type UiCtx } from './panel';
 import { carLabel, carPicker } from './cars';
@@ -126,7 +127,7 @@ function decorCard(ctx: UiCtx, id: string): HTMLElement {
   const cost = api.price({ type: 'buyDecor', decorId: id });
   const card = h('div.ui-card.ui-item');
   card.append(
-    decorIcon(id, d.isPlant, 48),
+    decorIcon(api.data, id, 48),
     h(
       'div.ui-item-main',
       null,
@@ -169,10 +170,13 @@ function specialTab(ctx: UiCtx, list: HTMLElement): void {
   let desc = '';
   let picker: HTMLElement | null = null;
   let tgt: string | undefined;
+  /** Sprite inside the special's medallion (fish specials), else the CSS medallion alone. */
+  let art: HTMLElement[] = [];
   switch (sp.kind) {
     case 'levelDiscount':
       title = `${speciesName(api.data, sp.species ?? '')} lessons`;
       desc = `−${Math.round(c.levelDiscount * 100)}% on its next ${c.levelDiscountCount} level-ups.`;
+      if (sp.species) art = [fishIcon(api.data, sp.species, false, 46), h('b.ui-special-off', { text: `−${Math.round(c.levelDiscount * 100)}%` })];
       break;
     case 'shinyEgg': {
       title = 'Shiny Egg';
@@ -188,6 +192,7 @@ function specialTab(ctx: UiCtx, list: HTMLElement): void {
         }, { title: speciesName(api.data, id) });
         picker.append(b);
       }
+      if (specialTarget) art = [fishIcon(api.data, specialTarget, true, 46)];
       break;
     }
     case 'freeSlot': {
@@ -212,7 +217,7 @@ function specialTab(ctx: UiCtx, list: HTMLElement): void {
   const card = h('div.ui-card.ui-special' + (sp.sold ? '.sold' : ''));
   card.append(
     h('div.ui-special-tag', { text: "Today's Special" }),
-    h('div.ui-special-icon', { 'data-kind': sp.kind }),
+    h('div.ui-special-icon', { 'data-kind': sp.kind }, ...art),
     h('div.ui-item-name', { text: title }),
     h('p.ui-item-desc', { text: desc }),
   );
@@ -248,7 +253,7 @@ function requestsTab(ctx: UiCtx, list: HTMLElement): void {
           h('div.ui-item-name', { text: r.passenger.name }),
           h('q.ui-req-text', { text: r.text }),
           h('div.ui-req-cond', { html: `<b>Wish</b> ${conditionText(api.data, r.condition)}` }),
-          h('div.ui-req-rew', { html: `<b>Reward</b> ${rewardText(api.data, r.reward)}` }),
+          h('div.ui-req-rew', null, h('b', { text: 'Reward' }), ' ', r.reward.type === 'decor' ? decorIcon(api.data, r.reward.decorId, 22) : null, rewardText(api.data, r.reward)),
         ),
         done ? h('span.ui-stamp-done', { text: 'Done' }) : null,
       ),
