@@ -21,13 +21,19 @@ describe('T-35 depot art analysis', () => {
       if (inDoor && x === 60 && y === 60) return [240, 200, 90, 255]; // lamp inside the opening
       if (inDoor) return [30, 28, 34, 255];
       if (x > 100 && y < 20) return [20, 20, 20, 255]; // small dark window (not the door)
+      if (y === 30 || x === 20) return [15, 15, 15, 255]; // 1 px outline lines touching the door
       return [230, 220, 190, 255];
     });
     const d = findDoorway(shed);
     expect(d).not.toBeNull();
-    expect(d!.rect.x).toBe(40);
-    expect(d!.rect.w).toBe(40);
-    expect(d!.rect.y + d!.rect.h - 1).toBe(84);
+    // rect is the opening grown by the arch outline margin (≤ 3 px)
+    expect(Math.abs(d!.rect.x - 40)).toBeLessThanOrEqual(3);
+    expect(Math.abs(d!.rect.w - 40)).toBeLessThanOrEqual(6);
+    expect(d!.rect.y + d!.rect.h - 1).toBeGreaterThanOrEqual(84);
+    // punched columns are exactly the dark ones
+    expect(d!.mask[70 * 120 + 40]).toBe(1);
+    expect(d!.mask[70 * 120 + 79]).toBe(1);
+    expect(d!.mask[70 * 120 + 38]).toBe(0);
     expect(d!.rect.h).toBeGreaterThanOrEqual(45);
     // the lamp pixel is filled into the punch mask, wall pixels are not
     expect(d!.mask[60 * 120 + 60]).toBe(1);
