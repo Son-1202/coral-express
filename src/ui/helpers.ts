@@ -211,3 +211,14 @@ export function fishGainWithBonds(data: GameData, state: SimState, sp: SpeciesDe
   }
   return { sps, bond: bonds.length ? bonds.join(' + ') : null };
 }
+
+/** T-24: locked-Line hint from the two-run unlock rule, e.g. "Reach the Sunny Coast terminal twice to open the Fog Fjords (1/2)". */
+export function lineLockText(data: GameData, state: SimState, lineId: number): string {
+  const l = data.lines.find((x) => x.id === lineId);
+  if (!l || l.opensAfter == null) return 'Locked';
+  const prev = data.lines.find((x) => x.id === l.opensAfter);
+  const need = l.opensAfterRuns ?? 1;
+  const done = Math.min(need, state.permanent.terminalRuns[String(l.opensAfter)] ?? 0);
+  const times = need === 1 ? 'once' : need === 2 ? 'twice' : `${need} times`;
+  return `Reach the ${prev?.region ?? `Line ${l.opensAfter}`} terminal ${times} to open the ${l.region} (${done}/${need})`;
+}

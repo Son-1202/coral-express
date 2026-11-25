@@ -19,6 +19,8 @@
 html, body, *, *::before, *::after { font-variant-ligatures: none; font-feature-settings: "liga" 0, "clig" 0, "dlig" 0; }
 html, body { margin: 0; height: 100%; overflow: hidden; background: #8fd3e8; }
 body { font-family: var(--font-head); color: var(--ink); -webkit-tap-highlight-color: transparent; user-select: none; touch-action: none; }
+/* T-24: form controls don't inherit the page font by default (offline "Collect" used the browser font). */
+button, input, select, textarea { font-family: var(--font-head); }
 #app, canvas.stage { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
 
 .hud { position: fixed; inset: 0; pointer-events: none; z-index: 2; }

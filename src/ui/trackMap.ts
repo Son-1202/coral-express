@@ -1,6 +1,7 @@
 // Track map: stylised line map of the current Line + other Lines locked/open.
 import { stationName } from './content';
 import { h } from './dom';
+import { lineLockText } from './helpers';
 import { costButton, type PanelView, type UiCtx } from './panel';
 
 export function trackPanel(ctx: UiCtx): PanelView {
@@ -65,7 +66,7 @@ export function trackPanel(ctx: UiCtx): PanelView {
             { style: `--sky:${l.palette.sky};--sea:${l.palette.sea};--land:${l.palette.land}` },
             h('b', { text: l.name }),
             h('span', { text: l.region }),
-            h('small', { text: cur ? 'Riding now' : open ? 'Open — pick it at the Depot' : `Reach the Line ${l.opensAfter} terminal` }),
+            h('small', { text: cur ? 'Riding now' : open ? 'Open — pick it at the Depot' : lineLockText(api.data, s, l.id) }),
           ),
         );
       }

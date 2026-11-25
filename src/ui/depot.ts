@@ -3,7 +3,7 @@ import type { LineId } from '../data/schema';
 import { fileUrl, hasFile } from '../assets';
 import { speciesName } from './content';
 import { btn, fishIcon, h, TICKET } from './dom';
-import { defaultMascotName, depotResetHint, describeUpgrade, formatDuration } from './helpers';
+import { defaultMascotName, depotResetHint, describeUpgrade, formatDuration, lineLockText } from './helpers';
 import { confirmDialog } from './modal';
 import { carLabel } from './cars';
 import { costButton, type PanelView, type UiCtx } from './panel';
@@ -87,7 +87,7 @@ export function depotPanel(ctx: UiCtx): PanelView {
       for (const l of api.data.lines) {
         const open = opened.includes(l.id);
         lines.append(
-          btn(`ui-line-card${open ? ' open' : ' locked'}${l.id === nextLine ? ' cur' : ''}`, h('span', null, h('b', { text: l.name }), h('span', { text: l.region }), h('small', { text: open ? (l.id === nextLine ? 'Selected' : 'Ride this line') : 'Locked' })), () => {
+          btn(`ui-line-card${open ? ' open' : ' locked'}${l.id === nextLine ? ' cur' : ''}`, h('span', null, h('b', { text: l.name }), h('span', { text: l.region }), h('small', { text: open ? (l.id === nextLine ? 'Selected' : 'Ride this line') : lineLockText(api.data, s, l.id) })), () => {
             if (!open) return;
             nextLine = l.id;
             ctx.rerender();
