@@ -18,4 +18,6 @@ Unit prices quoted: nano_banana_pro 2k 16:9 = 2.0 cr · gpt_image_2_6 1:1 = 0.75
 
 | 9 | T-31 | foreground kit: 3 walls, 3 grounds (incl. rejects/retries), 9 lens sprites, 3 planters, trackbed | nano_banana_pro / gpt_image_2_6 | 35 | 568.21 | 433.79 |
 
-**Total: 568.21 credits spent.** Balance 433.79 (plus plan) after T-31, 2026-11-25.
+| 10 | T-34 | depot shed ×2, yard ×2, pool, buffer; app icon ×4 candidates | nano_banana_pro / gpt_image_2_6 | 17.75 | 585.96 | 416.04 |
+
+**Total: 585.96 credits spent.** Balance 416.04 (plus plan) after T-34, 2026-11-25.
