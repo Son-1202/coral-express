@@ -73,6 +73,7 @@ See pm/CREDITS.md.
 - PRODUCER BUG (2026-11-25): train motion not smooth (judder in screen recording) → FIXED in T-25 (D-030).
 
 | T-26 Fix: Stamp Book & UI use real art (producer bug) | DEV | high | in progress |
+| T-27 Fix: missing-partner hint readable + shiny in Tank View (producer bugs) | DEV | high | in progress |
 
 ## Ship summary (2026-11-25)
 - All tickets T-00…T-25 done. Build green, 179 unit tests, E2E 10/10 local + live.
@@ -80,3 +81,4 @@ See pm/CREDITS.md.
 - Credits: 532.21 spent, 469.79 left.
 - Known issues: see docs/qa/FINAL_QA.md (all low).
 - PRODUCER BUG (2026-11-25): Stamp Book shows placeholders instead of postcard/station art → T-26.
+- PRODUCER BUGS (2026-11-25): grey 'ghost' blobs in cars (missing-partner hint unreadable); Tank View ignores shiny sprites → T-27.
