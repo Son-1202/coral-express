@@ -14,4 +14,6 @@ Unit prices quoted: nano_banana_pro 2k 16:9 = 2.0 cr · gpt_image_2_6 1:1 = 0.75
 | 6 | T-16 | 9 sky variants, 10 backdrops, Wren, title ×3, ending ×3, 18 postcards (+1 retry), 3 line covers, 3 shiny sheets (+1 retry) | nano_banana_pro 2k | 108 | 455.71 | 546.29 |
 | 7 | T-17 | title_loop ×2, ending_dive ×2, line_1..3 ×1 | kling3_0_turbo 720p | 76.5 | 532.21 | 469.79 |
 
-**Final total: 532.21 credits spent** (6 before top-up + 526.21 after). Final balance 469.79 (plus plan), confirmed via `balance` on 2026-11-25. No generation after T-17.
+| 8 | T-30 | Shells/s HUD icon (4 variants, 1 request) | gpt_image_2_6 1k | 1 | 533.21 | 468.79 |
+
+**Final total: 533.21 credits spent.** Balance 468.79 (plus plan) after T-30, 2026-11-25.
