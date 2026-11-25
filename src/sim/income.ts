@@ -3,7 +3,7 @@
 import type { DecorEffect, Habitat, SpeciesDef } from '../data/schema';
 import { resolveBonds, type CarBonds } from './bonds';
 import { milestoneMult } from './costs';
-import { lineDef, type DataIndex } from './lookup';
+import type { DataIndex } from './lookup';
 import type { Carriage, Fish, FishIncomeInfo, SimState } from './types';
 import { ticketMult, type UpgradeFx } from './upgrades';
 
@@ -24,6 +24,8 @@ export interface TrainModel {
   byId: Map<string, CarModel>;
   totalAppeal: number;
   baseFishSps: number;
+  /** T-20 fare weight: Σ over cars of fareAppeal(appeal) × base fish Shells/s (fares scale with it). */
+  fareWeight: number;
 }
 
 function speciesOf(idx: DataIndex, f: Fish): SpeciesDef {
@@ -117,17 +119,38 @@ export function computeTrain(idx: DataIndex, state: SimState, fx: UpgradeFx): Tr
   const oldFriend = state.permanent.oldFriend ? 1 + idx.data.config.mascot.oldFriendBonus : 1;
   const globalMult = ticketMult(idx, state) * whaleMult(idx, state) * oldFriend;
   const cars = state.carriages.map((c) => computeCar(idx, state, c, fx, globalMult));
-  let totalAppeal = 0;
-  let baseFishSps = 0;
-  for (const c of cars) { totalAppeal += c.appeal; baseFishSps += c.baseSps; }
-  return { cars, byId: new Map(cars.map((c) => [c.carId, c] as const)), totalAppeal, baseFishSps };
+  return trainFromCars(idx, cars);
 }
 
-/** Fare multiplier independent of station and appeal (line, tickets, upgrades, endless). */
+/**
+ * T-20: effective fare appeal of one car. With `config.fareAppealHalf` = H the bonus
+ * saturates, A·H/(A+H) (half of H at A = H); without it, it is linear in A.
+ */
+export function fareAppeal(idx: DataIndex, appeal: number): number {
+  const h = idx.data.config.fareAppealHalf;
+  if (!h || h <= 0 || appeal <= 0) return Math.max(0, appeal);
+  return (appeal * h) / (appeal + h);
+}
+
+/** Aggregate car models into a train model (shared with the bots' cached estimator). */
+export function trainFromCars(idx: DataIndex, cars: CarModel[]): TrainModel {
+  let totalAppeal = 0;
+  let baseFishSps = 0;
+  let fareWeight = 0;
+  for (const c of cars) { totalAppeal += c.appeal; baseFishSps += c.baseSps; fareWeight += fareAppeal(idx, c.appeal) * c.baseSps; }
+  return { cars, byId: new Map(cars.map((c) => [c.carId, c] as const)), totalAppeal, baseFishSps, fareWeight };
+}
+
+/**
+ * Fare multiplier independent of station and fare weight (upgrades, endless).
+ * T-20 rule: fare = Σ_car (fareAppeal(appeal_car) × baseSps_car) × fareAppealFactor × stationMult × this.
+ * Line economy and Tickets enter through the cars' fish output, so fares keep a stable
+ * share of income on every Line while appeal stays a small, readable number.
+ */
 export function fareBaseMult(idx: DataIndex, state: SimState, fx: UpgradeFx): number {
   const cfg = idx.data.config;
   const endless = state.permanent.endless ? cfg.endless.fareMult : 1;
-  return cfg.fareAppealFactor * lineDef(idx, state.currentLine).fareMult * ticketMult(idx, state) * fx.fareMult * endless;
+  return cfg.fareAppealFactor * fx.fareMult * endless;
 }
 
 export function stationMult(idx: DataIndex, station: number): number {

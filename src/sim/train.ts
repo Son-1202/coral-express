@@ -60,16 +60,18 @@ function reachTerminal(ctx: Ctx): void {
   if (s.terminalReachedThisRun) return;
   s.terminalReachedThisRun = true;
   const firstTime = !p.reachedTerminals.includes(line);
+  // T-20: count runs that reached this terminal; a Line opens after `opensAfterRuns` of them.
+  const runs = (p.terminalRuns[String(line)] ?? 0) + 1;
+  p.terminalRuns[String(line)] = runs;
   ctx.emit({ type: 'terminalReached', line, firstTime });
-  if (!firstTime) return;
-  p.reachedTerminals.push(line);
+  if (firstTime) p.reachedTerminals.push(line);
   for (const l of ctx.idx.data.lines) {
-    if (l.opensAfter === line && !p.openedLines.includes(l.id)) {
+    if (l.opensAfter === line && runs >= (l.opensAfterRuns ?? 1) && !p.openedLines.includes(l.id)) {
       p.openedLines.push(l.id);
       ctx.emit({ type: 'lineOpened', line: l.id });
     }
   }
-  if (line === ctx.idx.maxLine && !p.endless) {
+  if (firstTime && line === ctx.idx.maxLine && !p.endless) {
     p.endless = true;
     ctx.invalidate();
     ctx.emit({ type: 'ending', line });

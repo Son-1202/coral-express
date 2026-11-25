@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import type { DecorDef, GameData, Habitat, PlantDef, SpeciesDef } from '../../data/schema';
 import type { PlacedDecor } from '../../sim/types';
 import { createMover, isSwarm, type MotionBounds, type MotionEnv, type Mover } from './motion';
+import { DecorSteer, type Obstacle } from './motion/avoid';
 import { decorUrls, fishUrls, plantUrls, tankTexture } from './assets';
 import { paintCap, paintDecor, paintFish, paintPlant } from './paint';
 import { fishMaterial, plantMaterial, type FishUniforms, type PlantUniforms } from './shaders';
@@ -57,6 +58,8 @@ export class FishActor {
   private readonly tex: THREE.Texture;
   private readonly cap: THREE.Mesh | null = null;
   private readonly dummy = new THREE.Object3D();
+  /** Route around decor + occasional hiding in castle/arch (not for floor-bound or swarm profiles). */
+  readonly steer: DecorSteer | null;
   flash = 0;
 
   constructor(readonly spec: FishSpec, rand: () => number, readonly area: Area = TANK_AREA) {
@@ -85,6 +88,13 @@ export class FishActor {
       this.object = mesh;
     }
     this.object.userData.fishId = spec.fishId;
+    const free = ['darter', 'hoverer', 'glider', 'sinuous', 'pulser'].includes(def.motion);
+    this.steer = free && !isSwarm(this.mover) ? new DecorSteer(rand) : null;
+  }
+
+  /** Render position (pose, steered around decor). */
+  get pos(): { x: number; y: number } {
+    return this.steer ? this.steer.out : this.mover.pose;
   }
 
   /** Motion bounds for the sprite centre (inset by half size so it never overlaps the glass frame). */
@@ -98,18 +108,21 @@ export class FishActor {
     return { minX, maxX, minY, maxY: Math.max(minY, a.surface - hh - 0.25), floorY: a.floor + hh * 0.8 };
   }
 
-  update(dt: number, env: Omit<MotionEnv, 'bounds'>, time: number): void {
+  update(dt: number, env: Omit<MotionEnv, 'bounds'>, time: number, obstacles: readonly Obstacle[] = []): void {
     const bounds = this.bounds();
     this.mover.step(dt, { ...env, bounds });
     const p = this.mover.pose;
-    const look = depthLook(this.depth + p.depthBias);
+    const at = this.steer ? this.steer.step(dt, p, obstacles, !env.food, this.halfH * 0.8) : p;
+    const hidden = this.steer?.hidden ?? 0;
+    // tucked into a hideout: pushed to the back and faded (the decor reads as covering it)
+    const look = depthLook(Math.min(1, this.depth + p.depthBias + hidden * 0.6));
     const u = this.uniforms;
     u.uTime.value = time;
     u.uFreq.value = p.wobbleFreq;
     u.uAmp.value = p.wobbleAmp;
     if (this.spec.def.motionVariant !== 'sinuousTail') u.uWave.value = p.wave;
     u.uTintAmt.value = look.tint;
-    u.uAlpha.value = look.alpha;
+    u.uAlpha.value = look.alpha * (1 - hidden * 0.75);
     this.flash = Math.max(0, this.flash - dt * 2.5);
     u.uFlash.value = this.flash > 0 ? Math.abs(Math.sin(this.flash * 18)) * 0.8 : 0;
     const z = 1 - (this.depth + p.depthBias) * 3; // nearer = higher z = drawn later
@@ -132,7 +145,7 @@ export class FishActor {
       return;
     }
     const o = this.object;
-    o.position.set(p.x, p.y, z);
+    o.position.set(at.x, at.y, z - hidden * 4);
     o.scale.set(w * p.sx * p.facing, h * p.sy, 1);
     o.rotation.z = p.rot * p.facing;
     if (this.cap) {
@@ -145,7 +158,7 @@ export class FishActor {
 
   /** Point-in-sprite test (world coords) with a little slack for small fish. */
   contains(x: number, y: number): boolean {
-    const p = this.mover.pose;
+    const p = this.pos;
     if (isSwarm(this.mover)) return Math.hypot(x - p.x, y - p.y) < 1.2;
     const h = this.halfH * depthLook(this.depth).scale;
     const w = h * aspectOf(this.tex);

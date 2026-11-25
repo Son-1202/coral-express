@@ -43,6 +43,8 @@ export interface Config {
   milestones: { levels: number[]; mult: number };
   offHabitatMult: number;
   fareAppealFactor: number;
+  /** T-20: appeal at which a car's fare bonus is half its cap (saturating); absent = linear. */
+  fareAppealHalf?: number;
   stationMults: number[];
   frenzy: { mult: number; seconds: number; cooldown: number };
   shinyChance: number;
@@ -58,7 +60,7 @@ export interface Config {
   mascot: { startLevel: number; oldFriendStreak: number; oldFriendBonus: number };
   request: { refreshVisits: number };
   endless: { fareMult: number };
-  todaysSpecial: { priceSecondsOfIncome: number; levelDiscount: number; levelDiscountCount: number };
+  todaysSpecial: { priceSecondsOfIncome: number; levelDiscount: number; levelDiscountCount: number; minPrice?: number };
 }
 
 // ---------- species.json ----------
@@ -152,8 +154,12 @@ export interface LineDef {
   fareMult: number;
   trackBase: number;
   trackGrowth: number;
-  /** Line whose terminal must be reached once; null = open at start. */
+  /** Line whose terminal must be reached; null = open at start. */
   opensAfter: LineId | null;
+  /** T-20: runs in which the `opensAfter` terminal must be reached (default 1). */
+  opensAfterRuns?: number;
+  /** T-20: per-Line Ticket divisor (default `config.depotReset.divisor`). */
+  ticketDivisor?: number;
   decorPool: Exclude<DecorPool, 'reward'>;
   palette: LinePalette;
 }

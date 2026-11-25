@@ -67,8 +67,12 @@ await new Promise<void>((resolve, reject) => {
 
 const by: Partial<Record<Variant, GameRecord[]>> = {};
 for (const r of records.sort((a, b) => a.seed - b.seed)) (by[r.variant] ??= []).push(r);
-const speciesIds = loadGameData().species.map((s) => s.id);
-const summary = summarize(by, speciesIds, minutes);
+const gameData = loadGameData();
+const speciesIds = gameData.species.map((s) => s.id);
+// Grand Terminus signature species: sold only at the ending station (PM, T-20).
+const maxLine = Math.max(...gameData.lines.map((l) => l.id));
+const terminusOnly = gameData.species.filter((s) => s.line === maxLine && s.station === gameData.config.stationsPerLine).map((s) => s.id);
+const summary = summarize(by, speciesIds, minutes, terminusOnly);
 const seconds = (Date.now() - t0) / 1000;
 writeReport(out, summary, { games, bots, minutes, offlineAt, offlineHours, seedBase, workers, seconds });
 for (const r of summary.rows) console.log(`${r.pass === null ? '  -  ' : r.pass ? 'PASS ' : 'FAIL '} ${r.metric}: ${r.value}`);

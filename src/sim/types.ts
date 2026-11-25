@@ -114,6 +114,8 @@ export interface PermanentState {
   oldFriend: boolean;
   endless: boolean;
   reachedTerminals: LineId[];
+  /** T-20: runs in which each Line's terminal was reached (key = line id). */
+  terminalRuns: Record<string, number>;
   resets: number;
   /** Request ids ever completed (unique, first-completion order; kept across resets). */
   requestHistory: string[];

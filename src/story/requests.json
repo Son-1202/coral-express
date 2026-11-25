@@ -15,7 +15,7 @@
       },
       "reward": {
         "type": "income",
-        "seconds": 180
+        "seconds": 60
       }
     },
     {
@@ -33,7 +33,7 @@
       },
       "reward": {
         "type": "income",
-        "seconds": 180
+        "seconds": 60
       }
     },
     {
@@ -51,7 +51,7 @@
       },
       "reward": {
         "type": "income",
-        "seconds": 240
+        "seconds": 75
       }
     },
     {
@@ -68,7 +68,7 @@
       },
       "reward": {
         "type": "income",
-        "seconds": 180
+        "seconds": 60
       }
     },
     {
@@ -86,7 +86,7 @@
       },
       "reward": {
         "type": "incomeCosmetic",
-        "seconds": 300,
+        "seconds": 90,
         "cosmetic": "paint_red"
       }
     },
@@ -128,7 +128,7 @@
       },
       "reward": {
         "type": "income",
-        "seconds": 240
+        "seconds": 75
       }
     },
     {
@@ -161,7 +161,7 @@
       },
       "reward": {
         "type": "income",
-        "seconds": 180
+        "seconds": 60
       }
     },
     {
@@ -179,7 +179,7 @@
       },
       "reward": {
         "type": "incomeCosmetic",
-        "seconds": 300,
+        "seconds": 90,
         "cosmetic": "sand_white"
       }
     },
@@ -225,7 +225,7 @@
       },
       "reward": {
         "type": "income",
-        "seconds": 240
+        "seconds": 75
       }
     },
     {
@@ -243,7 +243,7 @@
       },
       "reward": {
         "type": "income",
-        "seconds": 180
+        "seconds": 60
       }
     },
     {
@@ -261,7 +261,7 @@
       },
       "reward": {
         "type": "income",
-        "seconds": 180
+        "seconds": 60
       }
     },
     {
@@ -279,7 +279,7 @@
       },
       "reward": {
         "type": "income",
-        "seconds": 240
+        "seconds": 75
       }
     },
     {
@@ -296,7 +296,7 @@
       },
       "reward": {
         "type": "incomeCosmetic",
-        "seconds": 300,
+        "seconds": 90,
         "cosmetic": "backdrop_kelp_1"
       }
     },
@@ -315,7 +315,7 @@
       },
       "reward": {
         "type": "income",
-        "seconds": 180
+        "seconds": 60
       }
     },
     {
@@ -356,7 +356,7 @@
       },
       "reward": {
         "type": "income",
-        "seconds": 180
+        "seconds": 60
       }
     },
     {
@@ -374,7 +374,7 @@
       },
       "reward": {
         "type": "income",
-        "seconds": 240
+        "seconds": 75
       }
     },
     {
@@ -407,7 +407,7 @@
       },
       "reward": {
         "type": "incomeCosmetic",
-        "seconds": 300,
+        "seconds": 90,
         "cosmetic": "backdrop_polar_1"
       }
     },
@@ -453,7 +453,7 @@
       },
       "reward": {
         "type": "income",
-        "seconds": 240
+        "seconds": 75
       }
     },
     {
@@ -471,7 +471,7 @@
       },
       "reward": {
         "type": "income",
-        "seconds": 180
+        "seconds": 60
       }
     },
     {
@@ -489,7 +489,7 @@
       },
       "reward": {
         "type": "income",
-        "seconds": 180
+        "seconds": 60
       }
     },
     {
@@ -507,7 +507,7 @@
       },
       "reward": {
         "type": "income",
-        "seconds": 240
+        "seconds": 75
       }
     },
     {
@@ -525,7 +525,7 @@
       },
       "reward": {
         "type": "income",
-        "seconds": 180
+        "seconds": 60
       }
     },
     {
@@ -542,7 +542,7 @@
       },
       "reward": {
         "type": "incomeCosmetic",
-        "seconds": 300,
+        "seconds": 90,
         "cosmetic": "backdrop_vent_1"
       }
     },
@@ -561,7 +561,7 @@
       },
       "reward": {
         "type": "income",
-        "seconds": 180
+        "seconds": 60
       }
     },
     {
@@ -602,7 +602,7 @@
       },
       "reward": {
         "type": "income",
-        "seconds": 240
+        "seconds": 75
       }
     },
     {
@@ -635,7 +635,7 @@
       },
       "reward": {
         "type": "income",
-        "seconds": 180
+        "seconds": 60
       }
     },
     {
@@ -679,7 +679,7 @@
       },
       "reward": {
         "type": "income",
-        "seconds": 240
+        "seconds": 75
       }
     }
   ]

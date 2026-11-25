@@ -26,6 +26,31 @@ const MILESTONE_LOOKAHEAD = 15;
 /** While saving for the terminal track, only buys that repay within this many seconds. */
 const FORCED_PAYBACK = 120;
 
+/**
+ * T-20: the next track only pays off soon if it is built before the train leaves the last
+ * built station (else it shuttles a whole round trip first). When the track is the best
+ * structural plan and affordable by then, keep enough Shells for it. Returns the reserve.
+ */
+function trackReserve(s: SimState, structural: Cand[], income: number): number {
+  const tr = s.train;
+  const heading = (tr.phase === 'moving' && tr.toStation === s.builtTo) || (tr.phase === 'stopped' && tr.fromStation === s.builtTo);
+  if (!heading || income <= 0) return 0;
+  const track = structural.find((c) => c.kind === 'track');
+  if (!track) return 0;
+  const T = (c: Cand): number => (c.gain > 0 ? (c.cost - c.bonus) / c.gain : Infinity);
+  // Worth it if it repays within TRACK_RESERVE_PAYBACK s or is the best structural plan.
+  if (T(track) > TRACK_RESERVE_PAYBACK && structural.some((c) => c.kind !== 'track' && T(c) < T(track))) return 0;
+  const left = tr.phase === 'moving' ? DEPART_GUESS.leg - tr.t + DEPART_GUESS.stop : DEPART_GUESS.stop - tr.t;
+  const need = track.now - income * Math.max(0, left - 1);
+  return Math.max(0, need);
+}
+
+/** Track payback (s) that is always worth catching the departure for. */
+const TRACK_RESERVE_PAYBACK = 150;
+
+/** Leg/stop seconds for the departure estimate (set from data when the bot is created). */
+const DEPART_GUESS = { leg: 45, stop: 6 };
+
 function signature(s: SimState): string {
   let sig = `${s.nextId}|${s.lifetime.arrivals}|${s.permanent.resets}|${s.builtTo}|${s.market.special?.sold ?? '-'}|${s.permanent.upgrades.length}`;
   for (const c of s.carriages) sig += `|${c.fish.length},${c.slots},${c.decor.length},${c.habitat}`;
@@ -39,16 +64,55 @@ export function resetTarget(s: SimState): number {
   return total === 0 ? FIRST_RESET_TICKETS : 2 * total;
 }
 
-/** Highest-level fish (ties: higher basePps). */
-export function pickMascot(sim: Sim, basePps: (species: string) => number): string | null {
+/** T-20 (ticket direction 6): Mascot = highest-output fish (ties: higher level). */
+export function pickMascot(sim: Sim): string | null {
   let best: string | null = null;
+  let bv = -1;
   let bl = -1;
-  let bp = -1;
-  for (const f of Object.values(sim.state.fish)) {
-    const p = basePps(f.species);
-    if (f.level > bl || (f.level === bl && p > bp)) { best = f.id; bl = f.level; bp = p; }
+  for (const c of sim.state.carriages) {
+    for (const fi of sim.carInfo(c.id).fish) {
+      const lvl = sim.state.fish[fi.fishId]?.level ?? 0;
+      if (fi.sps > bv || (fi.sps === bv && lvl > bl)) { best = fi.fishId; bv = fi.sps; bl = lvl; }
+    }
   }
   return best;
+}
+
+/** Seconds the bot may wait at the terminal to afford its signature species before resetting. */
+const TERMINAL_SPECIES_WAIT = 60;
+
+/**
+ * T-20: buy the terminal's signature species (first sale only there) before the reset,
+ * if affordable within TERMINAL_SPECIES_WAIT s. Returns actions to buy now, 'wait', or null.
+ */
+function terminalSpecies(sim: Sim, idx: ReturnType<typeof buildIndex>): Action[] | 'wait' | null {
+  const s = sim.state;
+  const cfg = idx.data.config;
+  const sig = idx.data.species.find((x) => x.line === s.currentLine && x.station === cfg.stationsPerLine);
+  if (!sig || s.speciesBoughtThisRun.includes(sig.id) || !s.market.fish.includes(sig.id)) return null;
+  const free = s.carriages.filter((c) => c.fish.length < c.slots);
+  const car = free.find((c) => c.habitat === sig.habitat) ?? free[0];
+  const out: Action[] = [];
+  let carId = car?.id;
+  let refund = 0;
+  if (!carId) {
+    let weakest: { id: string; car: string; sps: number; spent: number } | null = null;
+    for (const c of s.carriages) {
+      for (const fi of sim.carInfo(c.id).fish) {
+        const f = s.fish[fi.fishId];
+        if (f && !f.mascot && (!weakest || fi.sps < weakest.sps)) weakest = { id: f.id, car: c.id, sps: fi.sps, spent: f.spent };
+      }
+    }
+    if (!weakest) return null;
+    out.push({ type: 'sellFish', fishId: weakest.id });
+    carId = weakest.car;
+    refund = cfg.sellRefund * weakest.spent;
+  }
+  const buy: Action = { type: 'buyFish', species: sig.id, carId };
+  const price = (sim.price(buy) ?? Infinity) - refund;
+  if (price <= s.shells) return [...out, buy];
+  const income = sim.stats().totalSps;
+  return income > 0 && (price - s.shells) / income <= TERMINAL_SPECIES_WAIT ? 'wait' : null;
 }
 
 interface VirtualFish { level: number; sps0: number; level0: number }
@@ -58,8 +122,11 @@ export function createGreedyBot(opts: BotOptions, name: Extract<BotName, 'greedy
   const cfg = idx.data.config;
   const plan: PlanOpts = { bonds: name === 'greedy', rng: botRng(opts.seed) };
   const frenzyF = 1 + ((cfg.frenzy.mult - 1) * cfg.frenzy.seconds) / cfg.frenzy.cooldown;
+  DEPART_GUESS.leg = cfg.legSeconds;
+  DEPART_GUESS.stop = cfg.stopSeconds;
   let cache: { sig: string; t: number; cands: Cand[] } = { sig: '', t: -1e9, cands: [] };
   let waitFor = 0;
+  let termWaitStart = -1;
   /** Per-fish level candidates, reused while level, discount and output are unchanged. */
   const levelCache = new Map<string, { key: string; cands: Cand[] }>();
   const carCache: CarCache = new Map();
@@ -121,7 +188,7 @@ export function createGreedyBot(opts: BotOptions, name: Extract<BotName, 'greedy
     let structural = cache.cands;
     // Reset-ready except for the terminal: the track is what matters now. Other purchases
     // only if they repay themselves within FORCED_PAYBACK s (they speed the track up).
-    const forced = !s.terminalReachedThisRun && s.runShells >= cfg.depotReset.minRunShells && sim.projectedTickets() >= resetTarget(s);
+    const forced = !s.terminalReachedThisRun && s.builtTo < cfg.stationsPerLine && s.runShells >= cfg.depotReset.minRunShells && sim.projectedTickets() >= resetTarget(s);
     const quick = (c: Cand): boolean => c.kind === 'track' || c.cost - c.bonus <= 0 || (c.gain > 0 && (c.cost - c.bonus) / c.gain <= FORCED_PAYBACK);
     if (forced) structural = structural.filter(quick);
     const virt = new Map<string, VirtualFish>();
@@ -136,12 +203,27 @@ export function createGreedyBot(opts: BotOptions, name: Extract<BotName, 'greedy
     let levels = lv(levelCands(e, virt, disc));
     let shells = s.shells;
     const out: Action[] = [];
+    // Conservative income (no frenzy) so the reserve is really there at departure.
+    const reserve = trackReserve(s, structural, e.baseIncome * 0.8);
     for (let n = 0; n < MAX_CHAIN; n++) {
       let best: Cand | null = null;
       let bt = Infinity;
-      for (const c of structural) { const v = score(c, shells, e.income); if (v < bt) { bt = v; best = c; } }
-      for (const c of levels) { const v = score(c, shells, e.income); if (v < bt) { bt = v; best = c; } }
+      // While reserving for a departure-critical track, only the track or buys that keep the reserve.
+      const ok = (c: Cand): boolean => reserve <= 0 || c.kind === 'track' || shells - c.now >= reserve;
+      for (const c of structural) { if (!ok(c)) continue; const v = score(c, shells, e.income); if (v < bt) { bt = v; best = c; } }
+      for (const c of levels) { if (!ok(c)) continue; const v = score(c, shells, e.income); if (v < bt) { bt = v; best = c; } }
       if (!best || best.now > shells) {
+        // T-20: saving for a level bundle (to the next milestone) — buy the affordable part now;
+        // it is the same spend in the same order, so the plan is unchanged but the player acts.
+        if (best && best.kind === 'level' && best.fishId && best.levels && best.levels > 1) {
+          const f = s.fish[best.fishId]!;
+          const sp = idx.species.get(f.species)!;
+          const v = virt.get(best.fishId)!;
+          let k = 0;
+          let c = 0;
+          while (k < best.levels - 1 && c + levelCost(idx, sp.baseCost, v.level + k) <= shells) { c += levelCost(idx, sp.baseCost, v.level + k); k++; }
+          if (k > 0) { out.push({ type: 'levelFish', fishId: best.fishId, times: k }); break; }
+        }
         if (n === 0) waitFor = best ? best.now : Infinity;
         break;
       }
@@ -186,9 +268,18 @@ export function createGreedyBot(opts: BotOptions, name: Extract<BotName, 'greedy
       const upgrading = !!next && canDo(sim, { type: 'buyUpgrade', id: next.id });
       if (next && upgrading) out.push({ type: 'buyUpgrade', id: next.id });
       if (sim.canDepotReset() && sim.projectedTickets() >= resetTarget(s)) {
-        const mascot = pickMascot(sim, pps);
-        const line = Math.max(...s.permanent.openedLines) as LineId;
-        if (mascot) { out.push({ type: 'depotReset', mascotFishId: mascot, nextLine: line }); return out; }
+        const ts = upgrading ? null : terminalSpecies(sim, idx);
+        if (ts === 'wait') { if (termWaitStart < 0) termWaitStart = t; }
+        if (ts !== 'wait' || t - termWaitStart > TERMINAL_SPECIES_WAIT) {
+          if (Array.isArray(ts)) { out.push(...ts); return out; }
+          const mascot = pickMascot(sim);
+          const line = Math.max(...s.permanent.openedLines) as LineId;
+          if (mascot) { termWaitStart = -1; out.push({ type: 'depotReset', mascotFishId: mascot, nextLine: line }); return out; }
+        } else {
+          const feedW = feedBest(sim);
+          if (feedW) out.push(feedW);
+          return out;
+        }
       }
       const sight = s.sight.active;
       let tapped = false;

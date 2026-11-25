@@ -2,6 +2,7 @@
 import { fail, findFish, okCheck, type Check } from './actionCheck';
 import { spawnFish } from './actionsFish';
 import type { Ctx } from './ctx';
+import { lineDef } from './lookup';
 import { endSight } from './sights';
 import { startRun, startSlots } from './state';
 import type { Action } from './types';
@@ -10,7 +11,9 @@ type A<T extends Action['type']> = Extract<Action, { type: T }>;
 
 export function projectedTickets(ctx: Ctx): number {
   const d = ctx.idx.data.config.depotReset;
-  return Math.floor(Math.sqrt(Math.max(0, ctx.state.runShells) / d.divisor));
+  // T-20: per-Line divisor so each Line's bigger economy doesn't explode Tickets.
+  const div = lineDef(ctx.idx, ctx.state.currentLine).ticketDivisor ?? d.divisor;
+  return Math.floor(Math.sqrt(Math.max(0, ctx.state.runShells) / div));
 }
 
 export function canDepotReset(ctx: Ctx): boolean {

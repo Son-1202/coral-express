@@ -1,11 +1,11 @@
 {
   "pairs": [
-    { "a": "clownfish", "b": "carpet_anemone", "bonus": 0.5 },
-    { "a": "pistol_shrimp", "b": "watchman_goby", "bonus": 0.5 },
-    { "a": "garibaldi", "b": "kelp_seahorse", "bonus": 0.4 },
-    { "a": "ice_krill", "b": "icefish", "bonus": 0.5 },
-    { "a": "tubeworm", "b": "yeti_crab", "bonus": 0.5 },
-    { "a": "vent_octopus", "b": "scaly_snail", "bonus": 0.4 }
+    { "a": "clownfish", "b": "carpet_anemone", "bonus": 1.0 },
+    { "a": "pistol_shrimp", "b": "watchman_goby", "bonus": 1.0 },
+    { "a": "garibaldi", "b": "kelp_seahorse", "bonus": 0.8 },
+    { "a": "ice_krill", "b": "icefish", "bonus": 1.0 },
+    { "a": "tubeworm", "b": "yeti_crab", "bonus": 1.0 },
+    { "a": "vent_octopus", "b": "scaly_snail", "bonus": 0.8 }
   ],
   "communities": [
     { "id": "reef_family", "name": "Reef Family", "members": ["pebble_damsel", "carpet_anemone", "clownfish"] },

@@ -36,7 +36,7 @@ export function currentFishSps(ctx: Ctx): number {
 
 /** Fare that an arrival at `station` would pay right now (without modifiers). */
 export function fareAt(ctx: Ctx, station: number): number {
-  return ctx.model().totalAppeal * fareBaseMult(ctx.idx, ctx.state, ctx.fx()) * stationMult(ctx.idx, station);
+  return ctx.model().fareWeight * fareBaseMult(ctx.idx, ctx.state, ctx.fx()) * stationMult(ctx.idx, station);
 }
 
 /** Stations visited in one full shuttle cycle over track 1..n (n ≥ 2). */

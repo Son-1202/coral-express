@@ -36,7 +36,7 @@ function defaultPermanent(): PermanentState {
   return {
     tickets: 0, totalTicketsEarned: 0, upgrades: [], openedLines: [1], stamps: [], postcards: [],
     unlockedCosmetics: [], mascot: null, oldFriendStreak: 0, oldFriend: false, endless: false,
-    reachedTerminals: [], resets: 0, requestHistory: [], requestCounts: {},
+    reachedTerminals: [], terminalRuns: {}, resets: 0, requestHistory: [], requestCounts: {},
   };
 }
 

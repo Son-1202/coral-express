@@ -5,8 +5,44 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
     <meta name="theme-color" content="#8fd3e8" />
     <title>Coral Express</title>
+    <style>
+      /* Loading screen (T-19): railway-ticket card, progress bar, tiny looping train. Shown before any JS runs. */
+      html, body { margin: 0; background: #cfe9ee; }
+      #loading { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; background: radial-gradient(ellipse at 50% 35%, #e6f5f2, #9fd3d6 80%); transition: opacity .5s ease; font-family: "Pixelify Sans", ui-monospace, monospace; }
+      #loading.done { opacity: 0; pointer-events: none; }
+      .ld-ticket { position: relative; width: min(340px, 82vw); padding: 18px 22px 16px; background: #fbf1d6; color: #2f4a4a; border: 3px solid #d9ac4c; border-radius: 10px; box-shadow: 0 6px 0 #c9b48a, 0 14px 30px rgba(20, 60, 70, .25); }
+      .ld-ticket::before, .ld-ticket::after { content: ""; position: absolute; top: 50%; width: 22px; height: 22px; margin-top: -11px; border-radius: 50%; background: #b7e0e0; border: 3px solid #d9ac4c; }
+      .ld-ticket::before { left: -14px; clip-path: inset(0 0 0 50%); }
+      .ld-ticket::after { right: -14px; clip-path: inset(0 50% 0 0); }
+      .ld-head { display: flex; justify-content: space-between; align-items: baseline; border-bottom: 2px dashed #d9c49a; padding-bottom: 6px; margin-bottom: 10px; }
+      .ld-head b { font-size: 22px; letter-spacing: .5px; }
+      .ld-head span { font-size: 12px; color: #7a6a4a; }
+      .ld-row { display: flex; justify-content: space-between; font-size: 13px; color: #6b5c40; margin-bottom: 10px; }
+      .ld-track { position: relative; height: 26px; overflow: hidden; margin-bottom: 8px; }
+      .ld-rail { position: absolute; left: 0; right: 0; bottom: 3px; height: 3px; background: repeating-linear-gradient(90deg, #6b4a2e 0 6px, transparent 6px 10px), #a8b2b6; }
+      .ld-train { position: absolute; bottom: 6px; left: 0; display: flex; gap: 2px; align-items: flex-end; animation: ld-run 3.2s linear infinite; }
+      .ld-train i { display: block; height: 12px; width: 22px; background: #7fd3d1; border: 2px solid #3f6b5e; border-radius: 2px; }
+      .ld-train i.loco { width: 20px; height: 14px; background: #5f9a86; border-radius: 3px 6px 2px 2px; }
+      .ld-train i.loco::after { content: ""; position: relative; display: block; left: 12px; top: -8px; width: 4px; height: 6px; background: #3f6b5e; }
+      .ld-train i:not(.loco) { animation: ld-bob .4s ease-in-out infinite alternate; }
+      @keyframes ld-run { from { transform: translateX(-110px); } to { transform: translateX(min(340px, 82vw)); } }
+      @keyframes ld-bob { to { transform: translateY(-1px); } }
+      .ld-bar { height: 10px; border-radius: 5px; background: #e8dcc0; overflow: hidden; border: 2px solid #d9c49a; }
+      .ld-bar > div { height: 100%; width: 0%; background: linear-gradient(#5fc6c4, #3c9ea0); transition: width .25s ease; }
+      .ld-foot { margin-top: 6px; font-size: 11px; color: #8a7a58; text-align: right; }
+      @media (prefers-reduced-motion: reduce) { .ld-train, .ld-train i { animation: none; } }
+    </style>
   </head>
   <body>
+    <div id="loading" role="progressbar" aria-label="Loading" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+      <div class="ld-ticket">
+        <div class="ld-head"><b>Coral Express</b><span>No. 0001</span></div>
+        <div class="ld-row"><span>From: The Depot</span><span>To: The Sunny Coast</span></div>
+        <div class="ld-track"><div class="ld-rail"></div><div class="ld-train"><i></i><i></i><i></i><i class="loco"></i></div></div>
+        <div class="ld-bar"><div id="ld-fill"></div></div>
+        <div class="ld-foot" id="ld-text">Boarding…</div>
+      </div>
+    </div>
     <div id="app"></div>
     <script type="module" src="/src/main.ts"></script>
   </body>

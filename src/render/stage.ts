@@ -19,6 +19,8 @@ import { dayPhase, nightAmount } from './timeOfDay';
 import { ODO_WRAP } from '../game/pose';
 import { fishMaterial } from './train/fishMaterial';
 import { fishSize, fishTexture } from './train/fishView';
+import { LivingWorld } from './world/world';
+import { DepotScene, type DepotSnapshot } from './depot/depotScene';
 
 export interface StageOpts {
   quality: Quality | 'auto';
@@ -54,6 +56,11 @@ export class Stage implements GameView {
   readonly coins: CoinFlight;
   readonly passengers = new Passengers();
   readonly sights: SightFx;
+  readonly world: LivingWorld;
+  /** Depot Reset scene (B4.9); while active it replaces the train-view render. */
+  readonly depot: DepotScene;
+  /** Called when a new run starts after the depot scene (T-18 hooks its Line splash here). */
+  onRunStart: ((line: number) => void) | null = null;
   private readonly fx: FxEvents;
   readonly rings = new Map<string, FrenzyRing>();
   /** Car the camera follows (null = locomotive). */
@@ -82,6 +89,7 @@ export class Stage implements GameView {
     this.rig = new CameraRig(window.innerWidth / window.innerHeight);
     const species = new Map(game.data.species.map((s) => [s.id, s.motion]));
     this.train = new Train((id) => species.get(id) ?? 'darter');
+    this.depot = new DepotScene(canvas.parentElement ?? document.body, (id) => species.get(id) ?? 'darter');
     const scene = this.diorama.scene;
     this.train.group.position.set(0, 0.2, 0.1);
     scene.add(this.train.group, this.train.steam.group, this.particles.group, this.passengers.group);
@@ -99,6 +107,8 @@ export class Stage implements GameView {
       particles: this.particles,
     });
     scene.add(this.sights.group);
+    this.world = new LivingWorld(this.particles);
+    scene.add(this.world.group);
     this.fx = new FxEvents(this);
     this.diorama.nameForSlot = (slot) => this.slotNames.get(slot) ?? '';
     this.post = new Post(this.renderer, scene, this.rig.camera);
@@ -119,11 +129,17 @@ export class Stage implements GameView {
     this.renderer.setSize(w, h, false);
     this.post.setSize(w, h);
     this.rig.resize(w / h);
+    this.depot?.resize(w / h);
   }
 
   setQuality(q: Quality | 'auto'): void {
     this.quality = q;
     this.post.setQuality(q === 'auto' ? 'high' : q);
+  }
+
+  /** Train speed in world units/s (0 when stopped) — drives the wheel clack. */
+  get trainSpeed(): number {
+    return this.depot.active ? 0 : Math.abs(this.lastVel);
   }
 
   /** Index into train.centers of the followed part (0 = locomotive). */
@@ -162,6 +178,7 @@ export class Stage implements GameView {
     }
     if (this.selectedCarId && !this.train.car(this.selectedCarId)) this.selectedCarId = null;
     this.diorama.setLine(s.currentLine);
+    this.world?.setLine(s.currentLine);
   }
 
   private placeTrain(dt: number): void {
@@ -193,7 +210,22 @@ export class Stage implements GameView {
 
   handle(e: SimEvent, bulk: boolean): void {
     if (bulk) return;
+    if (e.type === 'depotReset') this.playDepot(e.line);
     this.fx.handle(e);
+  }
+
+  /** Snapshot the outgoing train (before it is re-synced to the new run) and play the depot scene. */
+  playDepot(line: number): void {
+    const snap: DepotSnapshot = {
+      heritageId: this.game.sim.state.carriages.find((c) => c.heritage)?.id ?? null,
+      cars: this.train.cars.map((c) => ({
+        id: c.id,
+        habitat: c.habitat,
+        fish: [...c.fish.values()].map((f) => ({ id: f.id, species: f.species, shiny: f.shiny })),
+      })),
+    };
+    this.depot.resize(window.innerWidth / window.innerHeight);
+    this.depot.play(snap, line, (l) => this.onRunStart?.(l));
   }
 
   /** UI `itemFly`: sparkle + bubble pop where the bought item lands. */
@@ -243,7 +275,12 @@ export class Stage implements GameView {
     const tod = this.timeOverride ?? dayPhase(this.game.sim.state.time);
     this.post.setTimeOfDay(tod);
     this.diorama.update(this.time, this.rig.camera, nightAmount(tod), dt);
-    if (!this.skipRender) this.post.render(dt);
+    this.world.update(dt, this.time, this.rig.camera);
+    if (this.depot.active) {
+      this.depot.update(Math.min(0.1, realDt));
+      if (this.depot.active) this.depot.render(this.renderer);
+      else if (!this.skipRender) this.post.render(dt);
+    } else if (!this.skipRender) this.post.render(dt);
   }
 
   /** Raycast from normalised device coords. */

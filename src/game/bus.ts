@@ -16,6 +16,8 @@ export interface UiEventMap {
   saved: { at: number };
   /** A UI panel was requested by the canvas/debug (e.g. 'depot', 'market'). */
   openPanel: { id: string };
+  /** A new run started after the Depot Reset scene (T-19): its Line. */
+  runStart: { line: number };
   /** A sim event batch was processed in bulk (fast-forward / offline); VFX skipped. */
   bulk: { count: number };
 }

@@ -3,7 +3,7 @@
 // Read-only: never mutates sim state.
 import type { Habitat, SpeciesDef } from '../data/schema';
 import type { DataIndex } from '../sim/lookup';
-import { computeCar, computeTrain, fareBaseMult, stationMult, type CarModel, type TrainModel } from '../sim/income';
+import { computeCar, computeTrain, fareBaseMult, stationMult, fareAppeal, trainFromCars, type CarModel, type TrainModel } from '../sim/income';
 import { cycleStations } from '../sim/rates';
 import { legSeconds, ticketMult, upgradeFx, type UpgradeFx } from '../sim/upgrades';
 import type { Carriage, Fish, PlacedDecor, SimState } from '../sim/types';
@@ -19,7 +19,7 @@ export interface Econ {
   globalMult: number;
   /** Expected frenzy factor on fish output for this bot's feeding cadence. */
   frenzyF: number;
-  /** Fare Shells per second per point of appeal (shuttle-cycle average). */
+  /** Fare Shells/s per unit of fare weight (appeal × base fish Sps of a car), shuttle-cycle average. */
   fpa: number;
   /** Steady income: fish × frenzyF + fare rate. */
   income: number;
@@ -79,10 +79,7 @@ function cachedTrain(idx: DataIndex, state: SimState, fx: UpgradeFx, globalMult:
     cache.set(c.id, { key, model });
     return model;
   });
-  let totalAppeal = 0;
-  let baseFishSps = 0;
-  for (const c of cars) { totalAppeal += c.appeal; baseFishSps += c.baseSps; }
-  return { cars, byId: new Map(cars.map((c) => [c.carId, c] as const)), totalAppeal, baseFishSps };
+  return trainFromCars(idx, cars);
 }
 
 export function snapshot(idx: DataIndex, state: SimState, frenzyF: number, cache?: CarCache): Econ {
@@ -91,7 +88,7 @@ export function snapshot(idx: DataIndex, state: SimState, frenzyF: number, cache
   const globalMult = ticketMult(idx, state) * whaleMult(idx, state) * oldFriend;
   const model = cache ? cachedTrain(idx, state, fx, globalMult, cache) : computeTrain(idx, state, fx);
   const fpa = (fareBaseMult(idx, state, fx) * avgStationMult(idx, state.builtTo)) / arrivalSecs(idx, fx);
-  const fareSps = model.totalAppeal * fpa;
+  const fareSps = model.fareWeight * fpa;
   // Object.create keeps lookups of real fish on the live record (prototype chain) while
   // letting us add a hypothetical fish without copying or mutating sim state.
   const fishView = Object.create(state.fish) as Record<string, Fish>;
@@ -105,9 +102,9 @@ export function snapshot(idx: DataIndex, state: SimState, frenzyF: number, cache
   };
 }
 
-/** Value of a car model in Shells/s (fish with expected frenzy + fare from appeal). */
+/** Value of a car model in Shells/s (fish with expected frenzy + fare = appeal × base Sps). */
 export function carValue(e: Econ, m: CarModel): number {
-  return m.baseSps * e.frenzyF + m.appeal * e.fpa;
+  return m.baseSps * (e.frenzyF + fareAppeal(e.idx, m.appeal) * e.fpa);
 }
 
 export interface CarChange {
@@ -136,13 +133,16 @@ export function carModel(e: Econ, carId: string): CarModel | undefined {
   return e.model.byId.get(carId);
 }
 
-/** Bond-free value of one new level-1 fish of `sp` in a car of `habitat` (bond-never bot). */
-export function rawFishValue(e: Econ, sp: SpeciesDef, habitat: Habitat): number {
+/** Bond-free value of one new level-1 fish of `sp` in a car of `habitat` (bond-never bot);
+ *  with `car`, the fare cross-terms with that car's current appeal and output are included. */
+export function rawFishValue(e: Econ, sp: SpeciesDef, habitat: Habitat, car?: CarModel): number {
   const cfg = e.idx.data.config;
   const hm = sp.flags.alwaysHome || sp.habitat === habitat ? 1 : cfg.offHabitatMult;
   const sps = sp.basePps * hm * e.globalMult;
   const appeal = sp.appeal * (sp.flags.appealCount ?? 1) * hm;
-  return sps * e.frenzyF + appeal * e.fpa;
+  const A = car?.appeal ?? 0;
+  const S = car?.baseSps ?? 0;
+  return sps * e.frenzyF + (fareAppeal(e.idx, A + appeal) * (S + sps) - fareAppeal(e.idx, A) * S) * e.fpa;
 }
 
 /** Δ fare Shells/s from extending the track by one station. */
@@ -150,5 +150,5 @@ export function trackFareGain(e: Econ): number {
   const s = e.state;
   if (s.builtTo >= e.idx.data.config.stationsPerLine) return 0;
   const base = fareBaseMult(e.idx, s, e.fx) / arrivalSecs(e.idx, e.fx);
-  return e.model.totalAppeal * base * (avgStationMult(e.idx, s.builtTo + 1) - avgStationMult(e.idx, s.builtTo));
+  return e.model.fareWeight * base * (avgStationMult(e.idx, s.builtTo + 1) - avgStationMult(e.idx, s.builtTo));
 }

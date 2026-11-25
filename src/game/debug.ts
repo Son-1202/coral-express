@@ -74,6 +74,14 @@ export function createDebug(game: GameController, hooks: DebugHooks): Record<str
 
   const lineOpen = (l: LineId) => s().permanent.openedLines.includes(l);
 
+  /** Ride `from` to its terminal (repeating runs: T-20 `opensAfterRuns`) until `line` opens. */
+  const openLine = (line: LineId, from: LineId) => {
+    for (let i = 0; i < 12 && !lineOpen(line); i++) {
+      if (s().currentLine !== from || s().terminalReachedThisRun) resetTo(from);
+      reachTerminal();
+    }
+  };
+
   const skipTo = (target: SkipTarget) => {
     switch (target) {
       case 'terminal':
@@ -86,16 +94,13 @@ export function createDebug(game: GameController, hooks: DebugHooks): Record<str
         hooks.openPanel('depot');
         break;
       case 'line2':
-        if (!lineOpen(2)) {
-          if (s().currentLine !== 1) resetTo(1);
-          reachTerminal();
-        }
+        openLine(2, 1);
         if (s().currentLine !== 2) resetTo(2);
         break;
       case 'line3':
         if (!lineOpen(3)) {
           skipTo('line2');
-          reachTerminal();
+          openLine(3, 2);
         }
         if (s().currentLine !== 3) resetTo(3);
         break;
@@ -168,6 +173,36 @@ export function createDebug(game: GameController, hooks: DebugHooks): Record<str
       return f.id;
     },
     fastForward: (sec: number) => game.fastForward(sec),
+    /** Play a real depot reset with VFX (screenshots): adds `cars` carriages + fish first. */
+    depotScene: (cars = 3) => {
+      const habitats = ['reef', 'mangrove', 'kelp'] as const;
+      for (let i = 0; i < cars; i++) {
+        const a = { type: 'buyCarriage' as const, habitat: habitats[i % habitats.length] ?? 'reef' };
+        const p = sim.price(a);
+        if (p === null) break;
+        if (p > s().shells) s().shells = p;
+        sim.act(a);
+      }
+      const sp = game.data.species.map((x) => x.id);
+      let n = 0;
+      for (const car of s().carriages)
+        for (let k = car.fish.length; k < Math.min(car.slots, 3); k++) {
+          const id = sp[n++ % sp.length];
+          if (id) spawnFish(ctx, id, car.id, {});
+        }
+      ctx.invalidate();
+      ctx.refreshBonds();
+      game.drain(true);
+      const fishId = Object.keys(s().fish)[0];
+      const min = game.data.config.depotReset.minRunShells;
+      if (s().runShells < min) s().runShells = min;
+      s().terminalReachedThisRun = true; // debug: the scene is the point, not the ride
+      if (!fishId) return false;
+      game.view?.frame(0.016, 0.016);
+      const r = sim.act({ type: 'depotReset', mascotFishId: fishId, nextLine: s().currentLine });
+      game.drain();
+      return r.ok;
+    },
     triggerSight: (id: string) => {
       const ok = sim.triggerSight(id);
       game.drain();

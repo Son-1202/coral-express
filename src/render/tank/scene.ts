@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import type { GameData, Habitat } from '../../data/schema';
 import type { Carriage, PlacedDecor, SimState } from '../../sim/types';
 import { FishActor, DecorActor, decorLook, plantTexture } from './actors';
+import { HIDEOUTS, type Obstacle } from './motion/avoid';
 import { backdropUrls, coastUrls, tankTexture } from './assets';
 import { HABITAT_COLORS, paintBackdrop, paintCoast } from './paint';
 import { PointCloud } from './shaders';
@@ -184,6 +185,7 @@ export class TankScene {
     const deep = HABITAT_COLORS[this.car()?.habitat ?? 'reef'].deep;
     const neighbors: Point[] = [...this.fish.values()].map((f) => f.mover.pose);
     const anchors: Point[] = this.decor.filter((d) => d.look.isPlant).map((d) => ({ x: d.mesh.position.x, y: d.mesh.position.y }));
+    const obstacles = this.obstacles();
     // food pellets sink, rest on the sand, fade
     for (const p of this.pellets) {
       p.age += dt;
@@ -205,7 +207,7 @@ export class TankScene {
         food = null;
       }
       f.uniforms.uTint.value.set(deep);
-      f.update(dt, { time: t, tilt, food, neighbors, anchors }, t);
+      f.update(dt, { time: t, tilt, food, neighbors, anchors }, t, obstacles);
       // plants bend away from a passing fish
       for (const d of this.decor) {
         if (!d.look.isPlant) continue;
@@ -263,7 +265,7 @@ export class TankScene {
 
   private updateCamera(dt: number): void {
     const f = this.follow ? this.fish.get(this.follow) : undefined;
-    const target = f ? { x: f.mover.pose.x, y: f.mover.pose.y, zoom: 2 } : { x: TANK.w / 2, y: TANK.h / 2, zoom: 1 };
+    const target = f ? { x: f.pos.x, y: f.pos.y, zoom: 2 } : { x: TANK.w / 2, y: TANK.h / 2, zoom: 1 };
     const k = 1 - Math.exp(-4 * dt);
     this.view.x += (target.x - this.view.x) * k;
     this.view.y += (target.y - this.view.y) * k;
@@ -313,10 +315,22 @@ export class TankScene {
     let best: { id: string; d: number } | null = null;
     for (const [id, f] of this.fish) {
       if (!f.contains(x, y)) continue;
-      const d = Math.hypot(f.mover.pose.x - x, f.mover.pose.y - y) + f.depth;
+      const d = Math.hypot(f.pos.x - x, f.pos.y - y) + f.depth;
       if (!best || d < best.d) best = { id, d };
     }
     return best?.id ?? null;
+  }
+
+  /** Non-plant decor as circles fish route around (castle/arch also act as hideouts). */
+  obstacles(): Obstacle[] {
+    const out: Obstacle[] = [];
+    for (const d of this.decor) {
+      if (d.look.isPlant) continue;
+      const sx = Math.abs(d.mesh.scale.x);
+      const sy = d.mesh.scale.y;
+      out.push({ x: d.mesh.position.x, y: d.mesh.position.y + sy * 0.45, r: Math.min(sx, sy) * 0.42, hide: HIDEOUTS.has(d.placed.id) });
+    }
+    return out;
   }
 
   pickDecor(x: number, y: number): DecorActor | null {

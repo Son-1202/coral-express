@@ -27,13 +27,13 @@
 | T-17 Cinematic video clips | ART | medium | done |
 | T-18 Audio + ending + video player | DEV | medium | done (wiring via T-19) |
 | T-20 Balance tuning (E1 green) | DEV+CONTENT | high | in progress |
-| T-19 Render fixes, living world, depot scene, loading (+T-18 wiring) | DEV | medium | in progress |
+| T-19 Render fixes, living world, depot scene, loading (+T-18 wiring) | DEV | medium | done (deploys with T-20) |
 | T-21 QA E2E suite + screenshot matrix | QA | medium | in progress |
 | T-16 Painterly set + shiny | ART | medium | done |
 | T-17 Cinematic video clips | ART | medium | done |
 | T-18 Audio + ending + video player | DEV | medium | done (wiring via T-19) |
 | T-20 Balance tuning (E1 green) | DEV+CONTENT | high | in progress |
-| T-19 Render fixes, living world, depot scene, loading (+T-18 wiring) | DEV | medium | in progress |
+| T-19 Render fixes, living world, depot scene, loading (+T-18 wiring) | DEV | medium | done (deploys with T-20) |
 | T-21 QA E2E suite + screenshot matrix | QA | medium | in progress |
 | T-12 Sprite sheets | ART | medium | done |
 | T-06 Sim meta (sights, depot, offline, save, markets, requests) | DEV | high | done |
@@ -55,3 +55,4 @@ See pm/CREDITS.md.
 - T-14 gaps: market Shells/s gain ignores bonds; ending/credits screen not built (→ T-18).
 - Polish: ending beach segment uses plain procedural backdrop → use l3 far/dusk art.
 - 2026-11-24 ~18:xx UTC: third usage-limit stop (T-19, T-20, T-21); resumed 2026-11-25 02:55 UTC.
+- Polish backlog: foreground lens garden + white fence are Line-1 style on every Line (use per-Line near art/colors); L3 flamingo/manta hidden behind palms; endless-mode toast after ending not wired.

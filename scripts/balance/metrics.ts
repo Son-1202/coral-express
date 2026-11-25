@@ -49,7 +49,7 @@ export interface Summary {
   extra: Record<string, unknown>;
 }
 
-export function summarize(by: Partial<Record<Variant, GameRecord[]>>, speciesIds: string[], minutes: number): Summary {
+export function summarize(by: Partial<Record<Variant, GameRecord[]>>, speciesIds: string[], minutes: number, excluded: string[] = []): Summary {
   const rows: MetricRow[] = [];
   const g = by.greedy ?? [];
   const r = by.random ?? [];
@@ -98,9 +98,11 @@ export function summarize(by: Partial<Record<Variant, GameRecord[]>>, speciesIds
     const dd = dist(dom);
     rows.push({ id: 'dominance', metric: 'Max single-species share of fish income at each reset (greedy)', target: '≤35%', value: `${distPct(dd)}; resets over 35%: ${pct(dom.length ? dom.filter((v) => v > 0.35).length / dom.length : null)}`, pass: dd.p90 !== null && dd.p90 <= 0.35, rule: 'p90 over all resets ≤ 35%', raw: dd });
     const sp: Record<string, number> = {};
-    for (const id of speciesIds) sp[id] = share(g, (x) => x.species.includes(id));
+    // T-20 (PM): the Grand Terminus signature species (pocket_whale) is sold only at the
+    // Terminus itself — the endless-mode reward — so it is excluded from this metric.
+    for (const id of speciesIds) if (!excluded.includes(id)) sp[id] = share(g, (x) => x.species.includes(id));
     const low = Object.entries(sp).filter(([, v]) => v < 0.9);
-    rows.push({ id: 'speciesBought', metric: 'Every species bought before Terminus (greedy)', target: '≥90% of runs per species', value: low.length ? `${low.length}/${speciesIds.length} species below 90%: ${low.map(([k, v]) => `${k} ${pct(v)}`).join(', ')}` : 'all ≥ 90%', pass: low.length === 0, rule: 'every species ≥ 90% of games', raw: sp });
+    rows.push({ id: 'speciesBought', metric: 'Every species bought before Terminus (greedy)', target: '≥90% of runs per species', value: low.length ? `${low.length}/${Object.keys(sp).length} species below 90%: ${low.map(([k, v]) => `${k} ${pct(v)}`).join(', ')}` : 'all ≥ 90%', pass: low.length === 0, rule: `every species ≥ 90% of games${excluded.length ? ` (excluded: ${excluded.join(', ')})` : ''}`, raw: sp });
     const dead = dist(g.map((x) => x.deadTime));
     rows.push({ id: 'deadTime', metric: 'Longest dead time after min 1 (greedy)', target: '≤90 s', value: `${(dead.median ?? 0).toFixed(0)} s (p10 ${(dead.p10 ?? 0).toFixed(0)}, p90 ${(dead.p90 ?? 0).toFixed(0)}, max ${(dead.max ?? 0).toFixed(0)})`, pass: dead.p90 !== null && dead.p90 <= 90, rule: 'p90 of per-game longest gap between purchases ≤ 90 s', raw: dead });
     const reached = g.filter((x) => x.terminus !== null);

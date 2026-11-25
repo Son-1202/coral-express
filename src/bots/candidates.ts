@@ -4,7 +4,7 @@
 // signature; level candidates are cheap and computed analytically by the planner.
 import type { Habitat, SpeciesDef } from '../data/schema';
 import type { Action, Carriage, SimState } from '../sim';
-import type { CarModel } from '../sim/income';
+import { fareAppeal, type CarModel } from '../sim/income';
 import { carriagePrice, copyCost, decorCost, habitatChangeCost, levelCost, slotCost, trackCost } from '../sim/costs';
 import { habitatsForLine, stationId } from '../sim/lookup';
 import type { RequestDef } from '../sim/story';
@@ -124,11 +124,12 @@ function availableSpecies(s: SimState): string[] {
 /** Fish value inside its car model (Shells/s incl. appeal). */
 function fishValue(e: Econ, m: CarModel, fishId: string): number {
   const f = m.fish.find((x) => x.fishId === fishId);
-  return f ? f.sps * e.frenzyF + f.appeal * e.fpa : 0;
+  // Marginal value incl. fare cross-terms: F(A)·S − F(A − a)(S − s).
+  return f ? f.sps * e.frenzyF + (fareAppeal(e.idx, m.appeal) * m.baseSps - fareAppeal(e.idx, m.appeal - f.appeal) * (m.baseSps - f.sps)) * e.fpa : 0;
 }
 
 /** Best fish to put into `car` (or an empty car of `habitat`). Bond-never: raw output + habitat. */
-function bestFishFor(e: Econ, rq: ReqCtx, o: PlanOpts, car: Carriage, species: string[], removeFishId?: string): { sp: string; gain: number; bonus: number; cost: number } | null {
+function bestFishFor(e: Econ, rq: ReqCtx, o: PlanOpts, car: Carriage, species: string[], removeFishId?: string, extraCost = 0): { sp: string; gain: number; bonus: number; cost: number } | null {
   let best: { sp: string; gain: number; bonus: number; cost: number; score: number } | null = null;
   for (const id of species) {
     if (removeFishId && e.state.fish[removeFishId]?.species === id) continue;
@@ -144,10 +145,11 @@ function bestFishFor(e: Econ, rq: ReqCtx, o: PlanOpts, car: Carriage, species: s
     else {
       const cur = e.model.byId.get(car.id);
       const lost = removeFishId && cur ? fishValue(e, cur, removeFishId) : 0;
-      d = { gain: rawFishValue(e, sp, car.habitat) - lost, bonus: 0 };
+      d = { gain: rawFishValue(e, sp, car.habitat, cur) - lost, bonus: 0 };
     }
     if (d.gain <= 0) continue;
-    const score = d.gain / Math.max(1e-9, cost - d.bonus * 0.5 + 1);
+    // extraCost = carriage / slot price of the plan, so a cheap fish doesn't win a costly plan.
+    const score = d.gain / Math.max(1e-9, cost + extraCost - d.bonus * 0.5 + 1);
     if (!best || score > best.score) best = { sp: id, ...d, cost, score };
   }
   return best;
@@ -176,10 +178,16 @@ export function structuralCandidates(e: Econ, o: PlanOpts): Cand[] {
   } else if (free.length) {
     for (const id of species) {
       const sp = speciesOf(e, id);
+      // T-20: bond-never is the no-bonds baseline: among home-habitat cars it avoids cars
+      // holding a bond partner when it can (with only two habitats per Line, a bond-blind
+      // placement forms most bonds by accident and the comparison measures nothing).
       const home = free.filter((c) => c.habitat === sp.habitat);
-      const car = o.rng.pick(home.length ? home : free)!;
+      const pool = home.length ? home : free;
+      const partners = bondPartners(e).get(id) ?? [];
+      const safe = pool.filter((c) => !c.fish.some((fid) => partners.includes(s.fish[fid]?.species ?? '')));
+      const car = o.rng.pick(safe.length ? safe : pool)!;
       const cost = copyCost(e.idx, s, sp, e.fx);
-      out.push({ kind: 'buy', actions: [{ type: 'buyFish', species: id, carId: car.id }], cost, now: cost, gain: rawFishValue(e, sp, car.habitat), bonus: 0 });
+      out.push({ kind: 'buy', actions: [{ type: 'buyFish', species: id, carId: car.id }], cost, now: cost, gain: rawFishValue(e, sp, car.habitat, e.model.byId.get(car.id)), bonus: 0 });
     }
   }
 
@@ -214,7 +222,7 @@ export function structuralCandidates(e: Econ, o: PlanOpts): Cand[] {
     const price = carriagePrice(e.idx, line, s.carriages.length + 1);
     const slots = Math.min(e.fx.startSlots ?? cfg.startSlots, cfg.maxSlots);
     for (const h of habitats) {
-      const b = bestFishFor(e, rq, o, emptyCar(h, slots), species);
+      const b = bestFishFor(e, rq, o, emptyCar(h, slots), species, undefined, price);
       if (!b) continue;
       out.push({ kind: 'carriage', actions: [{ type: 'buyCarriage', habitat: h }], cost: price + b.cost, now: price, gain: b.gain, bonus: b.bonus });
     }
@@ -224,9 +232,9 @@ export function structuralCandidates(e: Econ, o: PlanOpts): Cand[] {
   const sp = s.market.special;
   for (const [i, car] of s.carriages.entries()) {
     if (car.fish.length < car.slots || car.slots >= cfg.maxSlots) continue;
-    const b = bestFishFor(e, rq, o, { ...car, slots: car.slots + 1 }, species);
-    if (!b) continue;
     const price = slotCost(e.idx, line, i + 1, car.extraSlots);
+    const b = bestFishFor(e, rq, o, { ...car, slots: car.slots + 1 }, species, undefined, price);
+    if (!b) continue;
     out.push({ kind: 'slot', actions: [{ type: 'buySlot', carId: car.id }], cost: price + b.cost, now: price, gain: b.gain, bonus: b.bonus });
     if (sp && !sp.sold && sp.kind === 'freeSlot') {
       out.push({ kind: 'special', actions: [{ type: 'buySpecial', target: car.id }], cost: sp.price + b.cost, now: sp.price, gain: b.gain, bonus: b.bonus });
@@ -280,7 +288,11 @@ export function structuralCandidates(e: Econ, o: PlanOpts): Cand[] {
     let cost = price;
     for (const nsp of e.idx.data.species) {
       if (nsp.line !== line || nsp.station !== k) continue;
-      gain += rawFishValue(e, nsp, nsp.habitat === 'any' ? 'reef' : nsp.habitat);
+      // T-20: greedy values the new species where it bonds best (free-slot car), like a player
+      // building track towards the Clownfish for the Reef Family; bond-never keeps the raw value.
+      let v = rawFishValue(e, nsp, nsp.habitat === 'any' ? 'reef' : nsp.habitat);
+      if (o.bonds) for (const car of s.carriages) v = Math.max(v, delta(e, rq, car, { addSpecies: nsp.id }).gain);
+      gain += v;
       cost += nsp.baseCost * e.fx.speciesCostMult;
     }
     out.push({ kind: 'track', actions: [{ type: 'buildTrack' }], cost, now: price, gain, bonus: 0 });
@@ -292,7 +304,8 @@ export function structuralCandidates(e: Econ, o: PlanOpts): Cand[] {
       const target = s.market.fish[0] && !s.speciesBoughtThisRun.includes(s.market.fish[0]) ? s.market.fish[0] : s.speciesBoughtThisRun[s.speciesBoughtThisRun.length - 1];
       const tsp = target ? e.idx.species.get(target) : undefined;
       if (tsp) {
-        const gain = (cfg.shinyAppealMult - 1) * tsp.appeal * (tsp.flags.appealCount ?? 1) * e.fpa;
+        const avgCarSps = e.model.baseFishSps / Math.max(1, e.model.cars.length);
+        const gain = (cfg.shinyAppealMult - 1) * tsp.appeal * (tsp.flags.appealCount ?? 1) * avgCarSps * e.fpa;
         out.push({ kind: 'special', actions: [{ type: 'buySpecial', target: tsp.id }], cost: sp.price, now: sp.price, gain, bonus: 0 });
       }
     } else if (sp.kind === 'levelDiscount' && sp.species) {
@@ -342,7 +355,8 @@ function moveCandidates(e: Econ, o: PlanOpts): Cand[] {
           gain = carValue(e, from) + carValue(e, toNext) - carValue(e, m) - (tm ? carValue(e, tm) : 0);
         } else {
           if (sp.habitat !== to.habitat) continue;
-          gain = fi.sps * (1 / fi.habitatMult - 1) * e.frenzyF + fi.appeal * (1 / fi.habitatMult - 1) * e.fpa;
+          const k = 1 / fi.habitatMult - 1;
+          gain = k * (fi.sps * (e.frenzyF + fareAppeal(e.idx, m.appeal) * e.fpa) + (fareAppeal(e.idx, m.appeal + fi.appeal) - fareAppeal(e.idx, m.appeal)) * m.baseSps * e.fpa);
         }
         if (gain > 1e-9 * (e.income + 1)) out.push({ kind: 'move', actions: [{ type: 'moveFish', fishId: f.id, carId: to.id }], cost: 0, now: 0, gain, bonus: 0 });
       }
