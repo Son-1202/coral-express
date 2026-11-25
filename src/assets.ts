@@ -127,6 +127,11 @@ export function loadTexture(key: AssetKey, placeholder: () => HTMLCanvasElement,
 }
 
 const cache = new Map<string, THREE.Texture>();
+/** True for textures owned by the shared cache (never dispose those). */
+export function isSharedTexture(t: THREE.Texture): boolean {
+  for (const v of cache.values()) if (v === t) return true;
+  return false;
+}
 /** Cached variant of loadTextureUrl (shared by every sprite of the same file). */
 export function sharedTexture(path: string, placeholder: () => HTMLCanvasElement, opts: TexOpts = {}): THREE.Texture {
   const k = `${path}|${opts.transform ? 't' : ''}`;

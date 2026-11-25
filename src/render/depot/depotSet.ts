@@ -1,8 +1,9 @@
 import * as THREE from 'three';
 import { PATHS, hasFile, type FarVariant } from '../../assets';
 import { toTexture } from '../paint/canvas';
+import { paintRailSide } from '../diorama/paintTrack';
 import { DEPOT_PALETTE, paintPillar, paintPool, paintRails, paintShedBack, paintShedRoof } from './paintDepot';
-import { depotArt, loadImage, loaded, texOf } from './depotLoad';
+import { depotArt, disposeTree, loadImage, loaded, texOf } from './depotLoad';
 import type { WaterRect } from './poolFish';
 
 /**
@@ -16,6 +17,8 @@ import type { WaterRect } from './poolFish';
 export const RAIL_STRIP = { y: 0.04, h: 0.34 } as const;
 export const TRAIN_Y = 0.11;
 export const SIDING_Z = -2.6;
+/** Render order of the backdrop (also how the time-of-day tint recognises it). */
+export const BACKDROP_ORDER = -10;
 /** Shed layers straddle the train (z 0) and the main rail (z 0.02). */
 const SHED_BACK_Z = -0.35;
 const SHED_FRONT_Z = 0.35;
@@ -23,8 +26,24 @@ const SHED_FRONT_Z = 0.35;
 const DOOR_OVER_LOCO = 1.32;
 const POOL_W = 7.2;
 const BUFFER_H = 0.95;
-/** World Y of the far edge of the yard strip behind the siding. */
-const YARD_BACK_TOP = 2.2;
+/** T-24 rail head of the main line (world Y). */
+const RAIL_HEAD = 0.1675;
+/**
+ * yard.png layout (T-34): tile width in world units (crates ≈ loco scale), bottom edge Y, and the
+ * siding's rail-head row as a fraction of the tile height from the bottom (lower half of the
+ * painted sleeper band, rows ≈ 320–515 of 646).
+ */
+const YARD = { tileW: 6.3, bottom: -0.1, headV: 0.3 } as const;
+/** Foreground strips (main-game scale: foreground.ts draws the wall 1.0 tall). */
+const WALL_H = 1.0;
+/** Measured (T-35 pixel scan): parked cars sat ~2 px above the thin side-on siding rail; sink them onto its head. */
+const SIDING_SINK = 0.032;
+const MEADOW_H = 3.6;
+const MEADOW_TOP = -0.55;
+
+function yardTileH(img: HTMLImageElement): number {
+  return (YARD.tileW * img.naturalHeight) / img.naturalWidth;
+}
 
 export interface SetLayout {
   /** Train group X (= locomotive nose) when stopped. */
@@ -38,6 +57,8 @@ export interface SetLayout {
   shed: { x0: number; x1: number; top: number };
   /** Render order the pool fish use (between the pool and its water overlay). */
   fishOrder: number;
+  /** Lift of a siding car above the main line (world Y). */
+  sidingDy: number;
 }
 
 export interface SetInput {
@@ -72,8 +93,14 @@ export class DepotSet {
   /** Meshes to re-project behind their twin once the camera is placed. */
   private readonly pairs: { mesh: THREE.Object3D; z: number }[] = [];
 
-  build(inp: SetInput): SetLayout {
+  /** Detach and free everything the last build made. */
+  clear(): void {
+    disposeTree(this.group);
     this.group.clear();
+  }
+
+  build(inp: SetInput): SetLayout {
+    this.clear();
     this.pairs.length = 0;
     const pal = DEPOT_PALETTE[inp.line] ?? DEPOT_PALETTE[1]!;
     const art = depotArt();
@@ -95,11 +122,11 @@ export class DepotSet {
       stopX = 0; // nose X decided below from the doorway's right edge
       const doorRightX = 0;
       const cx = doorRightX - (doorRightPx - s.img.naturalWidth / 2) * k;
-      const back = plane(iw, ih, basic(texOf(s.img, false)));
+      const back = plane(iw, ih, basic(texOf(s.img)));
       back.position.set(cx, y, SHED_FRONT_Z);
       back.renderOrder = -2;
       this.pairs.push({ mesh: back, z: SHED_BACK_Z });
-      const front = plane(iw, ih, basic(texOf(s.front, false)));
+      const front = plane(iw, ih, basic(texOf(s.front)));
       front.position.set(cx, y, SHED_FRONT_Z);
       front.renderOrder = 6;
       g.add(back, front);
@@ -124,7 +151,10 @@ export class DepotSet {
       shed = { x0: -shedW / 2, x1: shedW / 2, top: wallH + roofH };
     }
 
-    // ---- siding + buffer -------------------------------------------------------------------
+    // ---- yard + siding + buffer --------------------------------------------------------------
+    // With the yard art the siding runs along its painted sleeper band (behind the main track,
+    // a little higher on screen); without it, it is a plain second track at rail height.
+    const sidingHead = art.yard ? YARD.bottom + YARD.headV * yardTileH(art.yard) : RAIL_HEAD;
     // the rake stops with its tail at stopX - trainLen; uncoupled cars roll ~2.4 further left
     const tailX = stopX - inp.trainLen;
     const bufferFaceX = tailX - 2.4;
@@ -134,21 +164,21 @@ export class DepotSet {
       const k = BUFFER_H / b.box.h;
       const iw = b.img.naturalWidth * k;
       const ih = b.img.naturalHeight * k;
-      const m = plane(iw, ih, basic(texOf(b.img, false)));
-      // right edge of the opaque box against the cars; bottom of the box on the rail head
-      const right = (b.box.x + b.box.w - b.img.naturalWidth / 2) * k;
+      const m = plane(iw, ih, basic(texOf(b.img)));
+      // the art's bumpers face left: mirror it so they face the cars rolling in from the right
+      m.scale.x = -1;
+      const right = (b.img.naturalWidth / 2 - b.box.x) * k;
       const bottom = (b.img.naturalHeight / 2 - (b.box.y + b.box.h)) * k;
-      m.position.set(bufferFaceX - right, RAIL_STRIP.y + 0.06 - bottom, SIDING_Z + 0.05);
+      m.position.set(bufferFaceX - right, sidingHead - 0.05 - bottom, SIDING_Z + 0.05);
       g.add(m);
     } else {
       const beam = plane(0.22, 0.6, new THREE.MeshBasicMaterial({ color: '#6b4a2e' }));
-      beam.position.set(bufferFaceX - 0.11, 0.45, SIDING_Z + 0.05);
+      beam.position.set(bufferFaceX - 0.11, sidingHead + 0.28, SIDING_Z + 0.05);
       const pad = plane(0.12, 0.26, new THREE.MeshBasicMaterial({ color: '#c8402f' }));
-      pad.position.set(bufferFaceX - 0.03, 0.5, SIDING_Z + 0.06);
+      pad.position.set(bufferFaceX - 0.03, sidingHead + 0.33, SIDING_Z + 0.06);
       g.add(beam, pad);
     }
 
-    // ---- ground, rails ----------------------------------------------------------------------
     const railsTex = toTexture(paintRails(), true);
     railsTex.wrapS = THREE.RepeatWrapping;
     railsTex.repeat.x = 60;
@@ -156,12 +186,22 @@ export class DepotSet {
     const main = plane(400, RAIL_STRIP.h, new THREE.MeshBasicMaterial({ map: railsTex, transparent: true, alphaTest: 0.5 }));
     main.position.set(0, RAIL_STRIP.y, 0.02);
     const sidingLen = shed.x0 + 1 - (bufferFaceX - bufW);
-    const sTex = railsTex.clone();
-    sTex.repeat.x = sidingLen / (400 / 60);
-    const siding = plane(sidingLen, RAIL_STRIP.h, new THREE.MeshBasicMaterial({ map: sTex, transparent: true, alphaTest: 0.5 }));
-    siding.position.set(bufferFaceX - bufW + sidingLen / 2, RAIL_STRIP.y, SIDING_Z);
+    let siding: THREE.Mesh;
+    if (art.yard) {
+      // side-on rail (head = top row) standing on the yard's sleepers, same language as the main line
+      const rt = toTexture(paintRailSide(), true);
+      rt.wrapS = THREE.RepeatWrapping;
+      rt.repeat.x = sidingLen / 24;
+      siding = plane(sidingLen, 0.25, new THREE.MeshBasicMaterial({ map: rt, transparent: true, alphaTest: 0.5 }));
+      siding.position.set(bufferFaceX - bufW + sidingLen / 2, sidingHead - 0.125, SIDING_Z);
+    } else {
+      const sTex = railsTex.clone();
+      sTex.repeat.x = sidingLen / (400 / 60);
+      siding = plane(sidingLen, RAIL_STRIP.h, new THREE.MeshBasicMaterial({ map: sTex, transparent: true, alphaTest: 0.5 }));
+      siding.position.set(bufferFaceX - bufW + sidingLen / 2, RAIL_STRIP.y, SIDING_Z);
+    }
     g.add(main, siding);
-    this.ground(pal.ground, art.yard);
+    this.ground(inp.line, pal.ground, art.yard);
 
     // ---- pool (foreground, left of the shed, below the track) --------------------------------
     const poolCx = Math.min(shed.x0 - POOL_W / 2 - 0.4, (bufferFaceX + shed.x0) / 2);
@@ -175,10 +215,10 @@ export class DepotSet {
       const ih = p.img.naturalHeight * k;
       // top of the pool art just below the rail line
       const cy = -0.25 - ih / 2 + (p.water.y > 0 ? 0 : 0);
-      const back = plane(POOL_W, ih, basic(texOf(p.img, false)));
+      const back = plane(POOL_W, ih, basic(texOf(p.img)));
       back.position.set(poolCx, cy, poolZ);
       back.renderOrder = 1;
-      const front = plane(POOL_W, ih, new THREE.MeshBasicMaterial({ map: texOf(p.front, false), transparent: true, depthWrite: false }));
+      const front = plane(POOL_W, ih, new THREE.MeshBasicMaterial({ map: texOf(p.front), transparent: true, depthWrite: false }));
       front.position.set(poolCx, cy, poolZ + 0.1);
       front.renderOrder = 4;
       g.add(back, front);
@@ -210,7 +250,7 @@ export class DepotSet {
     const x0 = Math.min(bufferFaceX - bufW - 0.6, poolCx - POOL_W / 2 - 0.3);
     const x1 = Math.max(shed.x1 + 0.4, stopX + 1.2);
     void poolTop;
-    return { stopX, bufferFaceX, water, frame: { x0, x1, y0: poolBottom - 0.15, y1: shed.top + 0.25 }, shed, fishOrder: 3 };
+    return { stopX, bufferFaceX, water, frame: { x0, x1, y0: poolBottom - 0.45, y1: shed.top + 0.25 }, shed, fishOrder: 3, sidingDy: sidingHead - RAIL_HEAD - (art.yard ? SIDING_SINK : 0) };
   }
 
   /** Called once the camera is placed: tuck the shed's back copy behind the train without parallax. */
@@ -218,31 +258,53 @@ export class DepotSet {
     for (const p of this.pairs) alignToCamera(p.mesh, cam, p.z);
   }
 
-  private ground(color: string, yard: HTMLImageElement | null): void {
+  private ground(line: number, color: string, yard: HTMLImageElement | null): void {
     const g = this.group;
     // horizontal ground behind the tracks, vertical bank below the main track
-    const groundMat = new THREE.MeshBasicMaterial({ color });
-    const ground = plane(400, 30, groundMat);
+    const ground = plane(400, 30, new THREE.MeshBasicMaterial({ color: yard ? '#6f665c' : color }));
     ground.rotation.x = -Math.PI / 2;
     ground.position.set(0, 0, 1.9 - 15);
-    const bank = plane(400, 60, new THREE.MeshBasicMaterial({ color: new THREE.Color(color).multiplyScalar(0.78) }));
+    const bankMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(color).multiplyScalar(0.78) });
+    const bank = plane(400, 60, bankMat);
     bank.position.set(0, -30, 1.9);
     g.add(ground, bank);
+    // the Line's own retaining wall (T-31) under the main track and its fenced meadow in front,
+    // at the main game's scale (wall 1.0 tall) — the pool sits on that meadow
+    this.foreStrip(PATHS.fore(line, 'wall'), WALL_H, 0.06, 1.92, false);
+    this.foreStrip(PATHS.fore(line, 'ground'), MEADOW_H, MEADOW_TOP, 2.2, true);
     if (!yard) return;
-    // T-34 yard strip: a vertical band behind the siding (its top edge = the yard's far edge)
-    // and again as the bank in front of the main track; tiled with mirrored repeats.
-    const tileW = 9;
-    const tileH = (tileW * yard.naturalHeight) / yard.naturalWidth;
+    // T-34 yard strip: crates / drums on the far edge, gravel + the siding's sleepers below,
+    // standing just behind the siding (tiled with mirrored repeats).
+    const tileH = yardTileH(yard);
     const tex = texOf(yard, false);
     tex.wrapS = THREE.MirroredRepeatWrapping;
-    tex.repeat.x = 400 / tileW;
-    const back = plane(400, tileH, new THREE.MeshBasicMaterial({ map: tex }));
-    back.position.set(0, YARD_BACK_TOP - tileH / 2, SIDING_Z - 0.7);
-    const avg = new THREE.Color(color);
-    groundMat.color.copy(avg);
-    const front = plane(400, tileH, new THREE.MeshBasicMaterial({ map: tex, color: '#d8d2c8' }));
-    front.position.set(0, -0.02 - tileH / 2, 1.9);
-    g.add(back, front);
+    tex.repeat.x = 400 / YARD.tileW;
+    const back = plane(400, tileH, new THREE.MeshBasicMaterial({ map: tex, transparent: true, alphaTest: 0.5 }));
+    back.position.set(0, YARD.bottom + tileH / 2, SIDING_Z - 0.6);
+    back.renderOrder = -5;
+    g.add(back);
+  }
+
+  /** A tiled (mirrored) per-Line foreground strip of height `h` with its top edge at `top`. */
+  private foreStrip(path: string, h: number, top: number, z: number, keyed: boolean): void {
+    if (!hasFile(path)) return;
+    const mat = new THREE.MeshBasicMaterial({ visible: false, transparent: keyed, alphaTest: keyed ? 0.5 : 0 });
+    const m = plane(400, h, mat);
+    m.position.set(0, top - h / 2, z);
+    const place = (img: HTMLImageElement | null) => {
+      if (!img) return;
+      const tileW = (h * img.naturalWidth) / img.naturalHeight;
+      const tex = texOf(img, false);
+      tex.wrapS = THREE.MirroredRepeatWrapping;
+      tex.repeat.x = 400 / tileW;
+      mat.map = tex;
+      mat.visible = true;
+      mat.needsUpdate = true;
+    };
+    const ready = loaded(path, true);
+    if (ready) place(ready);
+    else void loadImage(path, true).then((img) => m.parent && place(img));
+    this.group.add(m);
   }
 
   private backdrop(line: number, tod: FarVariant, sky: string): void {
@@ -252,7 +314,7 @@ export class DepotSet {
     const webp = path !== own;
     const mat = new THREE.MeshBasicMaterial({ color: sky, fog: false });
     const m = plane(1, 1, mat);
-    m.renderOrder = -10;
+    m.renderOrder = BACKDROP_ORDER;
     const place = (img: HTMLImageElement | null) => {
       const W = 320;
       const H = img ? (W * img.naturalHeight) / img.naturalWidth : 144;

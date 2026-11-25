@@ -14,7 +14,10 @@ export class DepotOverlay {
     c.style.cssText =
       'position:absolute;left:50%;top:14%;transform:translateX(-50%);padding:10px 22px;background:#fbf1d6;color:#2f4a4a;border:3px solid #d9ac4c;border-radius:10px;box-shadow:0 5px 0 rgba(0,0,0,.25);text-align:center;opacity:0;transition:opacity .5s;max-width:80vw;';
     const rest = cars > 0 ? `${cars} carriage${cars > 1 ? 's' : ''} rest${cars > 1 ? '' : 's'} on the siding` : 'The Heritage Carriage rolls on';
-    c.innerHTML = `<b style="font-size:20px">The Depot</b><br><span style="font-size:14px">${rest}${fish > 0 ? ' · the fish doze in the depot pool' : ''}</span>`;
+    // T-35: short (phone landscape) screens get a compact card at the very top so the shed's roof stays visible
+    const short = window.innerHeight < 520;
+    if (short) c.style.cssText += 'top:8px;padding:5px 14px;max-width:92vw;white-space:nowrap;border-width:2px;';
+    c.innerHTML = `<b style="font-size:${short ? 15 : 20}px">The Depot</b><br><span style="font-size:${short ? 11 : 14}px">${rest}${fish > 0 ? ' · the fish doze in the depot pool' : ''}</span>`;
     const b = document.createElement('button');
     b.type = 'button';
     b.textContent = 'Skip ›';

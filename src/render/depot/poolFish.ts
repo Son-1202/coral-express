@@ -61,6 +61,18 @@ function ring(): THREE.Texture {
   return rippleTex;
 }
 
+let dotTex: THREE.Texture | null = null;
+function dot(): THREE.Texture {
+  if (dotTex) return dotTex;
+  const p = makeCanvas(8, 8);
+  p.ctx.fillStyle = '#ffffff';
+  p.ctx.beginPath();
+  p.ctx.arc(4, 4, 3.5, 0, Math.PI * 2);
+  p.ctx.fill();
+  dotTex = new THREE.CanvasTexture(p.canvas);
+  return dotTex;
+}
+
 /**
  * Fish leaving the carriages for the depot pool: a hop through the air, a splash + ripple where
  * each one enters the water, then they swim *inside* the water band with their T-15 motion
@@ -182,14 +194,15 @@ export class PoolFish {
     mesh.renderOrder = this.renderOrder + 2;
     this.group.add(mesh);
     this.ripples.push({ mesh, mat, t0: t });
-    const dropMat = new THREE.MeshBasicMaterial({ color: 0xeafcff, transparent: true, opacity: 0.9, depthWrite: false });
+    const dropMat = new THREE.MeshBasicMaterial({ map: dot(), color: 0xeafcff, transparent: true, opacity: 0.9, depthWrite: false });
     for (let i = 0; i < 6; i++) {
-      const d = new THREE.Mesh(new THREE.PlaneGeometry(0.07, 0.07), dropMat);
+      const sz = 0.05 + (i % 3) * 0.015;
+      const d = new THREE.Mesh(new THREE.PlaneGeometry(sz, sz), dropMat);
       d.position.set(at.x, at.y, this.water.z + 0.07);
       d.renderOrder = this.renderOrder + 2;
       this.group.add(d);
       const a = (i / 5 - 0.5) * 2.2;
-      this.drops.push({ mesh: d, vx: Math.sin(a) * 1.1, vy: 2.0 + (i % 2) * 0.6, t0: t, y0: at.y });
+      this.drops.push({ mesh: d, vx: Math.sin(a) * 1.1 + ((i * 0.37) % 0.3), vy: 1.6 + ((i * 0.61) % 1) * 1.2, t0: t, y0: at.y });
     }
   }
 
