@@ -5,6 +5,8 @@
  */
 import * as THREE from 'three';
 import existingFiles from 'virtual:asset-list';
+import { shinyTint } from '../train/fishMaterial';
+import { fishSource } from './fishSource';
 
 const available = new Set<string>(existingFiles);
 
@@ -14,7 +16,11 @@ export function firstExisting(candidates: readonly string[]): string | null {
 }
 
 /** `texture.userData.aspect` (w/h) is kept up to date when the real image arrives. */
-export function tankTexture(candidates: readonly string[], placeholder: () => HTMLCanvasElement): THREE.Texture {
+export function tankTexture(
+  candidates: readonly string[],
+  placeholder: () => HTMLCanvasElement,
+  transform?: (img: HTMLImageElement) => HTMLCanvasElement,
+): THREE.Texture {
   const ph = placeholder();
   const tex: THREE.Texture = new THREE.Texture(ph);
   setup(tex, ph.width, ph.height);
@@ -23,12 +29,20 @@ export function tankTexture(candidates: readonly string[], placeholder: () => HT
     const img = new Image();
     img.onload = () => {
       tex.dispose(); // size changes: drop the immutable GPU storage so it re-uploads
-      tex.image = img;
-      setup(tex, img.naturalWidth, img.naturalHeight);
+      const src = transform ? transform(img) : img;
+      tex.image = src;
+      if (src instanceof HTMLImageElement) setup(tex, src.naturalWidth, src.naturalHeight);
+      else setup(tex, src.width, src.height);
     };
     img.src = url;
   }
   return tex;
+}
+
+/** Fish sprite texture; shiny fish load `<id>_shiny.png` (or a tinted copy of the normal art). */
+export function fishTankTexture(id: string, shiny: boolean, placeholder: () => HTMLCanvasElement): THREE.Texture {
+  const src = fishSource(id, shiny, (u) => available.has(u));
+  return tankTexture(src.url ? [src.url] : [], placeholder, src.tint ? shinyTint : undefined);
 }
 
 function setup(tex: THREE.Texture, w: number, h: number): void {
@@ -42,7 +56,7 @@ function setup(tex: THREE.Texture, w: number, h: number): void {
   tex.needsUpdate = true;
 }
 
-export const fishUrls = (id: string): string[] => [`/fish/${id}.png`, `/_cut/fish/${id}.png`];
+export { fishUrls } from './fishSource';
 export const plantUrls = (id: string): string[] => [`/plants/${id}.png`, `/_cut/plants/${id}.png`];
 export const decorUrls = (id: string): string[] => [`/decor/${id}.png`, `/_cut/decor/${id}.png`];
 const SIGHT_ART: Record<string, string> = { dolphin_race: 'dolphin', seagull_thief: 'gull', whale_breach: 'whale' };

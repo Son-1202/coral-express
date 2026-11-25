@@ -25,6 +25,14 @@ export interface Rect {
 }
 
 const PAD = 0.3;
+const SPARKLES_PER_FISH = 4;
+
+/** Deterministic 0..1 hash of an integer (sparkle placement). */
+function hash01(n: number): number {
+  let h = Math.imul(n ^ 0x9e3779b9, 0x85ebca6b);
+  h = Math.imul(h ^ (h >>> 13), 0xc2b2ae35);
+  return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
+}
 
 function hashId(s: string): number {
   let h = 2166136261;
@@ -56,6 +64,8 @@ export class TankScene {
   private readonly bubbles = new PointCloud(48, '#e8fbff', true);
   private readonly motes = new PointCloud(70, '#f4fff8', false);
   private readonly food = new PointCloud(16, '#a8743f', false);
+  /** T-27: subtle sparkles around shiny fish (SPARKLES_PER_FISH each). */
+  private readonly sparkles = new PointCloud(32, '#fff1b8', false, true);
   private pellets: Pellet[] = [];
   private bubbleSeeds = Array.from({ length: 48 }, (_, i) => ({ y: (i / 48) * TANK.h, ph: i * 1.7, sp: 0.9 + (i % 5) * 0.15, src: i }));
   private moteState = Array.from({ length: 70 }, (_, i) => ({ x: ((i * 37) % 100) / 100 * TANK.w, y: TANK.floor + (((i * 61) % 100) / 100) * (TANK.surface - TANK.floor), ph: i }));
@@ -72,7 +82,8 @@ export class TankScene {
   preview: { index: number; placed: PlacedDecor } | null = null;
 
   constructor(private readonly src: TankSource) {
-    this.scene.add(this.water.group, this.decorLayer, this.fishLayer, this.bubbles.points, this.motes.points, this.food.points);
+    this.scene.add(this.water.group, this.decorLayer, this.fishLayer, this.bubbles.points, this.motes.points, this.food.points, this.sparkles.points);
+    this.sparkles.points.renderOrder = 48;
     this.bubbles.points.renderOrder = 50;
     this.motes.points.renderOrder = 40;
     this.motes.points.position.z = 2;
@@ -100,7 +111,7 @@ export class TankScene {
     const car = this.car();
     if (!car) return;
     const st = this.src.state();
-    const fishKey = car.fish.map((id) => `${id}:${st.fish[id]?.species}:${st.fish[id]?.mascot ? 1 : 0}`).join(',');
+    const fishKey = car.fish.map((id) => `${id}:${st.fish[id]?.species}:${st.fish[id]?.mascot ? 1 : 0}:${st.fish[id]?.shiny ? 1 : 0}`).join(',');
     if (fishKey !== this.keys.fish) {
       this.keys.fish = fishKey;
       this.syncFish(car, st);
@@ -120,7 +131,8 @@ export class TankScene {
   private syncFish(car: Carriage, st: SimState): void {
     const want = new Set(car.fish);
     for (const [id, a] of this.fish) {
-      if (!want.has(id) || st.fish[id]?.species !== a.spec.def.id || !!st.fish[id]?.mascot !== a.spec.mascot) {
+      const f = st.fish[id];
+      if (!want.has(id) || f?.species !== a.spec.def.id || !!f?.mascot !== a.spec.mascot || !!f?.shiny !== a.spec.shiny) {
         this.fishLayer.remove(a.object);
         a.dispose();
         this.fish.delete(id);
@@ -261,6 +273,34 @@ export class TankScene {
       f.size[i] = 0.12;
       f.alpha[i] = p ? Math.min(1, (9 - p.age) / 2) : 0;
     }
+    this.updateSparkles();
+  }
+
+  /** Each shiny fish twinkles: a few short-lived 4-point stars at seeded spots around its sprite. */
+  private updateSparkles(): void {
+    const t = this.time;
+    const sp = this.sparkles;
+    let i = 0;
+    for (const f of this.fish.values()) {
+      if (!f.spec.shiny) continue;
+      const p = f.pos;
+      const hh = f.halfH;
+      const hw = hh * Math.min(2.2, Math.max(0.6, (f.object.scale.x ? Math.abs(f.object.scale.x / f.object.scale.y) : 1)));
+      for (let k = 0; k < SPARKLES_PER_FISH && i < sp.capacity; k++, i++) {
+        const cyc = t * 0.7 + k / SPARKLES_PER_FISH + (f.spec.seed % 97) / 97;
+        const n = Math.floor(cyc);
+        const life = cyc - n;
+        const h1 = hash01(f.spec.seed + n * 131 + k * 17);
+        const h2 = hash01(f.spec.seed * 3 + n * 71 + k * 29);
+        sp.pos[i * 3] = p.x + (h1 * 2 - 1) * hw;
+        sp.pos[i * 3 + 1] = p.y + (h2 * 2 - 1) * hh;
+        sp.pos[i * 3 + 2] = 4;
+        const a = Math.sin(life * Math.PI);
+        sp.size[i] = 0.16 + 0.14 * a;
+        sp.alpha[i] = a * 0.85;
+      }
+    }
+    for (; i < sp.capacity; i++) sp.alpha[i] = 0;
   }
 
   private updateCamera(dt: number): void {
@@ -365,6 +405,7 @@ export class TankScene {
     this.bubbles.commit(s);
     this.motes.commit(s);
     this.food.commit(s);
+    this.sparkles.commit(s);
   }
 
   /** Render the tank (no UI) at w×h into a fresh 2D canvas — used by photo mode. */
@@ -400,5 +441,6 @@ export class TankScene {
     this.bubbles.dispose();
     this.motes.dispose();
     this.food.dispose();
+    this.sparkles.dispose();
   }
 }

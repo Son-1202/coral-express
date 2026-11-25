@@ -4,7 +4,7 @@ import type { DecorDef, GameData, Habitat, PlantDef, SpeciesDef } from '../../da
 import type { PlacedDecor } from '../../sim/types';
 import { createMover, isSwarm, type MotionBounds, type MotionEnv, type Mover } from './motion';
 import { DecorSteer, type Obstacle } from './motion/avoid';
-import { decorUrls, fishUrls, plantUrls, tankTexture } from './assets';
+import { decorUrls, fishTankTexture, plantUrls, tankTexture } from './assets';
 import { paintCap, paintDecor, paintFish, paintPlant } from './paint';
 import { fishMaterial, plantMaterial, type FishUniforms, type PlantUniforms } from './shaders';
 import { depthLook, restingY, TANK } from './layout';
@@ -21,7 +21,8 @@ function cached(key: string, make: () => THREE.Texture): THREE.Texture {
   if (!t) texCache.set(key, (t = make()));
   return t;
 }
-export const fishTexture = (def: SpeciesDef): THREE.Texture => cached(`fish:${def.id}`, () => tankTexture(fishUrls(def.id), () => paintFish(def.id, def.motion)));
+export const fishTexture = (def: SpeciesDef, shiny = false): THREE.Texture =>
+  cached(`fish:${def.id}:${shiny ? 's' : 'n'}`, () => fishTankTexture(def.id, shiny, () => paintFish(def.id, def.motion)));
 export const plantTexture = (id: string, habitat: Habitat, n: number): THREE.Texture => cached(`plant:${id}`, () => tankTexture(plantUrls(id), () => paintPlant(habitat, n)));
 export const decorTexture = (id: string): THREE.Texture => cached(`decor:${id}`, () => tankTexture(decorUrls(id), () => paintDecor(id)));
 const capTexture = (): THREE.Texture => cached('cap', () => tankTexture(['/ui/conductor_cap.png'], paintCap));
@@ -64,7 +65,7 @@ export class FishActor {
 
   constructor(readonly spec: FishSpec, rand: () => number, readonly area: Area = TANK_AREA) {
     const { def } = spec;
-    this.tex = fishTexture(def);
+    this.tex = fishTexture(def, spec.shiny);
     this.halfH = (SPECIES_HALF_H[def.id] ?? HALF_H[def.motion] ?? 0.45) * (1 + Math.min(0.25, (spec.level - 1) * 0.01));
     this.depth = def.motion === 'sessile' || def.motion === 'crawler' ? 0.15 + rand() * 0.5 : rand();
     const profile = def.motion === 'glider' && def.motionVariant === 'sinuousTail' ? 'glider' : def.motion;

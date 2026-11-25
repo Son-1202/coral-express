@@ -137,18 +137,28 @@ void main() {
 const pointsFrag = /* glsl */ `
 uniform vec3 uColor;
 uniform float uRing;
+uniform float uStar;
 varying float vAlpha;
 void main() {
   vec2 d = gl_PointCoord - 0.5;
   float r = length(d);
   if (r > 0.5) discard;
+  if (uStar > 0.5) {
+    // 4-point sparkle: thin cross fading to the tips + bright core
+    float arm = max(step(abs(d.x), 0.06), step(abs(d.y), 0.06)) * (1.0 - r * 2.0);
+    float a = max(arm, step(r, 0.12));
+    if (a <= 0.01) discard;
+    gl_FragColor = vec4(uColor + vec3(0.25) * step(r, 0.12), a * vAlpha);
+    #include <colorspace_fragment>
+    return;
+  }
   float a = uRing > 0.5 ? smoothstep(0.5, 0.38, r) * (0.35 + 0.65 * smoothstep(0.22, 0.42, r)) : smoothstep(0.5, 0.2, r);
   vec3 col = uColor + (uRing > 0.5 ? vec3(0.3) * step(r, 0.18) * step(0.08, -d.y) : vec3(0.0));
   gl_FragColor = vec4(col, a * vAlpha);
   #include <colorspace_fragment>
 }`;
 
-/** Dynamic point cloud (bubbles, motes, food). Positions/sizes/alphas written by the caller. */
+/** Dynamic point cloud (bubbles, motes, food, shiny sparkles). Positions/sizes/alphas written by the caller. */
 export class PointCloud {
   readonly points: THREE.Points;
   readonly pos: Float32Array;
@@ -157,7 +167,7 @@ export class PointCloud {
   private readonly geo = new THREE.BufferGeometry();
   readonly material: THREE.ShaderMaterial;
 
-  constructor(readonly capacity: number, color: string, ring: boolean) {
+  constructor(readonly capacity: number, color: string, ring: boolean, star = false) {
     this.pos = new Float32Array(capacity * 3);
     this.size = new Float32Array(capacity);
     this.alpha = new Float32Array(capacity);
@@ -167,7 +177,7 @@ export class PointCloud {
     this.material = new THREE.ShaderMaterial({
       vertexShader: pointsVert,
       fragmentShader: pointsFrag,
-      uniforms: { uColor: { value: new THREE.Color(color) }, uRing: { value: ring ? 1 : 0 }, uScale: { value: 1 } },
+      uniforms: { uColor: { value: new THREE.Color(color) }, uRing: { value: ring ? 1 : 0 }, uStar: { value: star ? 1 : 0 }, uScale: { value: 1 } },
       transparent: true,
       depthWrite: false,
       depthTest: false,

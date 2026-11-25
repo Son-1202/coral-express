@@ -1,10 +1,13 @@
 import * as THREE from 'three';
 import { hasAsset, loadTexture } from '../../assets';
+import { loadGameData, type GameData } from '../../data/schema';
 import type { CarInfo } from '../../sim';
 import type { CarView } from '../train/train';
 import { fishMaterial } from '../train/fishMaterial';
 import { fishSize, fishTexture } from '../train/fishView';
-import { heartBubbleTex } from './paintFx';
+import { ghostHintTex, heartBubbleTex } from './paintFx';
+import { ghostText, pickGhost } from './ghostPick';
+import { GhostTip, type TipTarget } from './ghostTip';
 
 interface Heart {
   mesh: THREE.Mesh;
@@ -13,28 +16,43 @@ interface Heart {
 }
 interface Ghost {
   mesh: THREE.Mesh;
-  heart: THREE.Mesh;
-  anchor: string;
+  hint: THREE.Mesh;
+  key: string;
   species: string;
+  text: string;
+  /** -1 = bottom-left corner of the window, +1 = bottom-right. */
+  side: number;
 }
 interface CarBondFx {
   hearts: Map<string, Heart>;
-  ghosts: Map<string, Ghost>;
+  ghost: Ghost | null;
 }
 
 const HEART = 0.2;
+const HINT = 0.17;
+/** Ghost size caps (fraction of the window) so big species stay a small corner hint. */
+const GHOST_MAX_W = 0.34;
+const GHOST_MAX_H = 0.42;
 
 /**
- * Pillar 1 readability: a heart-bubble floats between bonded partners; a pair one
- * fish short shows the dotted outline of the missing partner next to the lonely fish.
+ * Pillar 1 readability: a heart-bubble floats between bonded partners. A bond one fish short
+ * (T-27) shows ONE hint per carriage — the most valuable missing partner — as a dashed outline
+ * of its real silhouette tucked in a bottom corner behind the fish, with a gold "+" hint bubble;
+ * hovering / tapping it explains it ("Add a Watchman Goby to bond with Pistol Shrimp (+100%)").
  */
 export class BondFx {
   private readonly perCar = new Map<string, CarBondFx>();
   private readonly heartTex: THREE.Texture;
+  private readonly hintTex: THREE.Texture;
   private readonly geo = new THREE.PlaneGeometry(1, 1);
+  private readonly tip: GhostTip;
+  private camera: THREE.Camera | null = null;
+  private canvas: HTMLCanvasElement | null = null;
 
-  constructor() {
+  constructor(private readonly data: GameData = loadGameData()) {
     this.heartTex = hasAsset('icons.heart_bubble') ? loadTexture('icons.heart_bubble', () => heartBubbleTex().image as HTMLCanvasElement, { pixel: true }) : heartBubbleTex();
+    this.hintTex = ghostHintTex();
+    this.tip = new GhostTip((x, y) => this.ghostAt(x, y));
   }
 
   private heartMesh(opacity = 1): THREE.Mesh {
@@ -47,7 +65,7 @@ export class BondFx {
   /** Reconcile with the latest car info (called a few times a second). */
   sync(car: CarView, info: CarInfo): void {
     let fx = this.perCar.get(car.id);
-    if (!fx) this.perCar.set(car.id, (fx = { hearts: new Map(), ghosts: new Map() }));
+    if (!fx) this.perCar.set(car.id, (fx = { hearts: new Map(), ghost: null }));
     const want = new Set<string>();
     for (const b of info.activeBonds) {
       const key = `${b.bondId}:${b.fishIds.join(',')}`;
@@ -65,36 +83,84 @@ export class BondFx {
         fx.hearts.delete(k);
       }
     }
-    // ghosts: for each possible pair, one missing partner next to a present fish of the bond
-    const wantG = new Set<string>();
-    let n = 0;
-    for (const pb of info.possibleBonds) {
-      if (n >= 2) break;
-      const missing = pb.missing[0];
-      const presentSp = pb.present[0];
-      if (!missing || !presentSp) continue;
-      const anchor = [...car.fish.values()].find((f) => f.species === presentSp);
-      if (!anchor) continue;
-      const key = `${pb.bondId}:${missing}`;
-      wantG.add(key);
-      n++;
-      if (!fx.ghosts.has(key)) {
-        const tex = fishTexture(missing, false);
-        const mesh = new THREE.Mesh(this.geo, fishMaterial(tex, 0, true));
-        mesh.renderOrder = 6;
-        const heart = this.heartMesh(0.45);
-        car.fishLayer.add(mesh, heart);
-        fx.ghosts.set(key, { mesh, heart, anchor: anchor.id, species: missing });
+    // ghost: at most one per carriage (the most valuable bond one fish short)
+    const pick = info.possibleBonds.length ? pickGhost(info.possibleBonds, this.data.bonds, this.data.config.communityBonus) : null;
+    const key = pick ? `${pick.missing}|${pick.pairs.length}|${pick.communities.length}` : '';
+    if (fx.ghost && fx.ghost.key !== key) {
+      this.removeGhost(car, fx.ghost);
+      fx.ghost = null;
+    }
+    if (pick && !fx.ghost) {
+      const tex = fishTexture(pick.missing, false);
+      const mesh = new THREE.Mesh(this.geo, fishMaterial(tex, 0, true));
+      mesh.renderOrder = 6;
+      const mat = mesh.material as THREE.ShaderMaterial;
+      mesh.onBeforeRender = (renderer, _scene, camera) => {
+        this.camera = camera;
+        this.canvas = renderer.domElement;
+        // outline ≥ 1 CSS px on hi-dpi screens (and exactly 1 device px on the low tier)
+        if (mat.uniforms.uLinePx) mat.uniforms.uLinePx.value = renderer.getPixelRatio();
+      };
+      const hint = new THREE.Mesh(this.geo, new THREE.MeshBasicMaterial({ map: this.hintTex, transparent: true, depthWrite: false, opacity: 0.95, fog: false }));
+      hint.renderOrder = 7;
+      car.fishLayer.add(mesh, hint);
+      // tuck it into the bottom corner away from the partner it is about
+      const anchor = [...car.fish.values()].find((f) => f.species === pick.anchor);
+      const side = anchor && anchor.mesh.position.x < 0 ? 1 : -1;
+      fx.ghost = { mesh, hint, key, species: pick.missing, text: ghostText(pick, this.data.species), side };
+    }
+  }
+
+  private removeGhost(car: CarView, g: Ghost): void {
+    car.fishLayer.remove(g.mesh, g.hint);
+    (g.mesh.material as THREE.Material).dispose();
+    (g.hint.material as THREE.Material).dispose();
+  }
+
+  /** CSS-pixel rect of a ghost + its hint bubble (null before the first render). */
+  private ghostRect(g: Ghost): TipTarget['rect'] | null {
+    const cam = this.camera;
+    const cv = this.canvas;
+    if (!cam || !cv || !g.mesh.parent) return null;
+    const r = cv.getBoundingClientRect();
+    let x0 = Infinity;
+    let y0 = Infinity;
+    let x1 = -Infinity;
+    let y1 = -Infinity;
+    const v = new THREE.Vector3();
+    for (const m of [g.mesh, g.hint]) {
+      for (const [cx, cy] of [[-0.5, -0.5], [0.5, 0.5], [-0.5, 0.5], [0.5, -0.5]] as const) {
+        v.set(cx, cy, 0).applyMatrix4(m.matrixWorld).project(cam);
+        const sx = r.left + ((v.x + 1) / 2) * r.width;
+        const sy = r.top + ((1 - v.y) / 2) * r.height;
+        x0 = Math.min(x0, sx);
+        x1 = Math.max(x1, sx);
+        y0 = Math.min(y0, sy);
+        y1 = Math.max(y1, sy);
       }
     }
-    for (const [k, g] of fx.ghosts) {
-      if (!wantG.has(k) || !car.fish.has(g.anchor)) {
-        car.fishLayer.remove(g.mesh, g.heart);
-        (g.mesh.material as THREE.Material).dispose();
-        (g.heart.material as THREE.Material).dispose();
-        fx.ghosts.delete(k);
-      }
+    return { x: x0, y: y0, w: x1 - x0, h: y1 - y0 };
+  }
+
+  private ghostAt(x: number, y: number): TipTarget | null {
+    const PAD = 6;
+    for (const fx of this.perCar.values()) {
+      const g = fx.ghost;
+      const rect = g && this.ghostRect(g);
+      if (!g || !rect) continue;
+      if (x >= rect.x - PAD && x <= rect.x + rect.w + PAD && y >= rect.y - PAD && y <= rect.y + rect.h + PAD) return { rect, text: g.text };
     }
+    return null;
+  }
+
+  /** Screen centre (CSS px) + tooltip text of the first visible ghost — for E2E / debug. */
+  ghostScreen(): { x: number; y: number; text: string } | null {
+    for (const fx of this.perCar.values()) {
+      const g = fx.ghost;
+      const rect = g && this.ghostRect(g);
+      if (g && rect) return { x: rect.x + rect.w / 2, y: rect.y + rect.h * 0.6, text: g.text };
+    }
+    return null;
   }
 
   /** Heart pop when a bond forms. */
@@ -109,6 +175,7 @@ export class BondFx {
   }
 
   update(dt: number, time: number, cars: CarView[]): void {
+    this.tip.tick();
     const tmp = new THREE.Vector3();
     for (const car of cars) {
       const fx = this.perCar.get(car.id);
@@ -129,20 +196,28 @@ export class BondFx {
         h.mesh.scale.set(s, s, 1);
         h.mesh.position.set(tmp.x, tmp.y + 0.12 + Math.sin(time * 2.4 + tmp.x) * 0.025, 0.06);
       }
-      for (const g of fx.ghosts.values()) {
-        const a = car.fish.get(g.anchor);
-        if (!a) continue;
-        const sz = fishSize((g.mesh.material as THREE.ShaderMaterial).uniforms.map?.value as THREE.Texture);
-        const side = a.mesh.position.x > 0 ? -1 : 1;
-        const gx = a.mesh.position.x + side * (0.32 + sz.w * 0.3);
-        const gy = Math.max(-car.winH / 2 + sz.h / 2, Math.min(car.winH / 2 - sz.h / 2, a.mesh.position.y + 0.04));
-        g.mesh.position.set(gx, gy, 0.05);
-        g.mesh.scale.set(sz.w * -side, sz.h, 1);
+      const g = fx.ghost;
+      if (g) {
         const mu = (g.mesh.material as THREE.ShaderMaterial).uniforms;
-        if (mu.uOpacity) mu.uOpacity.value = 0.55 + Math.sin(time * 3) * 0.25;
-        const img = (mu.map?.value as THREE.Texture | undefined)?.image as { width?: number; height?: number } | undefined;
+        const tex = mu.map?.value as THREE.Texture | undefined;
+        const sz = tex ? fishSize(tex) : { w: 0.4, h: 0.3 };
+        const k = Math.min(1, (car.winW * GHOST_MAX_W) / sz.w, (car.winH * GHOST_MAX_H) / sz.h);
+        const w = sz.w * k;
+        const h = sz.h * k;
+        const m = 0.05;
+        const gx = g.side * (car.winW / 2 - w / 2 - m);
+        const gy = -car.winH / 2 + h / 2 + m + Math.sin(time * 1.3) * 0.008;
+        // behind every fish (fish sit at z -0.01…0.01), in front of the tank backdrop (-0.02)
+        g.mesh.position.set(gx, gy, -0.015);
+        // face into the window
+        g.mesh.scale.set(w * -g.side, h, 1);
+        if (mu.uOpacity) mu.uOpacity.value = 0.6 + Math.sin(time * 2.2) * 0.15;
+        const img = tex?.image as { width?: number; height?: number } | undefined;
         if (img?.width && mu.uTexel) (mu.uTexel.value as THREE.Vector2).set(1 / img.width, 1 / (img.height ?? img.width));
-        g.heart.position.set((gx + a.mesh.position.x) / 2, Math.max(gy, a.mesh.position.y) + 0.12, 0.06);
+        const hs = HINT * (1 + Math.sin(time * 2.2) * 0.06);
+        const hx = Math.max(-car.winW / 2 + HINT / 2, Math.min(car.winW / 2 - HINT / 2, gx + g.side * -w * 0.25));
+        g.hint.position.set(hx, Math.min(car.winH / 2 - HINT / 2, gy + h / 2 + HINT * 0.45), 0.055);
+        g.hint.scale.set(hs, hs, 1);
       }
     }
   }

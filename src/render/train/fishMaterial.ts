@@ -22,22 +22,38 @@ uniform float uTintAmt;
 uniform float uOpacity;
 uniform float uGhost;
 uniform vec2 uTexel;
+uniform float uLinePx;
 varying vec2 vUv;
+// alpha with everything outside the sprite quad treated as transparent (no clamp-to-edge gaps)
+float ghostA(vec2 uv) {
+  vec2 inb = step(vec2(0.0), uv) * step(uv, vec2(1.0));
+  return texture2D(map, clamp(uv, 0.0, 1.0)).a * inb.x * inb.y;
+}
 void main() {
   vec4 c = texture2D(map, vUv);
   if (uGhost > 0.5) {
-    // dotted outline of a missing partner: edge pixels only, every other screen pixel
-    float a = c.a;
-    vec2 t2 = uTexel * 2.5;
-    float n = texture2D(map, vUv + vec2(t2.x, 0.0)).a + texture2D(map, vUv - vec2(t2.x, 0.0)).a
-            + texture2D(map, vUv + vec2(0.0, t2.y)).a + texture2D(map, vUv - vec2(0.0, t2.y)).a;
-    if (a < 0.5) discard;
-    bool edge = n < 3.5;
-    float dots = mod(floor(gl_FragCoord.x / 2.0) + floor(gl_FragCoord.y / 2.0), 2.0);
-    // faint silhouette + dotted white rim
-    float alpha = edge ? (dots > 0.5 ? uOpacity : 0.0) : uOpacity * 0.22;
-    if (alpha <= 0.0) discard;
-    gl_FragColor = vec4(1.0, 1.0, 1.0, alpha);
+    // T-27: crisp dashed outline of the missing partner's real silhouette — inner edge of the
+    // sprite alpha at native texel scale, but never thinner than uLinePx device pixels (k = texels
+    // per line width when minified). No fill. Dashes run along the local edge direction and
+    // are anchored to the sprite, so they don't crawl while the train moves.
+    vec2 tex = 1.0 / uTexel;
+    vec2 tc = vUv * tex;
+    float k = max(1.0, max(fwidth(tc.x), fwidth(tc.y)) * uLinePx);
+    vec2 cell = floor(tc / k);
+    vec2 cuv = (cell + 0.5) * k * uTexel;
+    vec2 o = uTexel * k;
+    float a = ghostA(cuv);
+    float r = ghostA(cuv + vec2(o.x, 0.0));
+    float l = ghostA(cuv - vec2(o.x, 0.0));
+    float u = ghostA(cuv + vec2(0.0, o.y));
+    float d = ghostA(cuv - vec2(0.0, o.y));
+    if (a < 0.5 || r + l + u + d > 3.5) discard;
+    // tangent axis: a mostly-horizontal edge (alpha changes in y) dashes along x, else along y
+    float along = abs(u - d) >= abs(r - l) ? cell.x : cell.y;
+    float on = step(mod(along, 3.0), 1.5);
+    // cream dash + faint teal gap so the line reads on bright water and on dark backdrops
+    vec4 col = on > 0.5 ? vec4(1.0, 0.96, 0.84, uOpacity) : vec4(0.12, 0.3, 0.34, uOpacity * 0.5);
+    gl_FragColor = col;
     return;
   }
   if (c.a < 0.5) discard;
@@ -59,21 +75,24 @@ export interface FishUniforms {
   uOpacity: THREE.IUniform<number>;
   uGhost: THREE.IUniform<number>;
   uTexel: THREE.IUniform<THREE.Vector2>;
+  /** Ghost outline width in device px (set to the renderer pixel ratio = 1 CSS px). */
+  uLinePx: THREE.IUniform<number>;
 }
 
-/** Fish sprite material: tail-wobble vertex shader, white level-up flash, depth tint, ghost outline. */
+/** Fish sprite material: tail-wobble vertex shader, white level-up flash, depth tint, dashed ghost outline. */
 export function fishMaterial(map: THREE.Texture, phase: number, ghost = false): THREE.ShaderMaterial & { uniforms: FishUniforms } {
   const uniforms: FishUniforms = {
     map: { value: map },
     uTime: { value: 0 },
-    uWobble: { value: 4 },
+    uWobble: { value: ghost ? 0 : 4 },
     uPhase: { value: phase },
     uFlash: { value: 0 },
     uTint: { value: new THREE.Color('#8fb7d6') },
     uTintAmt: { value: 0 },
-    uOpacity: { value: ghost ? 0.7 : 1 },
+    uOpacity: { value: ghost ? 0.6 : 1 },
     uGhost: { value: ghost ? 1 : 0 },
     uTexel: { value: new THREE.Vector2(1 / 64, 1 / 64) },
+    uLinePx: { value: 1 },
   };
   const m = new THREE.ShaderMaterial({ vertexShader: vert, fragmentShader: frag, uniforms, transparent: true, depthWrite: !ghost });
   return m as THREE.ShaderMaterial & { uniforms: FishUniforms };

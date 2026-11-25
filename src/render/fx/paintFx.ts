@@ -50,6 +50,35 @@ export const heartBubbleTex = () =>
     ),
   );
 
+/**
+ * T-27: "possible bond" hint — gold-rimmed cream bubble with a hollow heart and a teal "+" badge,
+ * so it never reads like the solid red heart of a formed bond.
+ */
+export const ghostHintTex = () =>
+  tex('ghostHint', 15, 15, (ctx) =>
+    px(
+      ctx,
+      [
+        '..........ggg..',
+        '.....ooooggwgg.',
+        '...oowwwwgwwwg.',
+        '..owwwwwwggwgg.',
+        '.owwhhwwwhgggo.',
+        '.owhwwhwhwwhwo.',
+        'owwhwwwhwwwhwwo',
+        'owwhwwwwwwwhwwo',
+        'owwwhwwwwwhwwwo',
+        '.owwwhwwwhwwwo.',
+        '.owwwwhwhwwwwo.',
+        '..owwwwhwwwwo..',
+        '...oowwwwwoo...',
+        '.....ooooo.....',
+        '...............',
+      ],
+      { o: '#b8792a', w: '#fff4d6', h: '#c9852b', g: '#1f8f8a' },
+    ),
+  );
+
 export const coinTex = () =>
   tex('coin', 9, 9, (ctx) =>
     px(
