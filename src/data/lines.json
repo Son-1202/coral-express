@@ -1,8 +1,8 @@
 [
-  { "id": 1, "name": "Line 1", "region": "Sunny Coast", "habitats": ["reef", "mangrove"], "fareMult": 1, "trackBase": 6, "trackGrowth": 20, "opensAfter": null, "ticketDivisor": 4e6, "decorPool": "l1",
+  { "id": 1, "name": "Line 1", "region": "Sunny Coast", "habitats": ["reef", "mangrove"], "fareMult": 1, "trackBase": 6, "trackGrowth": 18, "opensAfter": null, "ticketDivisor": 8e6, "decorPool": "l1",
     "palette": { "sky": "#bfe6f2", "sea": "#3cc7c4", "land": "#f3d9a4", "accent": "#f6c94a", "mood": "pastel cliff houses, lemon trees, striped awnings, turquoise sea" } },
   { "id": 2, "name": "Line 2", "region": "Fog Fjords", "habitats": ["kelp", "polar"], "fareMult": 25, "trackBase": 3000000, "trackGrowth": 8, "opensAfter": 1, "opensAfterRuns": 2, "ticketDivisor": 3e10, "decorPool": "l2",
     "palette": { "sky": "#c9d3dc", "sea": "#4f6f86", "land": "#3f5a4a", "accent": "#b5403a", "mood": "slate-blue mountains, pine forests, red wooden boathouses, low mist" } },
-  { "id": 3, "name": "Line 3", "region": "Volcano Isles", "habitats": ["vent"], "fareMult": 600, "trackBase": 1e12, "trackGrowth": 30, "opensAfter": 2, "opensAfterRuns": 2, "ticketDivisor": 1e14, "decorPool": "l3",
+  { "id": 3, "name": "Line 3", "region": "Volcano Isles", "habitats": ["vent"], "fareMult": 600, "trackBase": 1e12, "trackGrowth": 35, "opensAfter": 2, "opensAfterRuns": 2, "ticketDivisor": 1e14, "decorPool": "l3",
     "palette": { "sky": "#f0c59a", "sea": "#2fa58a", "land": "#2a2626", "accent": "#d8642b", "mood": "black-sand beaches, jade lagoons, smoking volcano far off, palm silhouettes" } }
 ]

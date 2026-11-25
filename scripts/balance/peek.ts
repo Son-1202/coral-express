@@ -27,3 +27,4 @@ for (const car of sim.state.carriages) {
 }
 console.log('market', sim.state.market.stationId, sim.state.market.fish.join(','), 'bought', sim.state.speciesBoughtThisRun.join(','));
 console.log('decide', JSON.stringify(bot.decide(sim, T)).slice(0, 300));
+for (const car of sim.state.carriages) console.log('bonds', car.id, JSON.stringify(sim.carInfo(car.id).activeBonds).slice(0, 200));

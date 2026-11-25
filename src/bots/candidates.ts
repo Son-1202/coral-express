@@ -131,8 +131,11 @@ function fishValue(e: Econ, m: CarModel, fishId: string): number {
 /** Best fish to put into `car` (or an empty car of `habitat`). Bond-never: raw output + habitat. */
 function bestFishFor(e: Econ, rq: ReqCtx, o: PlanOpts, car: Carriage, species: string[], removeFishId?: string, extraCost = 0): { sp: string; gain: number; bonus: number; cost: number } | null {
   let best: { sp: string; gain: number; bonus: number; cost: number; score: number } | null = null;
+  const partners = bondPartners(e);
   for (const id of species) {
     if (removeFishId && e.state.fish[removeFishId]?.species === id) continue;
+    // T-20: bond-never never adds a species next to one of its bond partners.
+    if (!o.bonds && car.fish.some((fid) => fid !== removeFishId && (partners.get(id) ?? []).includes(e.state.fish[fid]?.species ?? ''))) continue;
     const sp = speciesOf(e, id);
     const cost = copyCost(e.idx, e.state, sp, e.fx);
     let d: { gain: number; bonus: number };
@@ -181,11 +184,11 @@ export function structuralCandidates(e: Econ, o: PlanOpts): Cand[] {
       // T-20: bond-never is the no-bonds baseline: among home-habitat cars it avoids cars
       // holding a bond partner when it can (with only two habitats per Line, a bond-blind
       // placement forms most bonds by accident and the comparison measures nothing).
-      const home = free.filter((c) => c.habitat === sp.habitat);
-      const pool = home.length ? home : free;
       const partners = bondPartners(e).get(id) ?? [];
-      const safe = pool.filter((c) => !c.fish.some((fid) => partners.includes(s.fish[fid]?.species ?? '')));
-      const car = o.rng.pick(safe.length ? safe : pool)!;
+      const isSafe = (c: Carriage): boolean => !c.fish.some((fid) => partners.includes(s.fish[fid]?.species ?? ''));
+      const home = free.filter((c) => c.habitat === sp.habitat || sp.habitat === 'any');
+      const order = [home.filter(isSafe), free.filter(isSafe), home, free];
+      const car = o.rng.pick(order.find((l) => l.length)!)!;
       const cost = copyCost(e.idx, s, sp, e.fx);
       out.push({ kind: 'buy', actions: [{ type: 'buyFish', species: id, carId: car.id }], cost, now: cost, gain: rawFishValue(e, sp, car.habitat, e.model.byId.get(car.id)), bonus: 0 });
     }

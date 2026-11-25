@@ -20,7 +20,7 @@
   "maxLevel": 50,
   "milestones": { "levels": [10, 25, 50], "mult": 2 },
   "offHabitatMult": 0.5,
-  "fareAppealFactor": 0.18,
+  "fareAppealFactor": 0.2,
   "fareAppealHalf": 60,
   "stationMults": [1, 1.3, 1.6, 2, 2.5, 3],
   "frenzy": { "mult": 3, "seconds": 10, "cooldown": 30 },

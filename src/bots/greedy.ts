@@ -42,7 +42,8 @@ function trackReserve(s: SimState, structural: Cand[], income: number): number {
   if (T(track) > TRACK_RESERVE_PAYBACK && structural.some((c) => c.kind !== 'track' && T(c) < T(track))) return 0;
   const left = tr.phase === 'moving' ? DEPART_GUESS.leg - tr.t + DEPART_GUESS.stop : DEPART_GUESS.stop - tr.t;
   const need = track.now - income * Math.max(0, left - 1);
-  return Math.max(0, need);
+  // Infeasible (already spent): don't hoard for a departure we'll miss anyway.
+  return need <= s.shells ? Math.max(0, need) : 0;
 }
 
 /** Track payback (s) that is always worth catching the departure for. */
