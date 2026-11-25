@@ -16,4 +16,6 @@ Unit prices quoted: nano_banana_pro 2k 16:9 = 2.0 cr · gpt_image_2_6 1:1 = 0.75
 
 | 8 | T-30 | Shells/s HUD icon (4 variants, 1 request) | gpt_image_2_6 1k | 1 | 533.21 | 468.79 |
 
-**Final total: 533.21 credits spent.** Balance 468.79 (plus plan) after T-30, 2026-11-25.
+| 9 | T-31 | foreground kit: 3 walls, 3 grounds (incl. rejects/retries), 9 lens sprites, 3 planters, trackbed | nano_banana_pro / gpt_image_2_6 | 35 | 568.21 | 433.79 |
+
+**Total: 568.21 credits spent.** Balance 433.79 (plus plan) after T-31, 2026-11-25.
