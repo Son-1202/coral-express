@@ -84,3 +84,4 @@ See pm/CREDITS.md.
 - PRODUCER BUGS (2026-11-25): grey 'ghost' blobs in cars (missing-partner hint unreadable); Tank View ignores shiny sprites → FIXED in T-27 (note: tapping the hint also feeds the car — accepted).
 - PRODUCER REQUEST (2026-11-25): soften tilt-shift → DONE in T-28 (focusArea 0.56→0.90, offset −0.10→+0.05, kernel MEDIUM/SMALL→SMALL/VERY_SMALL, grain 0.08→0.048).
 - PRODUCER BUG (2026-11-25): placeholder Shells/s icon, plant decor leaf placeholder, Turtle Grass overflowing → FIXED in T-29 + T-30.
+- PRODUCER BUG (2026-11-25): foreground band (bushes, planter, fence, wall, grass, small trees) still procedural → T-31 (ART kit) + T-32 (DEV swap).
