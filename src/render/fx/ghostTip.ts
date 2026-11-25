@@ -67,9 +67,9 @@ export class GhostTip {
     if (this.el) this.el.style.opacity = '0';
   }
 
-  /** Tap tooltips expire on their own (called per frame). */
+  /** Tap tooltips expire on their own, and when Tank View opens (called per frame). */
   tick(): void {
-    if (this.tapUntil && performance.now() > this.tapUntil) {
+    if (this.tapUntil && (performance.now() > this.tapUntil || document.body.classList.contains('ui-tank'))) {
       this.tapUntil = 0;
       this.hide();
     }
