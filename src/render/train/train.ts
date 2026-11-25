@@ -261,23 +261,32 @@ export class Train {
     return this.geom.w;
   }
 
+  private lastGX = Number.NaN;
+  /** Distance rolled (world units): drives wheels + rail joints so they match the actual motion (T-25). */
+  private travel = 0;
+
   /** speed in world units/s, accel in units/s². */
   update(dt: number, time: number, speed: number, accel: number): void {
+    const gx = this.group.position.x;
+    let dx = Number.isFinite(this.lastGX) ? gx - this.lastGX : 0;
+    if (Math.abs(dx) > 2) dx = speed * dt; // view snap (offline / wrap / depot): not real rolling
+    this.lastGX = gx;
+    this.travel += dx;
     // signature slosh: damped spring driven by acceleration
     this.sloshVel += (-accel * 0.35 - this.slosh * 14) * dt;
     this.sloshVel *= Math.exp(-dt * 3.2);
     this.slosh += this.sloshVel * dt;
     const sp = Math.min(1, speed / 2.5);
     const rock = (body: THREE.Group, phase: number) => {
-      const joint = Math.pow(Math.max(0, Math.sin(time * speed * 1.7 - phase * 2)), 12);
+      const joint = Math.pow(Math.max(0, Math.sin(this.travel * 1.7 - phase * 2)), 12);
       body.rotation.z = Math.sin(time * 2.1 + phase) * 0.006 * sp + joint * 0.006 * sp;
       body.position.y = joint * 0.025 * sp + Math.sin(time * 9 + phase) * 0.004 * sp;
     };
     rock(this.loco.body, 0);
-    for (const w of this.loco.wheels) w.mesh.rotation.z -= (speed * dt) / w.r;
+    for (const w of this.loco.wheels) w.mesh.rotation.z -= dx / w.r;
     for (const c of this.cars) {
       rock(c.body, c.phase);
-      for (const w of c.wheels) w.mesh.rotation.z -= (speed * dt) / w.r;
+      for (const w of c.wheels) w.mesh.rotation.z -= dx / w.r;
       c.tank.setTilt(this.slosh * 1.6);
       c.tank.setFrenzy(c.frenzy);
       c.tank.update(time);

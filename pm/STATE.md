@@ -33,7 +33,7 @@
 | T-22b Fix: ending, tank decor, offline art | DEV | high | done |
 | T-22c Fix: UI typography, phone, depot guard | DEV | high | done |
 | T-24 Final polish (+ train-on-rails fix) | DEV | medium | done |
-| T-23 Final QA on live build | QA | medium | in progress |
+| T-23 Final QA on live build | QA | medium | done (all checks pass; 11/14 old bugs fixed, rest low) |
 | T-25 Fix: smooth train motion (producer bug) | DEV | high | in progress |
 | T-16 Painterly set + shiny | ART | medium | done |
 | T-17 Cinematic video clips | ART | medium | done |
@@ -45,7 +45,7 @@
 | T-22b Fix: ending, tank decor, offline art | DEV | high | done |
 | T-22c Fix: UI typography, phone, depot guard | DEV | high | done |
 | T-24 Final polish (+ train-on-rails fix) | DEV | medium | done |
-| T-23 Final QA on live build | QA | medium | in progress |
+| T-23 Final QA on live build | QA | medium | done (all checks pass; 11/14 old bugs fixed, rest low) |
 | T-25 Fix: smooth train motion (producer bug) | DEV | high | in progress |
 | T-12 Sprite sheets | ART | medium | done |
 | T-06 Sim meta (sights, depot, offline, save, markets, requests) | DEV | high | done |

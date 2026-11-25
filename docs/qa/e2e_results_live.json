@@ -1,0 +1,189 @@
+{
+ "when": "2026-11-25T04:35:07.590Z",
+ "totalSeconds": 150,
+ "pass": true,
+ "results": [
+  {
+   "name": "smoke",
+   "pass": true,
+   "details": {
+    "buttons": [
+     "New Game",
+     "Settings"
+    ]
+   },
+   "seconds": 8.7,
+   "consoleErrors": []
+  },
+  {
+   "name": "session",
+   "pass": true,
+   "details": {
+    "firstBuy": {
+     "button": "Buy Free",
+     "fish": 1,
+     "shells": 150.125
+    },
+    "feedChanged": true,
+    "panels": {
+     "m": "Lemonbay Halt",
+     "t": "Track Map",
+     "s": "Stamp Book",
+     "d": "The Depot"
+    },
+    "reset": {
+     "ticketsBefore": 0,
+     "tickets": 3,
+     "mascot": {
+      "species": "pebble_damsel",
+      "shiny": false,
+      "nickname": "Pebble Damsel"
+     },
+     "line": 1
+    },
+    "line2": {
+     "line": 2,
+     "builtTo": 2,
+     "endless": false
+    },
+    "line3": {
+     "line": 3,
+     "builtTo": 2,
+     "endless": false
+    },
+    "afterWin": {
+     "shells": 952.345286885246,
+     "runShells": 952.345286885246,
+     "line": 3,
+     "builtTo": 6,
+     "fish": 1,
+     "cars": 1,
+     "tickets": 12,
+     "openedLines": [
+      1,
+      2,
+      3
+     ],
+     "endless": true,
+     "mascot": {
+      "species": "pebble_damsel",
+      "shiny": false,
+      "nickname": "Pebble Damsel"
+     },
+     "terminal": true,
+     "arrivals": 25,
+     "fishBought": 1
+    },
+    "endingShown": true,
+    "endingBeat": "beach",
+    "endingSkipped": true,
+    "endless": true
+   },
+   "seconds": 31.8,
+   "consoleErrors": []
+  },
+  {
+   "name": "offline",
+   "pass": true,
+   "details": {
+    "titleTxt": "Continue away 1h New Game Settings",
+    "popup": "While you were away Lemonbay Halt The train kept rolling… Time away 1h Shells earned 452 Stations visited 70 Collect"
+   },
+   "seconds": 28.3,
+   "consoleErrors": []
+  },
+  {
+   "name": "saveLoad",
+   "pass": true,
+   "details": {
+    "before": {
+     "shells": 12495,
+     "runShells": 0,
+     "line": 1,
+     "builtTo": 2,
+     "fish": 2,
+     "cars": 1,
+     "tickets": 0,
+     "openedLines": [
+      1
+     ],
+     "endless": false,
+     "mascot": null,
+     "terminal": false,
+     "arrivals": 0,
+     "fishBought": 0
+    },
+    "reloaded": {
+     "shells": 12496.575409502262,
+     "runShells": 1.5754095022624435,
+     "line": 1,
+     "builtTo": 2,
+     "fish": 2,
+     "cars": 1,
+     "tickets": 0,
+     "openedLines": [
+      1
+     ],
+     "endless": false,
+     "mascot": null,
+     "terminal": false,
+     "arrivals": 0,
+     "fishBought": 0
+    },
+    "corrupted": {
+     "shells": 150,
+     "runShells": 0,
+     "line": 1,
+     "builtTo": 2,
+     "fish": 0,
+     "cars": 1,
+     "tickets": 0,
+     "openedLines": [
+      1
+     ],
+     "endless": false,
+     "mascot": null,
+     "terminal": false,
+     "arrivals": 0,
+     "fishBought": 0
+    }
+   },
+   "seconds": 19.8,
+   "consoleErrors": []
+  },
+  {
+   "name": "tankView",
+   "pass": true,
+   "details": {
+    "active": true,
+    "decorPlaced": 1,
+    "photo": true,
+    "exited": true,
+    "escMs": 3319
+   },
+   "seconds": 26.2,
+   "consoleErrors": []
+  },
+  {
+   "name": "motionTrain",
+   "pass": true,
+   "details": {
+    "line1": {
+     "phase": "moving",
+     "changed": "74.9%"
+    },
+    "line2": {
+     "phase": "moving",
+     "changed": "99.9%"
+    },
+    "line3": {
+     "phase": "moving",
+     "changed": "98.4%"
+    }
+   },
+   "seconds": 35.1,
+   "consoleErrors": []
+  }
+ ],
+ "base": "https://coral-express.vercel.app/"
+}

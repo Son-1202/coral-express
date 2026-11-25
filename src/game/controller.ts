@@ -74,8 +74,9 @@ export class GameController {
     return this.data.config.stopSeconds;
   }
 
+  /** Visual train pose, continuous between sim ticks (uses the unconsumed sub-tick time). */
   pose(): TrainPose {
-    return trainPose(this.sim.state, this.legSeconds(), this.stopSeconds());
+    return trainPose(this.sim.state, this.legSeconds(), this.stopSeconds(), this.sim.state.tickAcc);
   }
 
   /** The offline report produced while loading the save (for the "While you were away" card). */

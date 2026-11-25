@@ -1,7 +1,7 @@
 {
- "when": "2026-11-25T03:16:12.804Z",
- "totalSeconds": 306,
- "pass": false,
+ "when": "2026-11-25T04:19:35.400Z",
+ "totalSeconds": 285,
+ "pass": true,
  "results": [
   {
    "name": "smoke",
@@ -12,7 +12,7 @@
      "Settings"
     ]
    },
-   "seconds": 7.8,
+   "seconds": 7.5,
    "consoleErrors": []
   },
   {
@@ -22,7 +22,7 @@
     "firstBuy": {
      "button": "Buy Free",
      "fish": 1,
-     "shells": 150.125
+     "shells": 150.1875
     },
     "feedChanged": true,
     "panels": {
@@ -33,7 +33,7 @@
     },
     "reset": {
      "ticketsBefore": 0,
-     "tickets": 0,
+     "tickets": 3,
      "mascot": {
       "species": "pebble_damsel",
       "shiny": false,
@@ -41,9 +41,6 @@
      },
      "line": 1
     },
-    "warnings": [
-     "Depot Reset granted 0 Tickets after skipTo(depotReset)"
-    ],
     "line2": {
      "line": 2,
      "builtTo": 2,
@@ -55,13 +52,13 @@
      "endless": false
     },
     "afterWin": {
-     "shells": 400.6048360655738,
-     "runShells": 432.5645491803279,
+     "shells": 1021.095286885246,
+     "runShells": 1021.095286885246,
      "line": 3,
      "builtTo": 6,
      "fish": 1,
      "cars": 1,
-     "tickets": 0,
+     "tickets": 12,
      "openedLines": [
       1,
       2,
@@ -78,10 +75,11 @@
      "fishBought": 1
     },
     "endingShown": true,
+    "endingBeat": "beach",
     "endingSkipped": true,
     "endless": true
    },
-   "seconds": 32,
+   "seconds": 32.2,
    "consoleErrors": []
   },
   {
@@ -89,9 +87,9 @@
    "pass": true,
    "details": {
     "titleTxt": "Continue away 1h New Game Settings",
-    "popup": "While you were away The train kept rolling… Time away 1h Shells earned 451 Stations visited 70 Collect"
+    "popup": "While you were away Lemonbay Halt The train kept rolling… Time away 1h Shells earned 452 Stations visited 70 Collect"
    },
-   "seconds": 27.7,
+   "seconds": 25.1,
    "consoleErrors": []
   },
   {
@@ -99,8 +97,8 @@
    "pass": true,
    "details": {
     "before": {
-     "shells": 12495,
-     "runShells": 0,
+     "shells": 12496.1875,
+     "runShells": 1.1875,
      "line": 1,
      "builtTo": 2,
      "fish": 2,
@@ -116,8 +114,8 @@
      "fishBought": 0
     },
     "reloaded": {
-     "shells": 12497.609690622172,
-     "runShells": 2.6096906221719456,
+     "shells": 12497.588350226244,
+     "runShells": 2.588350226244344,
      "line": 1,
      "builtTo": 2,
      "fish": 2,
@@ -150,7 +148,7 @@
      "fishBought": 0
     }
    },
-   "seconds": 23.7,
+   "seconds": 18.4,
    "consoleErrors": []
   },
   {
@@ -161,9 +159,9 @@
     "decorPlaced": 1,
     "photo": true,
     "exited": true,
-    "escMs": 3427
+    "escMs": 3390
    },
-   "seconds": 28.4,
+   "seconds": 25.4,
    "consoleErrors": []
   },
   {
@@ -173,7 +171,7 @@
     "count": 28,
     "carDetailBonds": "Clownfish + Carpet Anemone +100% Reef Family +200%"
    },
-   "seconds": 115.3,
+   "seconds": 109.2,
    "consoleErrors": []
   },
   {
@@ -181,10 +179,10 @@
    "pass": true,
    "details": {
     "panelWidthPct": 40,
-    "smallTouchTargets": 1,
+    "smallTouchTargets": 0,
     "rotateCard": "rotate-card"
    },
-   "seconds": 17,
+   "seconds": 14.7,
    "consoleErrors": []
   },
   {
@@ -197,14 +195,18 @@
     "theEnd": "theEnd",
     "credits": "credits"
    },
-   "seconds": 13,
+   "seconds": 12.5,
    "consoleErrors": []
   },
   {
    "name": "motionZoo",
-   "pass": false,
-   "error": "assert: zoo cells with no motion over 1 s: species11",
-   "seconds": 5,
+   "pass": true,
+   "details": {
+    "cells": 45,
+    "still": [],
+    "stillAt1s": []
+   },
+   "seconds": 5.9,
    "consoleErrors": []
   },
   {
@@ -213,7 +215,7 @@
    "details": {
     "line1": {
      "phase": "moving",
-     "changed": "75.4%"
+     "changed": "76.1%"
     },
     "line2": {
      "phase": "moving",
@@ -221,10 +223,10 @@
     },
     "line3": {
      "phase": "moving",
-     "changed": "61.5%"
+     "changed": "98.5%"
     }
    },
-   "seconds": 35.6,
+   "seconds": 33.2,
    "consoleErrors": []
   }
  ]

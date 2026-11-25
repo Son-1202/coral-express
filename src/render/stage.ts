@@ -145,7 +145,7 @@ export class Stage implements GameView {
     this.syncState();
     this.resize();
     window.addEventListener('resize', () => this.resize());
-    this.placeTrain(0);
+    this.placeTrain(0, 0);
     this.rig.snap(this.followX());
   }
 
@@ -207,7 +207,7 @@ export class Stage implements GameView {
     this.world?.setLine(s.currentLine);
   }
 
-  private placeTrain(dt: number): void {
+  private placeTrain(dt: number, mDt = dt): void {
     const pose = this.game.pose();
     const x = pose.odo * WORLD.stationSpacing;
     // align the middle of the train with the platform centre when stopped
@@ -220,7 +220,7 @@ export class Stage implements GameView {
       this.lastX = wx;
     }
     const vel = pose.vel * WORLD.stationSpacing;
-    const accel = dt > 0 ? (vel - this.lastVel) / dt : 0;
+    const accel = mDt > 0 ? (vel - this.lastVel) / mDt : 0;
     this.lastVel = vel;
     this.lastX = wx;
     this.train.group.position.x = wx;
@@ -288,7 +288,10 @@ export class Stage implements GameView {
     this.guard.tick(realDt);
     this.time += dt;
     this.syncState();
-    this.placeTrain(dt);
+    // T-25: the train pose follows real (sim) time, so motion that tracks it uses the real gap
+    // (the clamped dt would make the camera lag jump after a hitch)
+    const mDt = Math.min(0.25, realDt);
+    this.placeTrain(dt, mDt);
     this.infoTimer = dt;
     this.refreshInfo();
     this.bonds.update(dt, this.time, this.train.cars);
@@ -298,7 +301,7 @@ export class Stage implements GameView {
     this.syncSight();
     this.sights.update(dt, this.time);
     this.coins.update(dt);
-    this.rig.update(dt, this.time, this.followX() + this.insetShift(), this.lastVel);
+    this.rig.update(mDt, this.time, this.followX() + this.insetShift(), this.lastVel);
     const tod = this.timeOverride ?? dayPhase(this.game.sim.state.time);
     this.post.setTimeOfDay(tod);
     this.diorama.update(this.time, this.rig.camera, nightAmount(tod), dt);

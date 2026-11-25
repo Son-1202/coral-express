@@ -34,42 +34,70 @@ async function snap(page, name) {
   return p;
 }
 
-/** Give the current Line three carriages, each filled with its habitat's community (+1 shiny). */
-async function fillLine(page) {
-  return page.evaluate(() => {
+/** Give the current Line three habitat carriages (plus the heritage car), each full of its habitat's fish. */
+async function fillLine(page, nCars = 3) {
+  // nCars counts every carriage (3 + loco is what the train camera frames fully)
+  return page.evaluate((nCars) => {
     const d = window.__debug;
     const g = d.game;
     const s = d.sim.state;
+    const shellsShown = { 1: 4.26e5, 2: 3.81e10, 3: 2.64e14 }[s.currentLine];
     d.addShells(1e30);
     const line = g.data.lines.find((l) => l.id === s.currentLine);
     const habs = line.habitats;
-    for (let i = 0; s.carriages.length < 3 && i < 6; i++) d.sim.act({ type: 'buyCarriage', habitat: habs[(s.carriages.length + 1) % habs.length] });
+    const own = () => s.carriages;
+    // cars from an earlier Line switch to this Line's habitats; their old fish go (the Mascot stays)
+    own().forEach((car, i) => {
+      const want = habs[i % habs.length];
+      if (car.habitat !== want) d.sim.act({ type: 'changeHabitat', carId: car.id, habitat: want });
+      for (const fid of car.fish.slice()) if (!s.fish[fid].mascot) {
+        delete s.fish[fid];
+        car.fish.splice(car.fish.indexOf(fid), 1);
+      }
+    });
+    for (let i = 0; own().length < nCars && i < 8; i++) d.sim.act({ type: 'buyCarriage', habitat: habs[own().length % habs.length] });
+    for (const car of own()) for (let i = 0; car.slots < 4 && i < 4; i++) d.sim.act({ type: 'buySlot', carId: car.id });
     g.drain(true);
     const comm = g.data.bonds.communities;
     const byHab = (h) => g.data.species.filter((sp) => sp.habitat === h || (h === 'vent' && sp.habitat === 'any'));
-    for (const car of s.carriages) {
-      const c = comm.find((x) => x.members.every((m) => byHab(car.habitat).some((sp) => sp.id === m)));
-      const ids = c ? c.members.slice() : byHab(car.habitat).map((sp) => sp.id);
-      for (const sp of byHab(car.habitat)) if (!ids.includes(sp.id)) ids.push(sp.id);
+    s.carriages.forEach((car, ci) => {
+      const pool = byHab(car.habitat).map((sp) => sp.id);
+      const c = comm.find((x) => x.members.every((m) => pool.includes(m)));
+      // rotate the pool per car so cars of the same habitat look different; community first in car 0/1
+      const rot = pool.slice(ci % pool.length).concat(pool.slice(0, ci % pool.length));
+      const ids = (c && ci < 2 ? c.members : []).concat(rot.filter((x) => !(c && ci < 2 && c.members.includes(x))));
       let k = 0;
       while (car.fish.length < car.slots && k < 12) {
-        const sp = ids[k % ids.length];
-        d.spawnFish(sp, car.id, { shiny: k === 1, level: 10 });
+        d.spawnFish(ids[k % ids.length], car.id, { shiny: k === 1 && ci === 1, level: 10 });
         k++;
       }
-    }
-    // a little decor in each car where possible
-    // a few decor pieces per car (buy → place on the sand)
-    const decs = g.data.decor.filter((x) => d.sim.price({ type: 'buyDecor', decorId: x.id }) !== null);
+    });
+    // a couple of decor pieces per car (buy → place on the sand); smallest first
+    const decs = g.data.decor.filter((x) => d.sim.price({ type: 'buyDecor', decorId: x.id }) !== null).sort((x, y) => x.capacity - y.capacity);
+    const why = [];
     s.carriages.forEach((car, ci) => {
-      for (let j = 0; j < 2 && decs.length; j++) {
-        const dec = decs[(ci * 2 + j) % decs.length];
-        if (!d.sim.act({ type: 'buyDecor', decorId: dec.id }).ok) continue;
-        d.sim.act({ type: 'placeDecor', carId: car.id, decorId: dec.id, x: j ? 0.75 : 0.25, y: 0.1, layer: 'back', scale: 1, flip: j === 1 });
+      let placed = 0;
+      for (let j = 0; j < decs.length && placed < 2; j++) {
+        const dec = decs[(ci + j) % decs.length];
+        const b = d.sim.act({ type: 'buyDecor', decorId: dec.id });
+        const r = d.sim.act({ type: 'placeDecor', carId: car.id, decorId: dec.id, x: placed ? 0.82 : 0.18, y: 0.05, layer: 'back', scale: 1, flip: placed === 1 });
+        if (r.ok) placed++;
+        else why.push(`${dec.id}:${b.ok ? '' : b.reason || 'buy'}/${r.reason}`);
       }
     });
+    window.__shipWhy = why.slice(0, 6);
     g.drain(true);
-    return s.carriages.map((c) => ({ id: c.id, hab: c.habitat, fish: c.fish.length, decor: c.decor.length }));
+    s.shells = shellsShown;
+    return { why: window.__shipWhy, cars: s.carriages.map((c) => `${c.id}${c.heritage ? '*' : ''} ${c.habitat} fish=${c.fish.map((f) => s.fish[f].species).join(',')} decor=${c.decor.length}`) };
+  }, nCars);
+}
+
+/** No Sight on screen (festival bunting etc. would cover the cars). */
+async function noSight(page) {
+  await page.evaluate(() => {
+    const d = window.__debug;
+    for (let i = 0; i < 120 && d.sim.state.sight.active; i++) d.fastForward(1);
+    d.sim.state.sight.nextAt = d.sim.state.time + 1e6;
   });
 }
 
@@ -83,9 +111,17 @@ async function parkAtStation(page) {
 
 async function lineShot(page, name, tod) {
   await page.evaluate((t) => window.__debug.setTimeOfDay(t), tod);
+  await noSight(page);
   await parkAtStation(page);
+  // frame the whole train: follow the car next to the loco instead of the loco itself
+  await page.evaluate((k) => {
+    const st = window.__debug.stage;
+    st.selectedCarId = st.train.cars[k] ? st.train.cars[k].id : null;
+  }, Number(process.env.SHIP_FOLLOW || 0));
   await settle(page, 2500);
-  return snap(page, name);
+  const p = await snap(page, name);
+  await page.evaluate(() => (window.__debug.stage.selectedCarId = null));
+  return p;
 }
 
 (async () => {
@@ -96,10 +132,15 @@ async function lineShot(page, name, tod) {
   info.l1 = await fillLine(page);
   if (on('01')) await lineShot(page, '01_line1', 'afternoon');
   if (on('04')) {
-    const car = await page.evaluate(() => window.__debug.sim.state.carriages[0].id);
+    const car = await page.evaluate(() => window.__debug.sim.state.carriages.find((c) => !c.heritage).id);
     await page.evaluate((id) => window.__debug.game.bus.emit('openPanel', { id: `car:${id}` }), car);
     await settle(page, 2000);
-    info.bonds = await page.evaluate(() => (document.querySelector('.ui-bonds') || {}).innerText || '');
+    info.bonds = await page.evaluate(() => {
+      const b = document.querySelector('.ui-bonds');
+      if (b) b.scrollIntoView({ block: 'center' });
+      return (b || {}).innerText || '';
+    });
+    await page.waitForTimeout(400);
     await snap(page, '04_car_detail_community');
     await L.clearModals(page);
     await page.keyboard.press('Escape');
@@ -139,12 +180,13 @@ async function lineShot(page, name, tod) {
   if (on('06')) {
     await page.evaluate(() => window.__debug.forceWin());
     await page.waitForSelector('.ending', { timeout: 10000 });
-    const beat = process.env.SHIP_BEAT || 'panorama';
+    const beat = process.env.SHIP_BEAT || 'postcard';
     const u = Number(process.env.SHIP_U || 0.6);
     await page.evaluate(({ beat, u }) => window.__debug.ending.seek(beat, u), { beat, u });
-    await settle(page, 3000);
+    await L.frames(page, 4);
+    await page.waitForTimeout(800);
     info.endingBeat = await page.evaluate(() => document.querySelector('.ending').dataset.beat);
-    await snap(page, '06_ending');
+    await snap(page, process.env.SHIP_NAME || '06_ending');
   }
   console.log(JSON.stringify(info, null, 1).slice(0, 3000));
   await browser.close();
