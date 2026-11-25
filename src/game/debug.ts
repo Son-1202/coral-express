@@ -3,6 +3,9 @@ import type { GameController } from './controller';
 import { spawnFish } from '../sim/actionsFish';
 import { TIME_NAMES, type TimeName } from '../render/timeOfDay';
 
+/** Tickets a debug-driven Depot Reset should at least grant (debug only, not balance). */
+const DEBUG_RESET_TICKETS = 3;
+
 export type SkipTarget = 'line2' | 'line3' | 'depotReset' | 'terminal' | 'ending';
 
 export interface DebugHooks {
@@ -60,10 +63,19 @@ export function createDebug(game: GameController, hooks: DebugHooks): Record<str
     }
   };
 
-  const resetTo = (line: LineId) => {
-    const fishId = ensureFish();
+  /**
+   * Debug resets must be worth something (QA bug 2): raise the run's Shells until the
+   * current ticket formula (`sim.projectedTickets()`, per-Line divisor) projects ≥ `want`.
+   */
+  const ensureRunShells = (want = DEBUG_RESET_TICKETS) => {
     const min = game.data.config.depotReset.minRunShells;
     if (s().runShells < min) s().runShells = min;
+    for (let i = 0; i < 200 && sim.projectedTickets() < want; i++) s().runShells = Math.max(1, s().runShells) * 1.25;
+  };
+
+  const resetTo = (line: LineId) => {
+    const fishId = ensureFish();
+    ensureRunShells();
     if (!fishId) return false;
     const r = sim.act({ type: 'depotReset', mascotFishId: fishId, nextLine: line });
     game.drain(true);
@@ -90,7 +102,7 @@ export function createDebug(game: GameController, hooks: DebugHooks): Record<str
       case 'depotReset':
         reachTerminal();
         ensureFish();
-        if (s().runShells < game.data.config.depotReset.minRunShells) s().runShells = game.data.config.depotReset.minRunShells;
+        ensureRunShells();
         hooks.openPanel('depot');
         break;
       case 'line2':

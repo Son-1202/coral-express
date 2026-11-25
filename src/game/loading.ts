@@ -1,4 +1,5 @@
 import { PATHS, fileUrl, hasFile } from '../assets';
+import { interiorPath } from '../render/train/interior';
 
 /**
  * Loading screen driver (T-19). The ticket card lives in index.html so it shows
@@ -15,7 +16,7 @@ export function bootUrls(line: number, habitats: string[]): string[] {
     { p: '/train/locomotive.png' },
     { p: '/train/car_shell.png' },
     { p: '/ui/title_keyart.png', webp: true },
-    ...habitats.map((h) => ({ p: PATHS.interior(h), webp: true })),
+    ...habitats.map((h) => ({ p: interiorPath(h), webp: true })),
     ...[1, 2, 3, 4].map((k) => ({ p: `/scenery/l${line}_props_${k}.png` })),
     ...[1, 2, 3].map((k) => ({ p: `/scenery/l${line}_foliage_${k}.png` })),
   ];

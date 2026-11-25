@@ -1,7 +1,8 @@
 import * as THREE from 'three';
 import { makeCanvas, rng, toTexture } from '../paint/canvas';
 import { outline } from './paintTrain';
-import { PATHS, hasFile, sharedTexture } from '../../assets';
+import { hasFile, sharedTexture } from '../../assets';
+import { interiorPath } from './interior';
 
 /** Reef-style tank decor (corals, anemone, rocks) painted on a transparent canvas. */
 function paintDecor(seed: number): HTMLCanvasElement {
@@ -171,7 +172,7 @@ export function createTank(seed: number, w: number, h: number): Tank {
       uniforms.uWater.value.set(water);
       uniforms.uDeep.value.set(deep);
       uniforms.uSand.value.set(sand);
-      const path = PATHS.interior(hb);
+      const path = interiorPath(hb);
       if (!hasFile(path)) {
         uniforms.uUseInterior.value = 0;
         return;

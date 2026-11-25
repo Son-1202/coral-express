@@ -9,7 +9,7 @@ import postcardsJson from '../../story/postcards.json';
 import { fileUrl, hasFile } from '../../assets';
 import { BeachPainter } from '../../render/ending/beach';
 import { EndingLayer } from '../../render/ending/layer';
-import { ownedSpecies } from '../../render/ending/owned';
+import { endingCars, ownedSpecies, type EndingCar } from '../../render/ending/owned';
 import { UnderwaterPainter, type EndingFish } from '../../render/ending/underwater';
 import type { GameApi } from '../types';
 import { playCinematic, videoSources, type CinematicHandle } from '../video/cinematic';
@@ -29,6 +29,8 @@ export interface EndingOptions {
   renderer?: unknown;
   /** Override the panorama cast (preview / tests). */
   fish?: EndingFish[];
+  /** Override the beach carriages (preview / tests); default = the player's carriages. */
+  cars?: EndingCar[];
   lowQuality?: boolean;
   audio?: EndingAudioHooks;
   onDone: () => void;
@@ -60,6 +62,7 @@ function el(tag: string, cls: string, text?: string): HTMLElement {
 export function runEnding(o: EndingOptions): EndingHandle {
   const low = o.lowQuality ?? (o.api ? o.api.getSettings().quality === 'low' : false);
   const fish = o.fish ?? (o.api ? ownedSpecies(o.api.sim.state.fish, o.api.data.species) : []);
+  const cars = o.cars ?? (o.api ? endingCars(o.api.sim.state.carriages, o.api.sim.state.fish, o.api.data.species) : []);
   const credits: CreditEntry[] = buildCredits(endingJson.credits);
   const hasVideo = !low && videoSources('ending_dive').length > 0;
   const tl: Beat[] = buildTimeline(creditLineCount(credits));
@@ -92,7 +95,7 @@ export function runEnding(o: EndingOptions): EndingHandle {
   const useBeach = () => {
     if (beachActive) return;
     stopCine();
-    layer.setPainter(new BeachPainter(() => ({ phase: curPhase, u: curU })));
+    layer.setPainter(new BeachPainter(() => ({ phase: curPhase, u: curU }), cars));
     beachActive = true;
   };
 
@@ -153,7 +156,7 @@ export function runEnding(o: EndingOptions): EndingHandle {
       case 'panorama':
         stopCine();
         flash('#0a3346');
-        layer.setPainter(new UnderwaterPainter({ fish, wildSwarms: low ? 1 : 2, seed: 11 }));
+        layer.setPainter(new UnderwaterPainter({ fish, wildSwarms: low ? 1 : 2, seed: 11, panorama: true }));
         say(lineText('panorama'));
         break;
       case 'theEnd':
@@ -210,6 +213,7 @@ export function runEnding(o: EndingOptions): EndingHandle {
       const b = tl.find((x) => x.id === id);
       if (!b) return;
       start = performance.now() - (b.start + b.dur * u) * 1000;
+      fade.classList.remove('on');
       if (current !== id) enter(id);
     },
     get beat() {

@@ -14,6 +14,9 @@
 }
 
 * { box-sizing: border-box; }
+/* QA bug 1: Pixelify Sans maps "fi" to a ligature that renders as "A" ("ClownAsh"). Ligatures off everywhere;
+   font-feature-settings is not reset by the `font:` shorthand, so it also holds on buttons and inputs. */
+html, body, *, *::before, *::after { font-variant-ligatures: none; font-feature-settings: "liga" 0, "clig" 0, "dlig" 0; }
 html, body { margin: 0; height: 100%; overflow: hidden; background: #8fd3e8; }
 body { font-family: var(--font-head); color: var(--ink); -webkit-tap-highlight-color: transparent; user-select: none; touch-action: none; }
 #app, canvas.stage { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
@@ -41,9 +44,10 @@ body { font-family: var(--font-head); color: var(--ink); -webkit-tap-highlight-c
 .wave { background: linear-gradient(#5fc6d0, #2a95b4); border-radius: 50%; box-shadow: inset 0 -4px 0 #1d7f99; }
 .ticket { background: var(--coral); border-radius: 3px; transform: rotate(-12deg); height: 14px !important; margin-top: 3px; box-shadow: inset 0 0 0 2px #fbe3c9; }
 
-.hud-progress { display: flex; flex-direction: column; justify-content: center; gap: 4px; padding: 0 6px 0 10px; min-width: 200px; }
+.hud-progress { display: flex; flex-direction: column; justify-content: center; gap: 4px; padding: 0 6px 0 10px; min-width: 200px; max-width: 300px; }
 .hud-prog-head { display: flex; justify-content: space-between; align-items: baseline; font-size: 12px; color: var(--ink-soft); gap: 10px; }
-.hud-eta { font-size: 13px; }
+.hud-eta { font-size: 13px; flex: none; }
+.hud-station { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .hud-bar { position: relative; height: 10px; background: #e6d6b0; border-radius: 5px; box-shadow: inset 0 2px 0 rgba(0, 0, 0, 0.12); }
 .hud-fill { position: absolute; inset: 0 auto 0 0; width: 0; background: linear-gradient(var(--seafoam), var(--seafoam-deep)); border-radius: 5px; }
 .hud-train { position: absolute; top: -5px; width: 18px; height: 14px; margin-left: -9px; background: var(--seafoam-deep); border: 2px solid var(--ink); border-radius: 4px 6px 2px 2px; }
@@ -56,7 +60,7 @@ body { font-family: var(--font-head); color: var(--ink); -webkit-tap-highlight-c
 .hud-btn {
   position: relative; min-width: 108px; min-height: 48px; padding: 6px 16px 6px 12px;
   display: flex; align-items: center; gap: 8px; justify-content: center;
-  font: 600 17px var(--font-head); color: #3b2a10; cursor: pointer;
+  font: 400 17px var(--font-head); color: #3b2a10; cursor: pointer;
   background: linear-gradient(var(--brass-light), var(--brass) 55%, #c4943a);
   border: 2px solid var(--brass-dark); border-radius: 8px;
   box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.55), 0 3px 0 var(--brass-dark), 0 6px 12px rgba(30, 50, 40, 0.3);
@@ -81,6 +85,7 @@ body { font-family: var(--font-head); color: var(--ink); -webkit-tap-highlight-c
   .hud-progress { min-width: 150px; }
   .hud-bottom { bottom: max(6px, env(safe-area-inset-bottom)); gap: 8px; }
   .hud-btn { min-width: 92px; min-height: 44px; font-size: 15px; padding: 4px 12px 4px 10px; }
+  .hud-progress { max-width: 190px; }
   .hud-btn kbd { display: none; }
 }
 
@@ -89,7 +94,7 @@ body { font-family: var(--font-head); color: var(--ink); -webkit-tap-highlight-c
   background: radial-gradient(circle at 50% 30%, #bfeaf0, #7cc6ec 60%, #4fa6c4); }
 .rotate-inner { width: min(340px, 90vw); background: var(--paper); border-radius: 10px; padding: 28px 22px 22px; text-align: center;
   box-shadow: 0 4px 0 var(--paper-shade), 0 12px 30px rgba(20, 60, 80, 0.35); border: 2px dashed var(--paper-shade); }
-.rotate-inner h2 { margin: 14px 0 6px; font-size: 24px; font-weight: 700; }
+.rotate-inner h2 { margin: 14px 0 6px; font-size: 24px; font-weight: 600; }
 .rotate-inner p { margin: 0 0 18px; color: var(--ink-soft); font-size: 15px; line-height: 1.35; }
 .rotate-phone { width: 38px; height: 64px; margin: 0 auto; border: 4px solid var(--ink); border-radius: 8px; position: relative; animation: rot 2.4s ease-in-out infinite; }
 .rotate-phone::after { content: ''; position: absolute; bottom: 4px; left: 50%; width: 8px; height: 3px; margin-left: -4px; background: var(--ink); border-radius: 2px; }

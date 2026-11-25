@@ -43,6 +43,8 @@ export function writeReport(base: string, s: Summary, info: RunInfo): void {
     '- **Income at min 15**: average run Shells/s over the 60 s before minute 15 of run 1 (or before the first reset if it comes earlier).',
     '- **Dominance**: share of the run\'s fish income (`state.speciesShells`) earned by the top species, sampled right before each reset.',
     '- Fare / request shares are of all Shells earned in the game (fish + fares + sights + requests + offline).',
+    '- **Species bought** (T-20, PM): the Grand Terminus signature species (pocket_whale) is excluded — it is sold only at the Terminus itself, as the endless-mode reward. The greedy bot buys a terminal\'s signature species before taking the Depot Reset when it can afford it within 60 s (the market stays open at the depot).',
+    '- **Bots (T-20)**: Mascot = highest-output fish; greedy keeps Shells to build the next track before the train leaves the last built station when that track repays within 150 s; bond-never avoids cars holding a bond partner when it can (the no-bonds baseline).',
     '',
     '## Species bought before the Terminus (greedy, % of games)',
     '',

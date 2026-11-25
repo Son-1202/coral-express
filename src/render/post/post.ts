@@ -30,7 +30,7 @@ export class Post {
   ) {
     this.composer = new EffectComposer(renderer, { frameBufferType: THREE.HalfFloatType });
     this.composer.addPass(new RenderPass(scene, camera));
-    this.tilt = new TiltShiftEffect({ focusArea: 0.48, feather: 0.3, offset: -0.12, kernelSize: KernelSize.MEDIUM });
+    this.tilt = new TiltShiftEffect({ focusArea: 0.56, feather: 0.3, offset: -0.1, kernelSize: KernelSize.MEDIUM });
     this.bloom = new BloomEffect({ intensity: 0.55, luminanceThreshold: 0.78, luminanceSmoothing: 0.25, mipmapBlur: true, radius: 0.7 });
     const vignette = new VignetteEffect({ offset: 0.32, darkness: 0.42 });
     this.noise = new NoiseEffect({ blendFunction: BlendFunction.SOFT_LIGHT, premultiply: false });

@@ -5,7 +5,7 @@
   { "id": "mudskipper", "name": "Mudskipper", "habitat": "mangrove", "line": 1, "station": 4, "baseCost": 3500, "basePps": 22.5, "appeal": 3, "motion": "hopper", "flags": { "hopsOnGlass": true } },
   { "id": "pistol_shrimp", "name": "Pistol Shrimp", "habitat": "mangrove", "line": 1, "station": 5, "baseCost": 25000, "basePps": 120, "appeal": 2, "motion": "crawler", "flags": { "snapOnFeed": true } },
   { "id": "watchman_goby", "name": "Watchman Goby", "habitat": "mangrove", "line": 1, "station": 6, "baseCost": 180000, "basePps": 650, "appeal": 5, "motion": "darter", "flags": {} },
-  { "id": "garibaldi", "name": "Garibaldi", "habitat": "kelp", "line": 2, "station": 1, "baseCost": 4e6, "basePps": 12500, "appeal": 5, "motion": "darter", "flags": {} },
+  { "id": "garibaldi", "name": "Garibaldi", "habitat": "kelp", "line": 2, "station": 1, "baseCost": 1.5e7, "basePps": 12500, "appeal": 5, "motion": "darter", "flags": {} },
   { "id": "kelp_seahorse", "name": "Kelp Seahorse", "habitat": "kelp", "line": 2, "station": 2, "baseCost": 2.5e7, "basePps": 65000, "appeal": 8, "motion": "hoverer", "flags": {} },
   { "id": "leafy_seadragon", "name": "Leafy Seadragon", "habitat": "kelp", "line": 2, "station": 3, "baseCost": 1.6e8, "basePps": 350000, "appeal": 12, "motion": "hoverer", "flags": {} },
   { "id": "ice_krill", "name": "Ice Krill Swarm", "habitat": "polar", "line": 2, "station": 4, "baseCost": 1.0e9, "basePps": 1.8e+06, "appeal": 3, "motion": "swarm", "flags": { "appealCount": 2 } },

@@ -76,6 +76,16 @@ async function boot(): Promise<void> {
     console.warn('[main] Tank View unavailable', err);
   }
 
+  /** Width (px) of the open right-hand side panel, 0 when none (camera centres left of it). */
+  const panelInset = (): number => {
+    const p = app.querySelector<HTMLElement>('.ui-panel');
+    if (!p || p.getAttribute('aria-hidden') === 'true') return 0;
+    const r = p.getBoundingClientRect();
+    const W = window.innerWidth;
+    if (r.width <= 0 || r.left >= W - 8 || r.left < W * 0.3) return 0;
+    return W - r.left;
+  };
+
   const view: GameView = {
     handle(e, bulk) {
       stage.handle(e, bulk);
@@ -83,6 +93,7 @@ async function boot(): Promise<void> {
     },
     frame(dt, realDt) {
       stage.skipRender = !!tank?.isCovering();
+      stage.viewInsetRight = panelInset();
       stage.frame(dt, realDt);
       if (tank?.isActive()) {
         tank.update(dt);

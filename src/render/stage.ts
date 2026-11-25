@@ -14,6 +14,7 @@ import { CoinFlight } from './fx/coins';
 import { FrenzyRing } from './fx/frenzyRing';
 import { Passengers } from './fx/passengers';
 import { SightFx } from './fx/sights';
+import { SightBanner } from './fx/sightBanner';
 import { FxEvents } from './fx/fxEvents';
 import { dayPhase, nightAmount } from './timeOfDay';
 import { ODO_WRAP } from '../game/pose';
@@ -56,6 +57,10 @@ export class Stage implements GameView {
   readonly coins: CoinFlight;
   readonly passengers = new Passengers();
   readonly sights: SightFx;
+  /** DOM banner naming the active Sight. */
+  readonly sightBanner: SightBanner;
+  /** Screen pixels covered by a side panel on the right; the followed part is centred left of it. */
+  viewInsetRight = 0;
   readonly world: LivingWorld;
   /** Depot Reset scene (B4.9); while active it replaces the train-view render. */
   readonly depot: DepotScene;
@@ -101,12 +106,32 @@ export class Stage implements GameView {
         if (!car) return null;
         return { x: this.train.group.position.x + car.group.position.x, y: this.train.roofY };
       },
+      carBox: (i) => {
+        const car = this.train.cars[Math.min(i, this.train.cars.length - 1)];
+        if (!car) return null;
+        const v = this.train.carWorld(car.id, new THREE.Vector3());
+        return v ? { x: v.x, y: v.y, w: car.winW, h: car.winH } : null;
+      },
+      stowawayCar: () => {
+        const cars = this.game.sim.state.carriages;
+        const i = cars.findIndex((c) => c.fish.length < c.slots);
+        return Math.max(0, i);
+      },
+      trainSpan: () => {
+        // the carriages only (the loco has its chimney and dome up there)
+        const gx = this.train.group.position.x;
+        const xs = this.train.cars.map((c) => gx + c.group.position.x);
+        if (!xs.length) xs.push(gx + (this.train.centers[0] ?? 0));
+        const half = this.train.carWidth / 2;
+        return { x0: Math.min(...xs) - half, x1: Math.max(...xs) + half, roof: this.train.roofY };
+      },
       nextStationX: () => (Math.floor(this.game.pose().odo) + 1) * WORLD.stationSpacing,
       zoomOut: (z) => this.rig.setZoom(z),
       fog: (m) => this.diorama.setFogMult(m),
       particles: this.particles,
     });
     scene.add(this.sights.group);
+    this.sightBanner = new SightBanner(canvas.parentElement ?? document.body);
     this.world = new LivingWorld(this.particles);
     scene.add(this.world.group);
     this.fx = new FxEvents(this);
@@ -269,9 +294,10 @@ export class Stage implements GameView {
     this.fx.update(dt);
     this.particles.update(dt);
     this.passengers.update(dt, this.time);
+    this.syncSight();
     this.sights.update(dt, this.time);
     this.coins.update(dt);
-    this.rig.update(dt, this.time, this.followX(), this.lastVel);
+    this.rig.update(dt, this.time, this.followX() + this.insetShift(), this.lastVel);
     const tod = this.timeOverride ?? dayPhase(this.game.sim.state.time);
     this.post.setTimeOfDay(tod);
     this.diorama.update(this.time, this.rig.camera, nightAmount(tod), dt);
@@ -281,6 +307,35 @@ export class Stage implements GameView {
       if (this.depot.active) this.depot.render(this.renderer);
       else if (!this.skipRender) this.post.render(dt);
     } else if (!this.skipRender) this.post.render(dt);
+  }
+
+  /**
+   * World-X camera offset that puts the followed part in the middle of the area
+   * left of an open side panel (QA bug 7): camX = targetX + halfWidth · inset / width.
+   */
+  private insetShift(): number {
+    const W = window.innerWidth;
+    if (this.viewInsetRight <= 0 || W <= 0) return 0;
+    const c = this.rig.camera;
+    const dist = Math.max(1, c.position.z - this.train.group.position.z);
+    const halfW = Math.tan(THREE.MathUtils.degToRad(c.fov / 2)) * dist * c.aspect;
+    return halfW * Math.min(0.8, this.viewInsetRight / W);
+  }
+
+  /**
+   * Keep the Sight visuals in step with the sim (QA bug 13): bulk batches
+   * (fast-forward, offline) skip per-event VFX, so a Sight that ended inside one
+   * would otherwise linger. Also drives the Sight banner.
+   */
+  private syncSight(): void {
+    const act = this.game.sim.state.sight.active;
+    const id = act?.id ?? null;
+    if (this.sights.current !== id) {
+      if (this.sights.current) this.sights.end(this.sights.current, false);
+      if (id) this.sights.start(id);
+    }
+    const def = id ? this.game.data.sights.find((x) => x.id === id) : undefined;
+    this.sightBanner.set(this.depot.active ? null : id, def?.name ?? '', !!act?.requiresTap);
   }
 
   /** Raycast from normalised device coords. */

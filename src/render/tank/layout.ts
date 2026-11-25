@@ -22,15 +22,27 @@ export const SCALE_MAX = 1.2;
 const clamp = (v: number, lo: number, hi: number) => (v < lo ? lo : v > hi ? hi : v);
 
 /**
- * Decorate-mode drop rule (normalised coords, y up). Near the bottom → snaps to the floor line:
- * the lowest strip is the front band (in front of fish), the rest of the floor the back band.
- * Higher up = hung on the back wall (back band, keeps its height).
+ * Decor that hangs on the back wall (keeps the height it is dropped at). Everything else stands on
+ * the sand. Render rule, not balance: a framed photo is the only wall item in decor.json today.
  */
-export function snapPlacement(x: number, y: number): { x: number; y: number; layer: DecorLayer } {
+export const WALL_DECOR: ReadonlySet<string> = new Set(['wren_photo']);
+export const isWallDecor = (id: string): boolean => WALL_DECOR.has(id);
+
+/**
+ * Decorate-mode drop rule (normalised coords, y up). The lowest strip is the front band (in front
+ * of fish); anywhere else, floor decor snaps to the sand line (back band). Only wall decor
+ * (`wall = true`) may hang higher up on the back wall, keeping its height.
+ */
+export function snapPlacement(x: number, y: number, wall = false): { x: number; y: number; layer: DecorLayer } {
   const nx = clamp(x, 0.04, 0.96);
   if (y < FLOOR_N * 0.55) return { x: nx, y: FRONT_N, layer: 'front' };
-  if (y < FLOOR_N + 0.16) return { x: nx, y: FLOOR_N, layer: 'back' };
+  if (!wall || y < FLOOR_N + 0.16) return { x: nx, y: FLOOR_N, layer: 'back' };
   return { x: nx, y: clamp(y, FLOOR_N, 0.8), layer: 'back' };
+}
+
+/** Render height for a placement: floor decor never floats (older saves may hold mid-water y). */
+export function restingY(id: string, y: number): number {
+  return isWallDecor(id) ? y : Math.min(y, FLOOR_N);
 }
 
 export function clampScale(s: number): number {

@@ -83,11 +83,11 @@ describe('decor + cosmetics', () => {
 });
 
 describe('stats', () => {
-  it('fareSps = average fare per arrival / (leg + stop)', () => {
+  it('fareSps = average fare per arrival / (leg + stop); fare = appeal × car Sps × 8 × stationMult (T-20)', () => {
     const t = make();
     addFish(t, 'pebble_damsel');
     const s = t.sim.stats();
-    expect(s.farePerArrival).toBeCloseTo(8 * (1 + 1.4) / 2);
+    expect(s.farePerArrival).toBeCloseTo(1 * 0.5 * 8 * (1 + 1.4) / 2);
     expect(s.fareSps).toBeCloseTo(s.farePerArrival / 51);
     expect(s.totalSps).toBeCloseTo(0.5 + s.fareSps);
   });

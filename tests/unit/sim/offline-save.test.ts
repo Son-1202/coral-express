@@ -7,7 +7,7 @@ describe('offline', () => {
     const t = make();
     noSights(t);
     addFish(t, 'pebble_damsel');
-    const total = 0.5 + (8 * (1 + 1.4) / 2) / 51;
+    const total = 0.5 + (1 * 0.5 * 8 * (1 + 1.4) / 2) / 51;
     t.ctx.state.shells = 0;
     t.sim.act({ type: 'feed', carId: t.ctx.state.carriages[0]!.id });
     t.sim.triggerSight('whale_breach');

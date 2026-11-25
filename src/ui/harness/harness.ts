@@ -1,6 +1,7 @@
 // Dev-only UI harness (served by `vite` at /src/ui/harness/index.html): a fake GameApi over a real sim.
 // Query: ?preset=new|mid|late  &panel=market|track|stamps|depot|settings|car  &tab=fish|decor|special|requests|catalogue
 //        &title=1  &offline=1  &modal=reset|postcard
+//        &depot0=1 (reset rules met but 0 projected Tickets)  &toasts=3 (stamp toasts)  &ending=1 (endless toast)
 import '@fontsource/pixelify-sans/400.css';
 import '@fontsource/pixelify-sans/600.css';
 import '@fontsource/pixelify-sans/700.css';
@@ -58,6 +59,11 @@ if (preset === 'late') {
   s.permanent.stamps.push('shiny:pebble_damsel', 'species:garibaldi');
   s.permanent.resets = 1;
 }
+if (q.get('depot0')) {
+  const s = sim.state;
+  s.runShells = data.config.depotReset.minRunShells;
+  s.terminalReachedThisRun = true;
+}
 sim.drainEvents();
 
 const api: GameApi = {
@@ -91,6 +97,13 @@ const panel = q.get('panel');
 if (panel) ui.open(panel as Parameters<typeof ui.open>[0], q.get('car') ?? undefined);
 if (q.get('modal') === 'postcard') showPostcard('l1s3');
 if (q.get('modal') === 'reset') setTimeout(() => document.querySelector<HTMLButtonElement>('.ui-panel .ui-brass.big')?.click(), 50);
+const nToasts = Number(q.get('toasts') ?? 0);
+const toastSpecies = ['clownfish', 'carpet_anemone', 'pebble_damsel', 'garibaldi'];
+for (let i = 0; i < nToasts; i++) {
+  const ref = toastSpecies[i % toastSpecies.length] ?? 'clownfish';
+  bus.emitSim({ type: 'stamp', stampId: `species:${ref}`, kind: 'species', ref });
+}
+if (q.get('ending')) bus.emitSim({ type: 'ending', line: 3 });
 
 let last = performance.now();
 const loop = (now: number) => {

@@ -34,16 +34,16 @@ describe('train', () => {
     expect(arrivals(t.sim.drainEvents())).toEqual([2]);
   });
 
-  it('pays fare = appeal × 8 × stationMult × fareMult × ticketMult at arrival', () => {
+  it('pays fare = appeal × car base Sps (incl. ticketMult) × 8 × stationMult at arrival (T-20)', () => {
     const t = make();
     addFish(t, 'pebble_damsel');
     t.ctx.state.permanent.totalTicketsEarned = 5;
     t.ctx.invalidate();
     t.sim.drainEvents();
-    expect(t.sim.stats().nextFare).toBeCloseTo(1 * 8 * 1.4 * 1 * 1.5);
+    expect(t.sim.stats().nextFare).toBeCloseTo(1 * (0.5 * 1.5) * 8 * 1.4);
     t.sim.advance(51);
     const fare = t.sim.drainEvents().find((e) => e.type === 'fare');
-    expect(fare && fare.type === 'fare' && fare.amount).toBeCloseTo(16.8);
+    expect(fare && fare.type === 'fare' && fare.amount).toBeCloseTo(8.4);
   });
 
   it('terminal on line 1 → terminalReached + lineOpened(2); stamps + postcards', () => {
@@ -81,7 +81,7 @@ describe('train', () => {
     const pc = ev.filter((e) => e.type === 'postcard');
     expect(pc[pc.length - 1]).toEqual({ type: 'postcard', stationId: 'l3s6', suppressToast: true });
     expect(t.ctx.state.permanent.endless).toBe(true);
-    // next arrival is station 5: tubeworm appeal 5 off-habitat (reef car) → 2.5
-    expect(t.sim.stats().nextFare).toBeCloseTo(2.5 * 8 * 4 * 600 * 2);
+    // next arrival is station 5: tubeworm off-habitat (reef car) → appeal 2.5, Sps 1.75e9; endless ×2
+    expect(t.sim.stats().nextFare / (2.5 * 1.75e9 * 8 * 4 * 2)).toBeCloseTo(1, 9);
   });
 });

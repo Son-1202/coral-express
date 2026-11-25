@@ -16,7 +16,7 @@
 .ui-postcard { position: relative; width: min(620px, 92vw); display: grid; grid-template-columns: 1.1fr 1fr; background: #fffaf0; border-radius: 6px; padding: 12px; gap: 14px;
   box-shadow: 0 3px 0 #e8dcc0, 0 18px 40px rgba(20,50,60,.45); transform: rotate(-1.2deg); animation: ui-pop .35s cubic-bezier(.2,1.3,.4,1); }
 .ui-pc-art { width: 100%; aspect-ratio: 4/3; object-fit: cover; border-radius: 3px; image-rendering: pixelated; }
-.ui-pc-art.ph { display: grid; place-items: end start; padding: 10px; color: #fff; font: 700 22px var(--font-head); text-shadow: 0 2px 0 rgba(0,0,0,.25);
+.ui-pc-art.ph { display: grid; place-items: end start; padding: 10px; color: #fff; font: 600 22px var(--font-head); text-shadow: 0 2px 0 rgba(0,0,0,.25);
   background: radial-gradient(circle at 75% 25%, #fff4c2 0 9%, transparent 10%), linear-gradient(#bfe6f2 0 45%, #3cc7c4 45% 72%, #f3d9a4 72%); }
 .ui-pc-art.ph[data-line='2'] { background: radial-gradient(circle at 75% 25%, #f2f4f7 0 9%, transparent 10%), linear-gradient(#c9d6e0 0 30%, #6d8297 30% 48%, #39546a 48% 70%, #b7c3c8 70%); }
 .ui-pc-art.ph[data-line='3'] { background: radial-gradient(circle at 75% 25%, #ffd59a 0 9%, transparent 10%), linear-gradient(#f7c9a3 0 45%, #2f9e8f 45% 72%, #2c2a2c 72%); }
@@ -60,6 +60,15 @@
 @keyframes ui-toast-in { from { transform: translateX(-120%); } }
 @keyframes ui-toast-out { to { transform: translateX(-120%); opacity: 0; } }
 @media (max-height: 460px) { .ui-toasts { top: 64px; width: min(250px, 34vw); } .ui-toast { padding: 5px 8px; } .ui-toast-txt b { font-size: 13px; } }
+/* phone landscape (QA bug 9): compact cards, <= 30% of the screen width, max 2 (toasts.ts) */
+@media (max-width: 899px) {
+  .ui-toasts { width: min(230px, 30vw); gap: 5px; }
+  .ui-toast { gap: 6px; padding: 4px 8px 4px 6px; border-left-width: 4px; }
+  .ui-toast-txt b { font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ui-toast-txt span { font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ui-toast > .ui-fish, .ui-toast-pair .ui-fish { --s: 24px !important; }
+  .ui-toast-ico { width: 22px; height: 22px; }
+}
 
 /* ---------- tutorial tip ---------- */
 .ui-tip { position: fixed; left: max(12px, env(safe-area-inset-left)); bottom: 84px; z-index: 5; max-width: min(360px, 44vw); display: none; gap: 10px; align-items: flex-start;
@@ -144,6 +153,7 @@ button.ui-line-card { cursor: pointer; }
 .ui-reset-tickets small { font-size: 14px; color: var(--ink-soft); }
 .ui-reset-mult { font-size: 14px; } .ui-reset-mult b { font-family: var(--font-num); font-weight: 400; } .ui-reset-mult .up { color: var(--seafoam-deep); }
 .ui-reset .ui-item-desc { text-align: center; }
+.ui-reset-hint { color: #a4442f; text-align: center; }
 .ui-mascots { display: grid; grid-template-columns: repeat(auto-fill, minmax(78px, 1fr)); gap: 6px; }
 .ui-mascot { position: relative; min-height: 70px; padding: 4px; border-radius: 8px; border: 2px solid var(--line); background: var(--card); cursor: pointer; color: var(--ink); }
 .ui-mascot > span { display: flex; flex-direction: column; align-items: center; gap: 2px; }
@@ -152,12 +162,12 @@ button.ui-line-card { cursor: pointer; }
 .ui-mascot.on { border-color: var(--brass-dark); background: #fff1c4; box-shadow: 0 0 0 2px var(--brass); }
 .ui-mascot > .ui-cap { position: absolute; top: 4px; left: 50%; margin-left: -4px; transform: rotate(-12deg); }
 .ui-field { display: flex; align-items: center; gap: 10px; margin: 8px 0 2px; font-size: 14px; }
-.ui-input { flex: 1; min-height: 40px; padding: 0 10px; border: 2px solid var(--line); border-radius: 8px; background: #fffdf6; font: 16px var(--font-head); color: var(--ink); user-select: text; }
+.ui-input { flex: 1; min-height: 44px; padding: 0 10px; border: 2px solid var(--line); border-radius: 8px; background: #fffdf6; font: 16px var(--font-head); color: var(--ink); user-select: text; }
 .ui-input:focus { outline: none; border-color: var(--seafoam-deep); }
 .ui-lines.pick { margin-bottom: 12px; }
 .ui-panel[data-panel='depot'] .ui-brass.big { width: 100%; }
 .ui-up-ico { width: 44px; height: 44px; flex: none; image-rendering: pixelated; }
-.ui-up-ico.ph { display: grid; place-items: center; border-radius: 50%; background: radial-gradient(circle at 35% 30%, var(--brass-light), var(--brass) 60%, var(--brass-dark)); color: #3b2a10; font: 700 20px var(--font-head); font-style: normal; box-shadow: 0 2px 0 var(--brass-dark); }
+.ui-up-ico.ph { display: grid; place-items: center; border-radius: 50%; background: radial-gradient(circle at 35% 30%, var(--brass-light), var(--brass) 60%, var(--brass-dark)); color: #3b2a10; font: 600 20px var(--font-head); font-style: normal; box-shadow: 0 2px 0 var(--brass-dark); }
 .ui-stats { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; margin: 0; font-size: 13.5px; }
 .ui-stats dt { color: var(--ink-soft); border-bottom: 1px dotted var(--line); }
 .ui-stats dd { margin: 0; font: 13px var(--font-num); text-align: right; border-bottom: 1px dotted var(--line); }
@@ -166,7 +176,7 @@ button.ui-line-card { cursor: pointer; }
 .ui-seg { display: flex; border: 2px solid var(--brass-dark); border-radius: 8px; overflow: hidden; }
 .ui-seg-btn { flex: 1; min-height: 44px; border: none; background: var(--card); color: var(--ink); font-size: 14px; cursor: pointer; border-right: 2px solid var(--brass-dark); }
 .ui-seg-btn:last-child { border-right: none; }
-.ui-seg-btn.on { background: linear-gradient(var(--brass-light), var(--brass)); font-weight: 600; color: #3b2a10; }
+.ui-seg-btn.on { background: linear-gradient(var(--brass-light), var(--brass)); font-weight: 400; color: #3b2a10; }
 .ui-field.slider span { width: 110px; } .ui-field.slider output { width: 44px; text-align: right; font: 12px var(--font-num); }
 .ui-range { flex: 1; height: 44px; -webkit-appearance: none; appearance: none; background: transparent; }
 .ui-range::-webkit-slider-runnable-track { height: 10px; border-radius: 5px; background: linear-gradient(90deg, var(--seafoam-deep) var(--v), #e6d6b0 var(--v)); box-shadow: inset 0 2px 0 rgba(0,0,0,.12); }

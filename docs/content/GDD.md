@@ -12,7 +12,7 @@ Shells `config.startShells` (+ `spare_change`: 500 × totalTicketsEarned). Track
 | Thing | Formula | Keys |
 |---|---|---|
 | Track to station k (k=2..6) | `trackBase × trackGrowth^(k-2)` | `lines[].trackBase`, `lines[].trackGrowth` |
-| Carriage n (n≥2) | `carriageBase × carriageGrowth^(n-2) × fareMult_line` | `config.carriageBase/Growth`, `lines[].fareMult`; cap `config.maxCarriages` |
+| Carriage n (n≥2) | `carriageBase × carriageGrowth^(n-2) × fareMult_line` | `config.carriageBase/Growth`, `lines[].fareMult` (since T-20 it prices carriages only, not fares); cap `config.maxCarriages` |
 | Habitat change | `habitatChangeFactor × carriagePrice` | `config.habitatChangeFactor` |
 | Extra slot | `slotCostFactor × carriagePrice × slotGrowth^extraSlotsBought` | `config.slotCostFactor/slotGrowth`; cap `config.maxSlots` |
 | Fish copy | `baseCost × copyCostGrowth^copiesOwned` (first Pebble Damsel free) | `species[].baseCost`, `config.copyCostGrowth`, `flags.firstFree` |
@@ -33,7 +33,8 @@ ticketMult    = 1 + ticketIncomePerTicket × totalTicketsEarned
 decorMult     = 1 + carIncome + habitatIncome(matching habitat)  (same decor id does not stack in one car)
 whale: all fish × (1 + perDistinctSpeciesBonus × distinctSpeciesOnTrain)
 appeal_car = Σ(appeal × appealCount × habitatMult × (shiny ? shinyAppealMult : 1)) + Σ decor appeal + communityAppeal(if community)
-fare       = Σ appeal_car × fareAppealFactor × stationMults[station-1] × fareMult_line × ticketMult × upgradeMults
+fare       = Σ_car fareAppeal(appeal_car) × baseSps_car × fareAppealFactor × stationMults[station-1] × upgradeMults   (T-20)
+fareAppeal(A) = A × fareAppealHalf / (A + fareAppealHalf)   (saturating; baseSps_car already holds ticketMult, bonds, habitat, decor)
 ```
 Endless mode: fares × `config.endless.fareMult`. Old Friend (same Mascot species `mascot.oldFriendStreak` resets running): +`mascot.oldFriendBonus` output.
 
@@ -46,7 +47,7 @@ Pairs `{a,b,bonus}`: both in the same car → each gets `bonus`; a fish counts t
 - Shiny: each purchase `shinyChance` → appeal × `shinyAppealMult`.
 
 ## Depot Reset
-Available when runShells ≥ `depotReset.minRunShells` and any terminal reached. Tickets = `floor(sqrt(runShells / depotReset.divisor))`. Upgrades (`upgrades.json`, each once, cost in Tickets) carry typed `effects`. Lines open via `lines[].opensAfter` (terminal of that line reached once).
+Available when runShells ≥ `depotReset.minRunShells` and any terminal reached. Tickets = `floor(sqrt(runShells / divisor))`, divisor = `lines[].ticketDivisor` of the run's Line (fallback `depotReset.divisor`) (T-20). Upgrades (`upgrades.json`, each once, cost in Tickets) carry typed `effects`. Lines open via `lines[].opensAfter` once that Line's terminal was reached in `lines[].opensAfterRuns` runs (default 1; T-20 uses 2 → Line 1, Line 1, Line 2, Line 2, Line 3 = 4 resets).
 
 ## Offline
 `offline.rate × (fishSps + avgFarePerArrival / legCycleSeconds) × min(elapsed, offline.capHours h)`; Season Pass replaces with rate 0.7 / cap 12 h.
@@ -59,4 +60,4 @@ Price ≈ `todaysSpecial.priceSecondsOfIncome` × current income/s. Level discou
 - Assumptions not in SPEC: Stowaway tap window 8 s; Whale Breach "all income ×2" = fish and fares; line palette hexes; cosmetic names/hexes; backdrop v=0 is the habitat default.
 
 ## Tuning knobs (E1)
-Species `baseCost`/`basePps`/`appeal` (±40% allowed, log changes) · `lines[].trackBase`, `fareMult` · `config.carriageBase/Growth`, `slotCostFactor/Growth` · `copyCostGrowth`, `levelCostGrowth`, `milestones` · `fareAppealFactor`, `stationMults` (fare share 25–50%) · pair `bonus`, `communityBonus` (bond-never gap) · `frenzy.*` · `sightInterval` · `depotReset.*`, `ticketIncomePerTicket` (reset count 3–6) · upgrade `cost`s · `offline.*` (offline target 15–35%) · `todaysSpecial.*`.
+Species `baseCost`/`basePps`/`appeal` (±40% allowed, log changes) · `lines[].trackBase`, `fareMult` · `config.carriageBase/Growth`, `slotCostFactor/Growth` · `copyCostGrowth`, `levelCostGrowth`, `milestones` · `fareAppealFactor`, `fareAppealHalf`, `stationMults` (fare share 25–50%) · pair `bonus`, `communityBonus` (bond-never gap) · `frenzy.*` · `sightInterval` · `depotReset.*`, `lines[].ticketDivisor`, `lines[].opensAfterRuns`, `ticketIncomePerTicket` (reset count 3–6) · upgrade `cost`s · `offline.*` (offline target 15–35%) · `todaysSpecial.*`.

@@ -81,7 +81,7 @@ describe('sights', () => {
     const paid = ev.find((e) => e.type === 'fare');
     expect(paid && paid.type === 'fare' && paid.amount).toBeCloseTo(fare * 5);
     expect(ends(ev)).toHaveLength(1);
-    expect(t.sim.stats().nextFare).toBeCloseTo(8); // back at station 1 next
+    expect(t.sim.stats().nextFare).toBeCloseTo(1 * 0.5 * 8); // back at station 1 next
   });
 
   it('stowaway: tap puts a free owned-habitat fish into a free slot; needs a slot', () => {

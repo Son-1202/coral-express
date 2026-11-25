@@ -31,16 +31,18 @@ export const WILDLIFE: Record<number, Spec[]> = {
   3: [
     { id: 'frigatebird', b: 'glide', px: 60 },
     { id: 'flamingo', b: 'wade', px: 60 },
-    { id: 'manta', b: 'jump', px: 55 },
+    { id: 'manta', b: 'jump', px: 42 },
   ],
 };
 
 /** Ground walkers use the front edge of the track bed; flyers and swimmers sit behind the near art. */
 const GROUND_Z = 1.05;
 const SKY_Z = -10;
-const SEA_Z = -14;
-/** Projected (train-plane) height of the visible sea band per Line (L3 only shows open water). */
-const SEA_Y0: Record<number, number> = { 3: 2.45 };
+/**
+ * Breach lane (manta): just behind the verge art, with an arc that clears the
+ * L3 palms/monstera (backlog: at the old sea depth, z −14, it was hidden).
+ */
+const JUMP = { z: -5.5, y0: 0.2, height: 3.8 };
 
 interface Actor {
   spec: Spec;
@@ -97,11 +99,13 @@ export class Wildlife {
       case 'scuttle':
       case 'crawl':
       case 'flop':
-      case 'float': {
+      case 'float':
+      case 'wade': {
+        // the flamingo wades along the track-side edge too: the sea band is behind the L3 palms
         const p = edge(GROUND_Z, 0);
         a.x0 = p.x;
         a.y0 = 0.02;
-        a.a = { scuttle: 1.9, crawl: 0.9, flop: 1.1, float: 1.3 }[spec.b];
+        a.a = { scuttle: 1.9, crawl: 0.9, flop: 1.1, float: 1.3, wade: 1.0 }[spec.b];
         a.life = ((half * 2 + 3) / a.a) * 1.05;
         mesh.position.z = GROUND_Z;
         break;
@@ -120,15 +124,12 @@ export class Wildlife {
         mesh.position.z = SKY_Z;
         break;
       }
-      case 'wade':
       case 'jump': {
-        const y0 = SEA_Y0[this.line] ?? 2.45;
-        const start = spec.b === 'wade' ? edge(SEA_Z, y0) : atDepth(cam, cam.x + (Math.random() - 0.5) * half, y0, SEA_Z);
-        a.x0 = start.x;
-        a.y0 = start.y;
-        a.a = spec.b === 'wade' ? 1.4 : 0;
-        a.life = spec.b === 'wade' ? ((half * 2 + 3) * ((cam.z - SEA_Z) / cam.z)) / a.a : 3.2;
-        mesh.position.z = SEA_Z;
+        a.x0 = atDepth(cam, cam.x + (Math.random() - 0.5) * half, JUMP.y0, JUMP.z).x;
+        a.y0 = JUMP.y0;
+        a.a = 0;
+        a.life = 3.2;
+        mesh.position.z = JUMP.z;
         break;
       }
     }
@@ -240,13 +241,13 @@ export class Wildlife {
         const u = t / a.life;
         const arc = Math.sin(Math.min(1, Math.max(0, (u - 0.15) / 0.7)) * Math.PI);
         x = a.x0 + d * 2.6 * u * 3;
-        y = a.y0 - 0.6 + arc * 2.4;
+        y = a.y0 - 0.6 + arc * JUMP.height;
         rot = d * (0.9 - Math.min(1, Math.max(0, (u - 0.15) / 0.7)) * 1.8);
         fade = u < 0.15 || u > 0.85 ? 0 : 1;
         if (this.particles && ((u > 0.15 && a.splashed === 0) || (u > 0.85 && a.splashed === 1))) {
           a.splashed++;
           for (let i = 0; i < 10; i++)
-            this.particles.spawn({ tex: splashTex(), x: x + (Math.random() - 0.5) * 1.2, y: a.y0 - 0.2, z: SEA_Z + 0.1, vx: (Math.random() - 0.5) * 2, vy: 2 + Math.random() * 2, g: -7, life: 0.9, size: 0.35, sizeEnd: 0.15 });
+            this.particles.spawn({ tex: splashTex(), x: x + (Math.random() - 0.5) * 1.2, y: a.y0 - 0.2, z: JUMP.z + 0.1, vx: (Math.random() - 0.5) * 2, vy: 2 + Math.random() * 2, g: -7, life: 0.9, size: 0.35, sizeEnd: 0.15 });
         }
         break;
       }

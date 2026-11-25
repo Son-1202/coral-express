@@ -7,7 +7,7 @@ import { DecorSteer, type Obstacle } from './motion/avoid';
 import { decorUrls, fishUrls, plantUrls, tankTexture } from './assets';
 import { paintCap, paintDecor, paintFish, paintPlant } from './paint';
 import { fishMaterial, plantMaterial, type FishUniforms, type PlantUniforms } from './shaders';
-import { depthLook, TANK } from './layout';
+import { depthLook, restingY, TANK } from './layout';
 
 /** Half-height (world units) per motion profile; tank is 16×9. */
 const HALF_H: Record<string, number> = {
@@ -234,7 +234,7 @@ export class DecorActor {
   layout(): void {
     const { w, h } = this.size();
     const p = this.placed;
-    this.mesh.position.set(p.x * TANK.w, p.y * TANK.h - (p.layer === 'front' ? 0 : 0.15), p.layer === 'front' ? 3 + p.x * 0.01 : -4 + p.x * 0.01);
+    this.mesh.position.set(p.x * TANK.w, restingY(p.id, p.y) * TANK.h - (p.layer === 'front' ? 0 : 0.15), p.layer === 'front' ? 3 + p.x * 0.01 : -4 + p.x * 0.01);
     this.mesh.scale.set(w * (p.flip ? -1 : 1), h, 1);
     const far = p.layer === 'back' ? 0.12 : 0;
     this.uniforms.uTintAmt.value = far;

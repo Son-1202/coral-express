@@ -7,6 +7,14 @@ import type { ToastSpec, UiCtx } from './panel';
 /** At most this many toasts are visible; a newer toast replaces the oldest. */
 export const MAX_TOASTS = 3;
 
+/** Phone landscape (QA bug 9): narrower than this → compact stack. Matches the CSS media query. */
+export const PHONE_MAX_WIDTH = 900;
+
+/** Stack limits for a viewport width: phones show at most 2 toasts and dismiss them sooner. */
+export function toastLimits(viewportWidth: number): { max: number; msScale: number } {
+  return viewportWidth < PHONE_MAX_WIDTH ? { max: 2, msScale: 0.6 } : { max: MAX_TOASTS, msScale: 1 };
+}
+
 interface PostcardGroup {
   el: HTMLElement;
   txt: HTMLElement;
@@ -27,8 +35,9 @@ export class Toasts {
   push(t: ToastSpec): void {
     // Fast-forward / offline batches emit many events at once: keep the stack calm.
     const now = performance.now();
+    const lim = toastLimits(window.innerWidth);
     this.recent = this.recent.filter((x) => now - x < 1000);
-    if (t.kind !== 'postcard' && this.recent.length >= 3) return;
+    if (t.kind !== 'postcard' && this.recent.length >= lim.max) return;
     this.recent.push(now);
     if (t.kind === 'postcard' && this.cards?.el.isConnected) {
       this.cards.items.push(t);
@@ -44,7 +53,7 @@ export class Toasts {
       if (this.cards?.el === el) this.cards = null;
       setTimeout(() => el.remove(), 300);
     };
-    const timer = setTimeout(kill, t.ms ?? 4200);
+    const timer = setTimeout(kill, (t.ms ?? 4200) * lim.msScale);
     if (t.kind === 'postcard') {
       this.cards = { el, txt, items: [t], timer };
       el.classList.add('click');
@@ -66,7 +75,7 @@ export class Toasts {
     this.root.prepend(el);
     // newer replace older: drop the oldest live toasts beyond the cap
     const live = [...this.root.children].filter((c) => !c.classList.contains('out'));
-    for (const old of live.slice(MAX_TOASTS)) {
+    for (const old of live.slice(lim.max)) {
       if (this.cards?.el === old) this.cards = null;
       old.remove();
     }
@@ -89,7 +98,7 @@ export class Toasts {
       el.classList.add('out');
       if (this.cards?.el === el) this.cards = null;
       setTimeout(() => el.remove(), 300);
-    }, first.ms ?? 7000);
+    }, (first.ms ?? 7000) * toastLimits(window.innerWidth).msScale);
   }
 }
 

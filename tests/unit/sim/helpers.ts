@@ -1,10 +1,11 @@
 // Test helpers: scripted sims that bypass market availability and give Shells.
-import { loadGameData } from '../../../src/data/schema';
+import { fixtureData } from './fixtureData';
 import type { GameData, Habitat, LineId } from '../../../src/data/schema';
 import { createSimInternal, type SimInternals, type StoryData } from '../../../src/sim';
 import requestsJson from '../../../src/story/requests.json';
 
-export const data: GameData = loadGameData();
+/** Frozen SPEC-era numbers (see fixtureData.ts): rule tests don't follow balance tuning. */
+export const data: GameData = fixtureData();
 export const story = requestsJson as StoryData;
 
 export function make(seed = 1, withStory = false): SimInternals {

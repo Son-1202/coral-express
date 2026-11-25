@@ -20,8 +20,21 @@
   text-align: center; font-size: clamp(16px, 2.3vw, 24px); line-height: 1.35;
   text-shadow: 0 2px 0 rgba(0, 0, 0, 0.6), 0 0 12px rgba(0, 0, 0, 0.5);
   opacity: 0; transition: opacity 0.8s ease, transform 0.8s ease; z-index: 3; pointer-events: none;
+  font-variant-ligatures: none;
 }
 .ending-caption.on { opacity: 1; transform: translate(-50%, 0); }
+/* Underwater beats: the caption sits on a parchment plate in the upper third, clear of the cast. */
+.ending[data-beat='video'] .ending-caption,
+.ending[data-beat='panorama'] .ending-caption {
+  top: 7%; bottom: auto; width: min(80vw, 680px); padding: 12px 22px 14px;
+  color: var(--ink, #2f4a4a); text-shadow: none;
+  background: linear-gradient(#fbf1d6, #f3e3bd); border-radius: 8px;
+  box-shadow: 0 0 0 3px var(--brass, #d9ac4c), 0 0 0 5px rgba(80, 56, 20, 0.35), 0 10px 24px rgba(4, 16, 24, 0.45);
+}
+@media (max-height: 460px) {
+  .ending[data-beat='video'] .ending-caption,
+  .ending[data-beat='panorama'] .ending-caption { top: 4%; padding: 8px 16px 10px; font-size: 15px; }
+}
 
 .ending-postcard {
   position: absolute; left: 50%; top: 50%; z-index: 3; width: min(84vw, 620px);
@@ -49,9 +62,10 @@
 .ending-credits { position: absolute; inset: 22% 0 0; overflow: hidden; z-index: 3; opacity: 0; transition: opacity 1s ease; pointer-events: none;
   -webkit-mask-image: linear-gradient(transparent, #000 12%, #000 85%, transparent); mask-image: linear-gradient(transparent, #000 12%, #000 85%, transparent); }
 .ending-credits.on { opacity: 1; }
-.ending-credits-roll { position: absolute; left: 0; right: 0; top: 100%; text-align: center; }
+.ending-credits-roll { position: absolute; left: 0; right: 0; top: 0; padding-top: 10vh; text-align: center; }
+/* Starts right under the title (no empty black gap) and scrolls until the last line leaves. */
 .ending-credits.on .ending-credits-roll { animation: ending-roll var(--dur, 14s) linear forwards; }
-@keyframes ending-roll { from { transform: translateY(0); } to { transform: translateY(calc(-100% - 78vh)); } }
+@keyframes ending-roll { from { transform: translateY(0); } to { transform: translateY(-100%); } }
 .ending-credit { margin: 0 0 28px; }
 .ending-credit-role { font-family: var(--font-num, monospace); font-size: 13px; letter-spacing: 2px; text-transform: uppercase; color: var(--brass-light, #f4d78a); margin-bottom: 4px; }
 .ending-credit-name { font-size: clamp(18px, 2.6vw, 26px); }

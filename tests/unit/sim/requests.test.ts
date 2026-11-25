@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { SimEvent } from '../../../src/sim';
 import { updateRequests } from '../../../src/sim/requests';
-import { addFish, give, heritage, make, noSights, stock } from './helpers';
+import { addFish, give, heritage, make, noSights, stock, story } from './helpers';
 
 const done = (ev: SimEvent[]) => ev.filter((e): e is Extract<SimEvent, { type: 'requestCompleted' }> => e.type === 'requestCompleted');
 
@@ -20,7 +20,8 @@ describe('passenger requests', () => {
     const h = heritage(t);
     addFish(t, 'pebble_damsel', h);
     const s0 = t.sim.stats();
-    const expected = 180 * (s0.fishSps + s0.fareSps);
+    const rw = story.requests.find((r) => r.id === 'r_l1_01')!.reward;
+    const expected = (rw.type === 'income' ? rw.seconds : NaN) * (s0.fishSps + s0.fareSps);
     t.sim.drainEvents();
     t.sim.advance(51 * 2); // → station 2 → station 1
     const ev = done(t.sim.drainEvents());

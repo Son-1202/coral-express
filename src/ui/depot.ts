@@ -3,7 +3,7 @@ import type { LineId } from '../data/schema';
 import { fileUrl, hasFile } from '../assets';
 import { speciesName } from './content';
 import { btn, fishIcon, h, TICKET } from './dom';
-import { defaultMascotName, describeUpgrade, formatDuration } from './helpers';
+import { defaultMascotName, depotResetHint, describeUpgrade, formatDuration } from './helpers';
 import { confirmDialog } from './modal';
 import { carLabel } from './cars';
 import { costButton, type PanelView, type UiCtx } from './panel';
@@ -24,8 +24,9 @@ export function depotPanel(ctx: UiCtx): PanelView {
       const s = api.sim.state;
       const p = s.permanent;
       const c = api.data.config;
-      const ready = api.sim.canDepotReset();
       const proj = api.sim.projectedTickets();
+      // QA bug 2: a reset that would grant 0 Tickets is never offered.
+      const ready = api.sim.canDepotReset() && proj > 0;
       const curMult = 1 + c.ticketIncomePerTicket * p.totalTicketsEarned;
       const newMult = 1 + c.ticketIncomePerTicket * (p.totalTicketsEarned + proj);
 
@@ -35,12 +36,14 @@ export function depotPanel(ctx: UiCtx): PanelView {
         h('div.ui-reset-tickets', null, h('span', { html: TICKET }), h('b', { text: `+${ctx.fmt(proj)}` }), h('small', { text: 'Tickets' })),
         h('div.ui-reset-mult', { html: `income <b>×${curMult.toFixed(1)}</b> → <b class="up">×${newMult.toFixed(1)}</b>` }),
       );
-      if (!ready) {
-        const need: string[] = [];
-        if (s.runShells < c.depotReset.minRunShells) need.push(`earn ${ctx.fmt(c.depotReset.minRunShells)} Shells this run (${ctx.fmt(s.runShells)} so far)`);
-        if (!s.terminalReachedThisRun) need.push('reach a terminal');
-        reset.append(h('p.ui-item-desc', { text: `To reset: ${need.join(' and ')}.` }));
-      }
+      const hint = depotResetHint({
+        runShells: s.runShells,
+        minRunShells: c.depotReset.minRunShells,
+        terminalReached: s.terminalReachedThisRun,
+        projectedTickets: proj,
+        fmt: ctx.fmt,
+      });
+      if (hint) reset.append(h('p.ui-item-desc.ui-reset-hint', { text: hint }));
 
       // mascot picker
       // one candidate per species (+ shiny variant): its highest-level fish
@@ -111,7 +114,7 @@ export function depotPanel(ctx: UiCtx): PanelView {
             if (r.ok) ctx.close();
           },
         });
-      }, { disabled: !ready || !chosen });
+      }, { disabled: !ready || !chosen, ...(hint ? { title: hint } : {}) });
 
       body.append(
         reset,
@@ -122,6 +125,7 @@ export function depotPanel(ctx: UiCtx): PanelView {
         h('h3.ui-sec', { text: 'Next line' }),
         lines,
         go,
+        ...(hint ? [h('p.ui-hint.ui-reset-hint', { text: hint })] : []),
       );
 
       // upgrades

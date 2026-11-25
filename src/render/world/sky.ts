@@ -238,7 +238,7 @@ export class FogBanks {
       b.m.position.set(b.x + n * 2, p.y, b.z);
       const k = (cam.z - b.z) / cam.z;
       b.m.scale.set(b.w, 1.4 * k * (1 + n * 0.15), 1);
-      b.mat.opacity = 0.55 + n * 0.2;
+      b.mat.opacity = 0.38 + n * 0.14; // QA bug 8: lighter, keeps the frame's contrast
     }
   }
 }

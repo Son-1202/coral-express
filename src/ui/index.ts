@@ -17,6 +17,7 @@ import { Toasts, wireToasts } from './toasts';
 import { trackPanel } from './trackMap';
 import { Tutorial } from './tutorial';
 import type { GameApi, PanelId, UIEvents } from './types';
+import endingJson from '../story/ending.json';
 import './panels.css';
 import './screens.css';
 
@@ -32,6 +33,8 @@ export interface MountOpts {
 export interface UiHandle {
   open(id: PanelId, arg?: string): void;
   close(): void;
+  /** Show a plain info toast (controller hooks, e.g. after the ending). */
+  toast(title: string, text?: string, ms?: number): void;
   readonly hud: Hud;
   destroy(): void;
 }
@@ -114,6 +117,9 @@ export function mountUI(root: HTMLElement, api: GameApi, opts: MountOpts = {}): 
       host.hide();
       hud.root.querySelectorAll('.hud-btn.on').forEach((b) => b.classList.remove('on'));
     },
+    toast(title, text, ms) {
+      toasts.push({ kind: 'info', title, ...(text ? { text } : {}), ...(ms ? { ms } : {}) });
+    },
     destroy() {
       offs.forEach((o) => o());
       tutorial?.dispose();
@@ -138,6 +144,7 @@ export function mountUI(root: HTMLElement, api: GameApi, opts: MountOpts = {}): 
       document.body.classList.toggle('ui-tank', !!e.carId);
       if (e.carId) ui.close();
     }),
+    api.on('ending', () => offs.push(afterEnding(() => ui.toast('Endless mode', ENDLESS_TOAST, 9000)))),
     api.on('settings', () => host.schedule()),
     api.on('depotReset', () => host.schedule()),
   );
@@ -208,6 +215,24 @@ export function mountUI(root: HTMLElement, api: GameApi, opts: MountOpts = {}): 
   } else afterTitle();
 
   return ui;
+}
+
+const ENDLESS_TOAST = endingJson.endlessToast;
+
+/**
+ * Run `cb` once the Grand Terminus overlay (`.ending`, mounted by the controller on the same
+ * `ending` event) has closed — or right away when there is none. Returns a cancel fn.
+ */
+function afterEnding(cb: () => void): () => void {
+  const t0 = performance.now();
+  const timer = setInterval(() => {
+    const el = document.querySelector('.ending');
+    if (el && !el.classList.contains('out')) return;
+    if (performance.now() - t0 < 600) return; // let the overlay mount first
+    clearInterval(timer);
+    cb();
+  }, 250);
+  return () => clearInterval(timer);
 }
 
 /** DOM "item flies to the train" flourish from a market card. */

@@ -6,7 +6,7 @@ import type { PlacedDecor, FailReason } from '../../sim/types';
 import type { TankApi } from './types';
 import type { Rect, TankScene } from './scene';
 import type { DecorActor } from './actors';
-import { clampScale, snapPlacement, TANK } from './layout';
+import { clampScale, isWallDecor, snapPlacement, TANK } from './layout';
 
 const LONG_PRESS_MS = 600;
 const TAP_PX = 6;
@@ -68,7 +68,7 @@ export class DecorateInput {
       this.ghost = null;
       if (ev.type === 'pointercancel' || !this.insideTank(ev.clientX, ev.clientY)) return;
       const n = this.normAt(ev.clientX, ev.clientY);
-      const s = snapPlacement(n.x, n.y);
+      const s = snapPlacement(n.x, n.y, isWallDecor(id));
       this.act({ type: 'placeDecor', carId: this.scene.carId, decorId: id, ...s, scale: 1, flip: false });
     };
     window.addEventListener('pointermove', move);
@@ -111,7 +111,7 @@ export class DecorateInput {
     d.moved = true;
     this.cancelPress();
     const w = this.scene.screenToWorld(e.clientX, e.clientY, this.rect());
-    const s = snapPlacement((w.x + d.dx) / TANK.w, (w.y + d.dy) / TANK.h);
+    const s = snapPlacement((w.x + d.dx) / TANK.w, (w.y + d.dy) / TANK.h, isWallDecor(d.actor.placed.id));
     this.scene.preview = { index: d.actor.index, placed: { ...d.actor.placed, ...s } };
   }
 

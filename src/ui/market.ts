@@ -1,8 +1,9 @@
 // Market side panel: stallkeeper header + Fish / Decor / Special / Requests / Catalogue tabs.
 import type { Habitat } from '../data/schema';
+import type { CarInfo } from '../sim';
 import { conditionText, decorInfo, rewardText, speciesName, station } from './content';
 import { btn, decorIcon, fishIcon, h, habitatName, passengerIcon } from './dom';
-import { defaultTargetCar, fishGain, lineHabitats, partnersOf } from './helpers';
+import { defaultTargetCar, fishGainWithBonds, lineHabitats, partnersOf } from './helpers';
 import { costButton, type PanelView, type UiCtx } from './panel';
 import { carLabel, carPicker } from './cars';
 
@@ -75,7 +76,7 @@ function speciesCard(ctx: UiCtx, species: string, signature: boolean): HTMLEleme
   const carId = target === 'auto' ? defaultTargetCar(s, api.data, species) : target;
   const car = s.carriages.find((c) => c.id === carId);
   const cost = carId ? api.price({ type: 'buyFish', species, carId }) : null;
-  const gain = fishGain(api.data, s, sp, car?.habitat ?? null);
+  const est = fishGainWithBonds(api.data, s, sp, car ?? null, car ? safeCarInfo(ctx, car.id) : null);
   const partners = partnersOf(api.data, species);
   const card = h('div.ui-card.ui-item');
   if (signature && !s.speciesBoughtThisRun.includes(species)) card.append(h('span.ui-ribbon', { text: 'NEW' }));
@@ -90,7 +91,8 @@ function speciesCard(ctx: UiCtx, species: string, signature: boolean): HTMLEleme
         'div.ui-item-meta',
         null,
         h(`span.ui-chip.hab-${sp.habitat}`, { text: habitatName(sp.habitat) }),
-        h('span.ui-gain', { html: `+${ctx.fmt(gain)}<small>/s</small>` }),
+        h('span.ui-gain', { html: `+${ctx.fmt(est.sps)}<small>/s</small>` }),
+        est.bond ? h('span.ui-chip.bond', { text: '+bond', title: `Completes a bond: ${est.bond}` }) : null,
         off ? h('span.ui-warn', { text: 'off-habitat', title: 'Earns less outside its home habitat' }) : null,
       ),
       partners.length
@@ -292,4 +294,13 @@ function catalogueTab(ctx: UiCtx, list: HTMLElement): void {
   }
   list.append(h('h3.ui-sec', { text: 'Track' }));
   list.append(h('div.ui-card.ui-row', null, h('span.ui-row-name', { text: 'Extend the line' }), btn('ui-link', 'Open track map', () => ctx.open('track'))));
+}
+
+/** Sim car info for the gain estimate; null if the sim cannot describe the car. */
+function safeCarInfo(ctx: UiCtx, carId: string): CarInfo | null {
+  try {
+    return ctx.api.sim.carInfo(carId);
+  } catch {
+    return null;
+  }
 }

@@ -25,7 +25,7 @@ const sim2 = createSim(data, { seed: 0, save, now: Date.now(), story }); // load
 | `carInfo(id)` | income, appeal, active bonds, possible bonds (`missing` species), per-fish `{sps, habitatMult, bondMult, appeal}`, slots used/total, decor used/capacity, `frenzyActive`, `frenzyReadyIn`. Throws on unknown id. |
 | `serialize(now?)` | `{version: 1, savedAt, state}`. **`now` param added** (wall-clock ms → `savedAt`, default `null`) so output stays deterministic. |
 | `advanceOffline(s)` | T-06. Cap 8 h (Season Pass 12 h), rate 50% (70%) × (base fish Sps + base fare rate) × t; frenzy/Sight buffs ignored and expired; train position untouched. Returns `{seconds, shells, stationsVisited}`. |
-| `canDepotReset()` / `projectedTickets()` | T-06. runShells ≥ 1e6 and a terminal reached this run; `floor(sqrt(runShells / 1e5))`. |
+| `canDepotReset()` / `projectedTickets()` | T-06. runShells ≥ `depotReset.minRunShells` and a terminal reached this run; `floor(sqrt(runShells / divisor))`, divisor = current Line's `ticketDivisor` (T-20) or `depotReset.divisor`. |
 | `triggerSight(id)` | T-06 debug hook (`window.__debug.triggerSight`). |
 | `offlineReport` | Offline result applied by `createSim({save, now})`, else `null`. |
 | `migrateSave(raw, seed?)` | (exported) SaveData / JSON string / bare v0 state → current SaveData; junk → fresh blank state; missing fields filled from defaults; newer version **throws**. |
@@ -82,6 +82,12 @@ Extension points for T-06/T-07 (exported from `index.ts`):
 23. **Depot Reset**: Mascot streak +1 if same species as the previous Mascot else 1; `oldFriend` latches at 3. The Mascot spawns at level 5 in Heritage, keeps shiny + name, `mascot: true`, counts as an owned copy (it is in the Catalogue). Active Sight ends silently.
 24. **Double Decker** also raises existing carriages to 5 slots when bought.
 25. **Save**: `migrateSave` fills missing keys from `blankState` recursively (wrong-typed values replaced); v0 = top-level `tickets/totalTicketsEarned/upgrades/stamps/postcards/openedLines` moved to `permanent`. On load, fish of unknown species and decor of unknown ids are dropped; a missing market is rebuilt.
+
+### T-20 rule changes (balance tuning; see docs/content/TUNING.md)
+26. **Fares scale with fish output** (data alone could not reach fares 25–50%: appeal is O(10) while fish output spans 13 orders of magnitude). Fare at station k = Σ_car `fareAppeal(appeal_car)` × car base fish Sps × `fareAppealFactor` × stationMult(k) × Ticket Printer × endless (× timed fare modifiers). Car base Sps already holds Tickets, bonds, habitat, decor, whale, Old Friend; `lines[].fareMult` now only prices carriages. `fareAppeal(A)` = A·H/(A+H) with `config.fareAppealHalf` = H (saturating; absent → linear A). `TrainModel.fareWeight` = Σ fareAppeal(A)·Sps. An empty car pays nothing.
+27. **Lines open after N terminal runs**: `lines[].opensAfterRuns` (default 1). `permanent.terminalRuns[line]` counts runs that reached that terminal (once per run); `terminalReached.firstTime` and `reachedTerminals` keep their meaning; the ending still fires on the first `maxLine` terminal.
+28. **Per-Line Ticket divisor**: `lines[].ticketDivisor` (optional) replaces `depotReset.divisor` for runs on that Line.
+29. `config.todaysSpecial.minPrice` is now in the schema (D-023).
 
 ## Events
 `purchase{item: fish|carriage|slot|decor|habitat}` · `levelUp` · `milestone` · `sale` · `fishMoved` · `bondFormed`/`bondBroken` · `frenzy`/`frenzyEnd` · `depart` · `arrive` · `fare` · `trackBuilt` · `lineOpened` · `terminalReached` · `stamp{kind: station|species|shiny}` · `postcard` · `ending` · `income` (once per sim second) · `decorChanged` · `cosmeticChanged`.

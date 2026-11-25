@@ -1,8 +1,16 @@
 import * as THREE from 'three';
 import { PATHS, sharedTexture } from '../../assets';
-import { makeCanvas } from '../paint/canvas';
 import type { Particles } from './particles';
-import { confettiTex, splashTex, sparkleTex } from './paintFx';
+import { confettiTex, splashTex, sparkleTex, bubbleTex } from './paintFx';
+import { buntingTex, fountainTex, paintDolphin, paintGull, paintWhale, tapRingTex } from './sightPaint';
+
+/** A carriage's window box in world space. */
+export interface CarBox {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
 
 /** Hooks the sight layer needs from the stage. */
 export interface SightHost {
@@ -10,6 +18,12 @@ export interface SightHost {
   focusX(): number;
   /** World X + roof Y of a carriage (random-ish by index). */
   carRoof(index: number): { x: number; y: number } | null;
+  /** Window box of carriage `index` (null when there is none). */
+  carBox(index: number): CarBox | null;
+  /** Index of the carriage a stowaway would jump into (first with a free slot). */
+  stowawayCar(): number;
+  /** World X range of the whole train and its roof Y. */
+  trainSpan(): { x0: number; x1: number; roof: number };
   /** World X of the next platform. */
   nextStationX(): number;
   zoomOut(amount: number): void;
@@ -17,84 +31,36 @@ export interface SightHost {
   readonly particles: Particles;
 }
 
-function blob(w: number, h: number, draw: (c: CanvasRenderingContext2D) => void): () => HTMLCanvasElement {
-  return () => {
-    const p = makeCanvas(w, h);
-    draw(p.ctx);
-    return p.canvas;
-  };
-}
-const paintDolphin = blob(24, 10, (c) => {
-  c.fillStyle = '#6f94b4';
-  c.fillRect(3, 3, 16, 5);
-  c.fillRect(18, 4, 4, 2);
-  c.fillRect(10, 1, 3, 2);
-  c.fillRect(0, 2, 3, 2);
-  c.fillRect(0, 6, 3, 2);
-  c.fillStyle = '#dfeaf2';
-  c.fillRect(6, 6, 11, 2);
-  c.fillStyle = '#1d2b33';
-  c.fillRect(17, 4, 1, 1);
-});
-const paintGull = blob(16, 12, (c) => {
-  c.fillStyle = '#f7f7f2';
-  c.fillRect(4, 4, 8, 5);
-  c.fillRect(11, 2, 3, 3);
-  c.fillStyle = '#9aa4ad';
-  c.fillRect(2, 4, 6, 2);
-  c.fillStyle = '#f2a33c';
-  c.fillRect(14, 3, 2, 1);
-  c.fillRect(6, 9, 1, 3);
-  c.fillRect(9, 9, 1, 3);
-  c.fillStyle = '#1d2b33';
-  c.fillRect(12, 3, 1, 1);
-});
-const paintWhale = blob(64, 26, (c) => {
-  c.fillStyle = '#4d6f8c';
-  c.beginPath();
-  c.ellipse(30, 14, 26, 10, 0, 0, Math.PI * 2);
-  c.fill();
-  c.fillRect(0, 6, 8, 5);
-  c.fillRect(0, 15, 8, 5);
-  c.fillStyle = '#c9d8e2';
-  c.fillRect(14, 18, 34, 4);
-  c.fillStyle = '#1d2b33';
-  c.fillRect(46, 11, 2, 2);
-});
-
-let flagTex: THREE.CanvasTexture | null = null;
-function bunting(): THREE.Texture {
-  if (flagTex) return flagTex;
-  const p = makeCanvas(96, 12);
-  const cols = ['#e45b4f', '#ffd447', '#2aa5a0', '#4c84c4', '#ff9a52', '#b98cf0'];
-  p.ctx.fillStyle = '#6b4a2c';
-  p.ctx.fillRect(0, 0, 96, 1);
-  for (let i = 0; i < 12; i++) {
-    p.ctx.fillStyle = cols[i % cols.length] ?? '#e45b4f';
-    for (let y = 0; y < 9; y++) {
-      const half = Math.max(0, 3.5 - y * 0.4);
-      p.ctx.fillRect(i * 8 + 4 - half, 1 + y, half * 2, 1);
-    }
-  }
-  flagTex = new THREE.CanvasTexture(p.canvas);
-  flagTex.magFilter = THREE.NearestFilter;
-  flagTex.minFilter = THREE.NearestFilter;
-  flagTex.colorSpace = THREE.SRGBColorSpace;
-  return flagTex;
-}
+/**
+ * Render-only Sight staging (QA bug 3). Depths sit in front of the mid layer and
+ * behind the verge, so animals rise from "the sea beyond the fence" at readable size.
+ */
+const STAGE = {
+  dolphin: { z: -4.4, h: 1.3, apex: 3.6, period: 1.7 },
+  whale: { z: -14, h: 4.4, apex: 9.8, breach: 3.4, period: 6.5, zoom: 1.3 },
+  gull: { h: 0.78 },
+} as const;
 
 interface Actor {
   mesh: THREE.Mesh;
+  /** Invisible, larger tap target that follows the mesh (optional). */
+  hit?: THREE.Mesh;
   update(dt: number, t: number): boolean; // false = finished
 }
 
 /** Unit plane sized each frame from its texture aspect (art or placeholder) at height `h`. */
-function spriteMesh(tex: THREE.Texture, _w: number, h: number, order = 5): THREE.Mesh {
+function spriteMesh(tex: THREE.Texture, h: number, order = 5): THREE.Mesh {
   const m = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({ map: tex, transparent: true, alphaTest: 0.05 }));
   m.renderOrder = order;
   m.userData.h = h;
   m.userData.flip = 1;
   m.userData.s = 1;
+  return m;
+}
+
+function hitMesh(w: number, h: number): THREE.Mesh {
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false }));
+  m.renderOrder = -20;
   return m;
 }
 
@@ -119,10 +85,12 @@ export class SightFx {
 
   private add(a: Actor, tappable = false): void {
     this.group.add(a.mesh);
+    if (a.hit) this.group.add(a.hit);
     this.actors.push(a);
     if (tappable) {
-      a.mesh.userData.sightTap = true;
-      this.tappables.push(a.mesh);
+      const t = a.hit ?? a.mesh;
+      t.userData.sightTap = true;
+      this.tappables.push(t);
     }
   }
 
@@ -130,160 +98,234 @@ export class SightFx {
     return this.active;
   }
 
+  private splash(x: number, y: number, z: number, n: number, size: number): void {
+    for (let i = 0; i < n; i++)
+      this.host.particles.spawn({ tex: splashTex(), x: x + (Math.random() - 0.5) * size, y, z, vx: (Math.random() - 0.5) * size, vy: 1.5 + Math.random() * 2.5 * size, g: -6, life: 0.9, size: 0.35 * size, sizeEnd: 0.6 * size, aspect: 1.6 });
+  }
+
+  private dolphins(): void {
+    const h = this.host;
+    const D = STAGE.dolphin;
+    const tex = sharedTexture(PATHS.sight('dolphin'), paintDolphin, { pixel: true });
+    for (let i = 0; i < 3; i++) {
+      const m = spriteMesh(tex, D.h, 6);
+      const hit = hitMesh(2.4, 2.2);
+      const ph = i / 3;
+      let lastCyc = 1;
+      this.add(
+        {
+          mesh: m,
+          hit,
+          update: (_dt, t) => {
+            const cyc = (t / D.period + ph) % 1;
+            const jump = Math.sin(cyc * Math.PI);
+            // the pod races the train: a slow surge around the camera focus
+            const x = h.focusX() - 4.2 + i * 2.6 + Math.sin(t * 0.7 + i) * 0.6 + cyc * 1.2;
+            m.position.set(x, -1.1 + jump * D.apex, D.z);
+            m.rotation.z = 0.35 - cyc * 1.5;
+            hit.position.set(x, Math.max(0.6, m.position.y), D.z + 0.05);
+            if (cyc < lastCyc) this.splash(x - 0.3, 0.1, D.z + 0.2, 5, 0.8);
+            if (cyc > 0.9 && lastCyc <= 0.9) this.splash(x + 0.5, 0.1, D.z + 0.2, 5, 0.8);
+            lastCyc = cyc;
+            return true;
+          },
+        },
+        true,
+      );
+    }
+  }
+
+  private whale(): void {
+    const h = this.host;
+    const W = STAGE.whale;
+    const tex = sharedTexture(PATHS.sight('whale'), paintWhale, { pixel: true });
+    const m = spriteMesh(tex, W.h, 4);
+    let t0 = 0;
+    let lastU = 0;
+    this.add({
+      mesh: m,
+      update: (dt) => {
+        t0 += dt;
+        const k = Math.floor(t0 / W.period);
+        const local = t0 - k * W.period;
+        const u = Math.min(1, local / W.breach);
+        const arc = Math.sin(u * Math.PI);
+        const side = k % 2 === 0 ? -1 : 1;
+        const x = h.focusX() + side * 2.5 + (u - 0.5) * 7;
+        m.position.set(x, -4.6 + arc * W.apex, W.z);
+        m.rotation.z = 0.25 - u * 1.3;
+        m.visible = u < 1;
+        if (u > 0.04 && lastU <= 0.04) this.splash(x - 1, 0.3, W.z + 0.5, 14, 2.2);
+        if (u > 0.92 && lastU <= 0.92) this.splash(x + 1.5, 0.3, W.z + 0.5, 22, 2.8);
+        // blow-hole spout at the top of the arc
+        if (arc > 0.9 && Math.random() < 0.5)
+          h.particles.spawn({ tex: splashTex(), x: x + 1.2, y: m.position.y + W.h * 0.45, z: W.z + 0.3, vy: 2.5, g: -3, life: 0.7, size: 0.5, sizeEnd: 1, aspect: 1.6 });
+        lastU = u >= 1 ? 0 : u;
+        return true;
+      },
+    });
+    h.zoomOut(W.zoom);
+  }
+
+  private gull(): void {
+    const h = this.host;
+    const tex = sharedTexture(PATHS.sight('gull'), paintGull, { pixel: true });
+    const m = spriteMesh(tex, STAGE.gull.h, 9);
+    const hit = hitMesh(1.4, 1.4);
+    const fx = h.focusX();
+    let t0 = 0;
+    this.add(
+      {
+        mesh: m,
+        hit,
+        update: (dt) => {
+          t0 += dt;
+          const r = h.carRoof(1) ?? h.carRoof(0) ?? { x: fx, y: 1.5 };
+          const land = Math.min(1, t0 / 0.8);
+          const e = 1 - (1 - land) * (1 - land);
+          const peck = Math.pow(Math.max(0, Math.sin(t0 * 5)), 8) * 0.12;
+          m.position.set(r.x + (1 - e) * 4, r.y + STAGE.gull.h / 2 - 0.05 + (1 - e) * 2.5, 0.3);
+          m.rotation.z = -peck;
+          m.userData.flip = -1;
+          hit.position.set(m.position.x, m.position.y, 0.35);
+          return true;
+        },
+      },
+      true,
+    );
+  }
+
+  private festival(): void {
+    const h = this.host;
+    const tex = buntingTex();
+    // bunting over the next platform
+    const st = new THREE.Mesh(new THREE.PlaneGeometry(10, 1.2), new THREE.MeshBasicMaterial({ map: tex, transparent: true, alphaTest: 0.05 }));
+    st.renderOrder = 5;
+    this.add({
+      mesh: st,
+      update: (_dt, t) => {
+        const sx = h.nextStationX();
+        st.position.set(sx, 3.3 + Math.sin(t * 1.5) * 0.04, -1.6);
+        if (Math.random() < 0.15)
+          h.particles.spawn({ tex: confettiTex(Math.floor(Math.random() * 6)), x: sx + (Math.random() - 0.5) * 10, y: 3.6, z: -1.2, vx: (Math.random() - 0.5) * 0.4, vy: -0.3, g: -0.3, life: 3, size: 0.07, aspect: 1.5, spin: 4, wobble: 0.15 });
+        return true;
+      },
+    });
+    // garlands strung along the train roof, plus confetti around the camera
+    const tr = tex.clone();
+    tr.wrapS = THREE.RepeatWrapping;
+    const g = new THREE.Mesh(new THREE.PlaneGeometry(1, 0.42), new THREE.MeshBasicMaterial({ map: tr, transparent: true, alphaTest: 0.05 }));
+    g.renderOrder = 6;
+    this.add({
+      mesh: g,
+      update: (_dt, t) => {
+        const s = h.trainSpan();
+        const len = Math.max(1, s.x1 - s.x0);
+        g.scale.set(len, 1, 1);
+        tr.repeat.x = len / 2.2;
+        g.position.set((s.x0 + s.x1) / 2, s.roof + 0.12 + Math.sin(t * 2) * 0.02, 0.35);
+        if (Math.random() < 0.35)
+          h.particles.spawn({ tex: confettiTex(Math.floor(Math.random() * 6)), x: h.focusX() + (Math.random() - 0.5) * 16, y: 5.5, z: 0.6, vx: (Math.random() - 0.5) * 0.5, vy: -0.6, g: -0.4, life: 4, size: 0.09, aspect: 1.5, spin: 5, wobble: 0.2 });
+        return true;
+      },
+    });
+  }
+
+  private stowaway(): void {
+    const h = this.host;
+    const idx = h.stowawayCar();
+    const ring = spriteMesh(tapRingTex(), 1, 8);
+    const spray = spriteMesh(fountainTex(), 1.15, 9);
+    let t0 = 0;
+    this.add(
+      {
+        mesh: ring,
+        update: (dt) => {
+          t0 += dt;
+          const b = h.carBox(idx) ?? { x: h.focusX(), y: 1, w: 2, h: 1 };
+          ring.userData.h = b.h * 1.9;
+          ring.userData.s = 1 + Math.sin(t0 * 6) * 0.06;
+          ring.position.set(b.x, b.y + 0.2, 0.6);
+          return true;
+        },
+      },
+      true,
+    );
+    this.add(
+      {
+        mesh: spray,
+        update: (dt) => {
+          const b = h.carBox(idx) ?? { x: h.focusX(), y: 1, w: 2, h: 1 };
+          const r = h.carRoof(idx) ?? { x: b.x, y: b.y + b.h };
+          spray.userData.s = 0.85 + Math.abs(Math.sin(t0 * 4)) * 0.3;
+          spray.position.set(b.x, r.y + 0.5 * (spray.userData.s as number), 0.5);
+          if (Math.random() < dt * 12)
+            h.particles.spawn({ tex: Math.random() < 0.5 ? sparkleTex() : bubbleTex(), x: b.x + (Math.random() - 0.5) * 1.2, y: r.y + 0.9, z: 0.6, vy: 0.6, life: 0.7, size: 0.12, sizeEnd: 0.03 });
+          return true;
+        },
+      },
+      true,
+    );
+  }
+
   start(id: string): void {
     this.clear();
     this.active = id;
-    const h = this.host;
-    const fx = h.focusX();
     switch (id) {
-      case 'dolphin_race': {
-        const tex = sharedTexture(PATHS.sight('dolphin'), paintDolphin, { pixel: true });
-        for (let i = 0; i < 3; i++) {
-          const m = spriteMesh(tex, 1.5, 0.95);
-          let x = fx - 6 - i * 1.6;
-          const ph = i * 1.3;
-          this.add(
-            {
-              mesh: m,
-              update: (dt, t) => {
-                x += dt * (3.2 + Math.sin(t + ph) * 0.4) + (h.focusX() - fx) * 0;
-                const cyc = (t * 0.9 + ph) % 1;
-                const jump = Math.sin(cyc * Math.PI);
-                m.position.set(x + (h.focusX() - fx), -1.2 + jump * 3.8, -12);
-                m.rotation.z = Math.cos(cyc * Math.PI) * 0.6;
-                if (cyc < 0.05) h.particles.spawn({ tex: splashTex(), x: m.position.x, y: 0.2, z: -11.8, life: 0.5, size: 0.5, sizeEnd: 0.8, aspect: 1.6, vy: 0.3 });
-                return true;
-              },
-            },
-            true,
-          );
-        }
+      case 'dolphin_race':
+        this.dolphins();
         break;
-      }
-      case 'seagull_thief': {
-        const tex = sharedTexture(PATHS.sight('gull'), paintGull, { pixel: true });
-        const m = spriteMesh(tex, 0.7, 0.52, 9);
-        const roof = h.carRoof(1) ?? h.carRoof(0) ?? { x: fx, y: 1.5 };
-        let t0 = 0;
-        this.add(
-          {
-            mesh: m,
-            update: (dt) => {
-              t0 += dt;
-              const r = h.carRoof(1) ?? h.carRoof(0) ?? roof;
-              const land = Math.min(1, t0 / 0.8);
-              const e = 1 - (1 - land) * (1 - land);
-              const peck = Math.pow(Math.max(0, Math.sin(t0 * 5)), 8) * 0.12;
-              m.position.set(r.x + (1 - e) * 4, r.y + 0.24 + (1 - e) * 2.5, 0.3);
-              m.rotation.z = -peck;
-              m.userData.flip = -1;
-              return true;
-            },
-          },
-          true,
-        );
+      case 'seagull_thief':
+        this.gull();
         break;
-      }
-      case 'whale_breach': {
-        const tex = sharedTexture(PATHS.sight('whale'), paintWhale, { pixel: true });
-        const m = spriteMesh(tex, 9, 3.6, 1);
-        let t0 = 0;
-        const x0 = fx + 6;
-        this.add({
-          mesh: m,
-          update: (dt) => {
-            t0 += dt;
-            const u = Math.min(1, t0 / 5);
-            const arc = Math.sin(u * Math.PI);
-            m.position.set(x0 - 6 + u * 12 + (h.focusX() - fx) * 0.6, -6 + arc * 9, -42);
-            m.rotation.z = (0.5 - u) * 1.1;
-            m.visible = u < 1;
-            if (Math.abs(u - 0.97) < dt / 5) {
-              for (let i = 0; i < 14; i++)
-                h.particles.spawn({ tex: splashTex(), x: m.position.x + (Math.random() - 0.5) * 6, y: -3, z: -41, vy: 2 + Math.random() * 3, g: -4, life: 1.2, size: 1.2, sizeEnd: 2, aspect: 1.6 });
-            }
-            return true;
-          },
-        });
-        h.zoomOut(1.45);
+      case 'whale_breach':
+        this.whale();
         break;
-      }
-      case 'festival_station': {
-        const m = new THREE.Mesh(new THREE.PlaneGeometry(10, 1.25), new THREE.MeshBasicMaterial({ map: bunting(), transparent: true, alphaTest: 0.05 }));
-        bunting().wrapS = THREE.RepeatWrapping;
-        this.add({
-          mesh: m,
-          update: (_dt, t) => {
-            const sx = h.nextStationX();
-            m.position.set(sx, 3.1 + Math.sin(t * 1.5) * 0.04, -1.6);
-            if (Math.random() < 0.15)
-              h.particles.spawn({ tex: confettiTex(Math.floor(Math.random() * 6)), x: sx + (Math.random() - 0.5) * 10, y: 3.4, z: -1.2, vx: (Math.random() - 0.5) * 0.4, vy: -0.3, g: -0.3, life: 3, size: 0.07, aspect: 1.5, spin: 4, wobble: 0.15 });
-            return true;
-          },
-        });
+      case 'festival_station':
+        this.festival();
         break;
-      }
-      case 'stowaway': {
-        const m = spriteMesh(splashTex(), 1.0, 0.62, 9);
-        let t0 = 0;
-        this.add(
-          {
-            mesh: m,
-            update: (dt) => {
-              t0 += dt;
-              const r = h.carRoof(0) ?? { x: fx, y: 1.5 };
-              m.position.set(r.x, r.y + 0.35 + Math.abs(Math.sin(t0 * 4)) * 0.12, 0.3);
-              m.userData.s = 1 + Math.sin(t0 * 8) * 0.06;
-              if (Math.random() < 0.2) h.particles.spawn({ tex: sparkleTex(), x: r.x + (Math.random() - 0.5) * 0.8, y: r.y + 0.6, z: 0.4, vy: 0.4, life: 0.6, size: 0.12, sizeEnd: 0.02 });
-              return true;
-            },
-          },
-          true,
-        );
+      case 'stowaway':
+        this.stowaway();
         break;
-      }
       case 'sea_fog':
-        h.fog(3.2);
+        this.host.fog(3.2);
         break;
     }
   }
 
-  /** Sight over. `tapped` plays the reward/shoo reaction. */
+  /** Sight over: every visual goes (QA bug 13). `tapped` plays the reward/shoo reaction. */
   end(_id: string, tapped: boolean): void {
     const h = this.host;
-    for (const a of this.actors) {
-      const p = a.mesh.position.clone();
-      if (tapped) h.particles.burst(sparkleTex(), p, 12, { speed: 2 });
-    }
-    if (this.active === 'seagull_thief' && this.actors[0]) {
-      // the gull flies off (with or without loot)
-      const m = this.actors[0].mesh;
-      let t0 = 0;
-      this.actors = [
-        {
-          mesh: m,
-          update: (dt) => {
-            t0 += dt;
-            m.position.x += dt * 5;
-            m.position.y += dt * 3;
-            m.rotation.z = Math.sin(t0 * 20) * 0.2;
-            return t0 < 1.5;
-          },
+    if (tapped) for (const a of this.actors) h.particles.burst(sparkleTex(), a.mesh.position.clone(), 12, { speed: 2 });
+    const gull = this.active === 'seagull_thief' ? this.actors[0]?.mesh : undefined;
+    this.clear(gull);
+    if (!gull) return;
+    // the gull flies off (with or without loot), then is gone
+    let t0 = 0;
+    this.group.add(gull);
+    this.actors = [
+      {
+        mesh: gull,
+        update: (dt) => {
+          t0 += dt;
+          gull.position.x += dt * 6;
+          gull.position.y += dt * 3.5;
+          gull.rotation.z = Math.sin(t0 * 20) * 0.2;
+          return t0 < 1.2;
         },
-      ];
-      this.tappables.length = 0;
-      this.active = null;
-      h.zoomOut(1);
-      h.fog(1);
-      return;
-    }
-    this.clear();
+      },
+    ];
   }
 
-  private clear(): void {
+  /** Remove every actor (except `keep`), reset zoom + fog. */
+  private clear(keep?: THREE.Mesh): void {
     for (const a of this.actors) {
       this.group.remove(a.mesh);
-      (a.mesh.material as THREE.Material).dispose();
+      if (a.hit) {
+        this.group.remove(a.hit);
+        (a.hit.material as THREE.Material).dispose();
+      }
+      if (a.mesh !== keep) (a.mesh.material as THREE.Material).dispose();
     }
     this.actors = [];
     this.tappables.length = 0;

@@ -7,8 +7,9 @@ import { createSea } from './sea';
 import { paintSky, paintClouds } from './paintSky';
 import { paintFar } from './paintFar';
 import { paintMidFar, paintMidNear } from './paintMid';
-import { paintTrackBed, paintRailSide, paintWall, paintGrass } from './paintTrack';
-import { paintNear, paintNearFront, paintVergeBack } from './paintNear';
+import { paintTrackBed, paintRailSide } from './paintTrack';
+import { paintVergeBack } from './paintNear';
+import { buildForeground, type ForeSet } from './foreground';
 import { buildLineArt, hasLineArt } from './lineArt';
 import { StationView } from './station';
 
@@ -19,7 +20,7 @@ function aspectH(canvas: HTMLCanvasElement, w: number): number {
 /** Fog per line (Fjords are thicker, SPEC C). Render mood only. */
 const LINE_FOG: Record<number, { color: string; near: number; far: number }> = {
   1: { color: '#e9efe6', near: 70, far: 520 },
-  2: { color: '#c9d6dc', near: 30, far: 260 },
+  2: { color: '#cfdade', near: 48, far: 380 },
   3: { color: '#e6ddd2', near: 60, far: 420 },
 };
 
@@ -40,6 +41,7 @@ export class Diorama {
   private readonly sea: ReturnType<typeof createSea>;
   readonly stations: StationView[] = [];
   private readonly lineSets = new Map<number, { group: THREE.Group; layers: TileLayer[] }>();
+  private readonly foreSets = new Map<number, ForeSet>();
   private line = 0;
   private readonly fog: THREE.Fog;
   private fogMult = 1;
@@ -81,18 +83,10 @@ export class Diorama {
     this.addProc({ width: 46, height: aspectH(mn, 46), y: WORLD.seaY - 0.3, z: LAYER_Z.midNear, textures: [toTexture(mn), toTexture(paintMidNear(42))] });
     this.addProc({ width: 24, height: 1.6, y: WORLD.groundY - 0.6, z: LAYER_Z.verge, textures: [toTexture(paintVergeBack(52), true)] });
 
-    // cliff-edge verge behind the track
-    const vergeDepth = WORLD.trackBackZ - WORLD.vergeBackZ;
-    this.add({ width: 24, height: vergeDepth + 0.2, y: WORLD.groundY - 0.01, z: (WORLD.trackBackZ + WORLD.vergeBackZ) / 2, horizontal: true, textures: [toTexture(paintGrass(51, 24, 3, false))] });
-    // track bed, front rail, embankment wall
+    // track bed + front rail (shared); verge, wall, garden and near layers are per Line (foreground.ts)
     const bedDepth = WORLD.trackFrontZ - WORLD.trackBackZ;
     this.add({ width: 24, height: bedDepth, y: WORLD.groundY, z: (WORLD.trackFrontZ + WORLD.trackBackZ) / 2, horizontal: true, textures: [toTexture(paintTrackBed(61), true)] });
     this.add({ width: 24, height: 0.25, y: -0.03, z: 0.56, textures: [toTexture(paintRailSide(), true)], renderOrder: 2 });
-    this.add({ width: 24, height: 1.0, y: WORLD.nearGroundY - 0.1, z: WORLD.trackFrontZ, textures: [toTexture(paintWall(62), true)] });
-    // near garden, fence strip and lens foliage
-    this.add({ width: 24, height: 8, y: WORLD.nearGroundY, z: WORLD.trackFrontZ + 4, horizontal: true, textures: [toTexture(paintGrass(71, 24, 8, true))] });
-    this.add({ width: 16, height: 3, y: WORLD.nearGroundY, z: LAYER_Z.near, textures: [toTexture(paintNear(72, 0), true), toTexture(paintNear(72, 1), true)] });
-    this.add({ width: 14, height: 2, y: WORLD.nearGroundY - 0.2, z: LAYER_Z.nearFront, textures: [toTexture(paintNearFront(81)), toTexture(paintNearFront(82))] });
 
     this.veilMat = new THREE.MeshBasicMaterial({ color: '#e8eef0', transparent: true, opacity: 0, depthWrite: false, fog: false });
     this.veil = new THREE.Mesh(new THREE.PlaneGeometry(200, 120), this.veilMat);
@@ -106,7 +100,7 @@ export class Diorama {
     }
     this.setLine(1);
     // repaint signs once the pixel webfont is ready
-    void document.fonts?.load('600 26px "Pixelify Sans"').then(() => this.stations.forEach((st) => st.repaintSign()));
+    void document.fonts?.load('700 30px "Pixelify Sans"').then(() => this.stations.forEach((st) => st.repaintSign()));
   }
 
   private add(o: ConstructorParameters<typeof TileLayer>[0]): void {
@@ -132,6 +126,12 @@ export class Diorama {
     const art = hasLineArt(line);
     if (art && !this.lineSets.has(line)) this.lineSets.set(line, buildLineArt(line, this.scene));
     for (const [l, set] of this.lineSets) set.group.visible = l === line;
+    if (!this.foreSets.has(line)) {
+      const f = buildForeground(line);
+      this.foreSets.set(line, f);
+      this.scene.add(f.group);
+    }
+    for (const [l, set] of this.foreSets) set.group.visible = l === line;
     this.proc.visible = !art;
     for (const st of this.stations) st.setLine(line);
     const f = LINE_FOG[line] ?? LINE_FOG[1];
@@ -156,6 +156,7 @@ export class Diorama {
     for (const l of this.common) l.update(cx);
     const set = this.lineSets.get(this.line);
     if (set) for (const l of set.layers) l.update(cx);
+    for (const l of this.foreSets.get(this.line)?.layers ?? []) l.update(cx);
     this.fogMult += (this.fogTarget - this.fogMult) * Math.min(1, dt * 0.8);
     const f = LINE_FOG[this.line] ?? LINE_FOG[1];
     if (f) {
@@ -163,7 +164,7 @@ export class Diorama {
       this.fog.far = f.far / Math.pow(this.fogMult, 1.6);
       this.veilMat.color.set(f.color);
     }
-    const baseMist = this.line === 2 ? 0.12 : 0;
+    const baseMist = this.line === 2 ? 0.04 : 0;
     this.veilMat.opacity = Math.min(0.8, baseMist + (this.fogMult - 1) * 0.3);
     this.veil.visible = this.veilMat.opacity > 0.01;
     this.veil.position.set(cx, camera.position.y - 4, -30);

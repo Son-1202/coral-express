@@ -19,6 +19,8 @@ export const STATION_FIT: Record<number, { px: number; cropBottom: number }> = {
   3: { px: 76, cropBottom: 0.25 },
 };
 const PLATFORM_H = 0.42;
+/** Name sign size and height above the platform (world units, render only). */
+const SIGN = { w: 3.0, h: 0.57, y: 1.95 };
 
 /** Render-only layout of each line's station art: lamp positions (fractions of the image, from top-left). */
 const LAMPS: Record<number, { x: number; y: number }[]> = {
@@ -51,12 +53,12 @@ export function paintSign(name: string): HTMLCanvasElement {
   ctx.fillRect(2, 2, w - 4, h - 4);
   ctx.fillStyle = LIVERY.cream;
   ctx.fillRect(5, 5, w - 10, h - 10);
-  ctx.fillStyle = '#2f4a52';
-  let size = 26;
-  ctx.font = `600 ${size}px "Pixelify Sans", sans-serif`;
+  ctx.fillStyle = '#1f3238';
+  let size = 30;
+  ctx.font = `700 ${size}px "Pixelify Sans", sans-serif`;
   while (ctx.measureText(name).width > w - 24 && size > 12) {
     size -= 1;
-    ctx.font = `600 ${size}px "Pixelify Sans", sans-serif`;
+    ctx.font = `700 ${size}px "Pixelify Sans", sans-serif`;
   }
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
@@ -94,12 +96,13 @@ export class StationView {
     this.signTex = toTexture(paintSign(''));
     this.signTex.anisotropy = 8;
     const sign = new THREE.Group();
-    this.sign = new THREE.Mesh(new THREE.PlaneGeometry(2.6, 0.49), new THREE.MeshBasicMaterial({ map: this.signTex, transparent: true }));
-    this.sign.position.y = 2.25;
+    // QA bug 8: larger, fog-free and low enough to sit near the tilt-shift focus band
+    this.sign = new THREE.Mesh(new THREE.PlaneGeometry(SIGN.w, SIGN.h), new THREE.MeshBasicMaterial({ map: this.signTex, transparent: true, fog: false }));
+    this.sign.position.y = SIGN.y;
     const postMat = new THREE.MeshBasicMaterial({ color: '#4b3a2c' });
-    for (const px of [-1.05, 1.05]) {
-      const post = new THREE.Mesh(new THREE.PlaneGeometry(0.08, 2.1), postMat);
-      post.position.set(px, 1.05, -0.01);
+    for (const px of [-SIGN.w * 0.4, SIGN.w * 0.4]) {
+      const post = new THREE.Mesh(new THREE.PlaneGeometry(0.09, SIGN.y), postMat);
+      post.position.set(px, SIGN.y / 2, -0.01);
       sign.add(post);
     }
     sign.add(this.sign);

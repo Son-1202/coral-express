@@ -4,16 +4,19 @@
  * World units: 1 = canvas height. Procedural painting + the real train sprites when present.
  */
 import { clamp01, lerp, smoothstep } from '../anim/ease';
+import { BEACH_Y, K, paintNearRocks, paintSand, paintSea, SEA_Y, SLOPE_X } from './beachPaint';
+import { CAR_ART_H, EndingCarriage, PuffSteam } from './carriages';
 import { Bubbles, image, ready, type Painter } from './layer';
+import type { EndingCar } from './owned';
 
-const BEACH_Y = 0.7; // rail height on the beach (world y, down = +)
-const SEA_Y = 0.74; // water surface
-const SLOPE_X = 1.9; // rails start descending here
-const K = 0.32; // slope (dy/dx)
 const CAR_H = 0.12;
 const LOCO_W = CAR_H * (320 / 151);
 const CAR_W = CAR_H * (288 / 148);
 const GAP = 0.012;
+/** One main-game world unit in ending units (main car art is 148/104 world units tall). */
+const MAIN_UNIT = CAR_H / (148 / 104);
+/** Chimney top on locomotive.png (fraction of width from the front, of height from the top). */
+const CHIMNEY = { fromFront: 0.22, fromTop: 0.02 };
 
 /** Point on the rails at arc length s (from x=0). */
 export function railAt(s: number): { x: number; y: number; a: number } {
@@ -34,20 +37,31 @@ export function frontAt(phase: 'beach' | 'dive', u: number): number {
 
 export class BeachPainter implements Painter {
   private readonly bubbles = new Bubbles();
-  private readonly puffs: { x: number; y: number; r: number; age: number }[] = [];
+  private readonly steam = new PuffSteam();
   private readonly loco = image('/train/locomotive.png');
-  private readonly car = image('/train/car_shell.png');
+  private readonly shell = image('/train/car_shell.png');
   /** Line 3 dusk painting as the beach backdrop (procedural sky when missing). */
   private readonly far = image('/scenery/l3_far_dusk.png', true);
-  private puffT = 0;
+  /** Line 3 mid art: its boulder row is the painted foreground of the beach. */
+  private readonly rocks = image('/scenery/l3_mid.png', true);
+  private readonly carriages: EndingCarriage[];
   private bubT = 0;
+  private lastFront = -1;
 
-  /** `progress` returns [phase, u] each frame (driven by the ending timeline). */
-  constructor(private readonly progress: () => { phase: 'beach' | 'dive'; u: number }, private readonly cars = 3) {}
+  /**
+   * `progress` returns [phase, u] each frame (driven by the ending timeline). `cars` = the
+   * player's carriages (habitat + fish); at least one (empty reef) is drawn.
+   */
+  constructor(private readonly progress: () => { phase: 'beach' | 'dive'; u: number }, cars: readonly EndingCar[] = []) {
+    const list = cars.length ? cars.slice(0, 8) : [{ habitat: 'reef', fish: [] }];
+    this.carriages = list.map((c, i) => new EndingCarriage(c, i + 1));
+  }
 
   draw(g: CanvasRenderingContext2D, w: number, h: number, t: number, dt: number): void {
     const { phase, u } = this.progress();
     const s0 = frontAt(phase, u);
+    const speed = this.lastFront < 0 || dt <= 0 ? 0 : Math.max(0, (s0 - this.lastFront) / dt);
+    this.lastFront = s0;
     const front = railAt(s0);
     const aspect = w / h;
     // camera: keep the locomotive at ~58% of the width, sink with it once it's under water
@@ -55,33 +69,19 @@ export class BeachPainter implements Painter {
     const sink = Math.max(0, front.y - SEA_Y + 0.05);
     const camY = phase === 'dive' ? sink * 0.9 : 0;
 
-    this.sky(g, w, h, t, camX, camY);
+    this.sky(g, w, h, camX, camY);
     g.setTransform(h, 0, 0, h, -camX * h, -camY * h);
-
-    // beach + seabed
-    g.fillStyle = '#2b2a30';
-    g.beginPath();
-    g.moveTo(camX - 1, BEACH_Y + 0.02);
-    for (let x = camX - 1; x <= camX + aspect + 1; x += 0.05) {
-      const y = x < SLOPE_X ? BEACH_Y + 0.02 : BEACH_Y + 0.02 + (x - SLOPE_X) * K;
-      g.lineTo(x, y);
-    }
-    g.lineTo(camX + aspect + 1, 9);
-    g.lineTo(camX - 1, 9);
-    g.closePath();
-    g.fill();
-    g.fillStyle = 'rgba(255,255,255,0.05)';
-    for (let i = 0; i < 40; i++) g.fillRect(Math.floor(camX) - 1 + ((i * 0.37) % (aspect + 2)), BEACH_Y + 0.04 + ((i * 0.13) % 0.2), 0.008, 0.004);
-
+    paintSand(g, camX, aspect, t);
+    paintNearRocks(g, this.rocks, camX, aspect);
     this.rails(g, camX, aspect);
-    this.train(g, s0, t, dt, phase);
-    this.water(g, w, h, t, camX, aspect);
+    this.train(g, s0, t, dt, speed);
+    paintSea(g, camX, aspect, t);
 
     // bubbles from submerged cars
     this.bubT -= dt;
     if (this.bubT <= 0) {
       this.bubT = 0.04;
-      for (let i = 0; i <= this.cars; i++) {
+      for (let i = 0; i <= this.carriages.length; i++) {
         const p = railAt(s0 - i * (CAR_W + GAP) - 0.1);
         if (p.y > SEA_Y + 0.03) this.bubbles.spawn(p.x + (Math.random() - 0.5) * 0.2, p.y - Math.random() * CAR_H, 0.003 + Math.random() * 0.008);
       }
@@ -97,7 +97,7 @@ export class BeachPainter implements Painter {
     }
   }
 
-  private sky(g: CanvasRenderingContext2D, w: number, h: number, t: number, camX: number, camY: number): void {
+  private sky(g: CanvasRenderingContext2D, w: number, h: number, camX: number, camY: number): void {
     g.setTransform(1, 0, 0, 1, 0, 0);
     g.fillStyle = '#f6c6a0';
     g.fillRect(0, 0, w, h);
@@ -116,10 +116,12 @@ export class BeachPainter implements Painter {
       const iw = (ih * far.naturalWidth) / far.naturalHeight;
       let x0 = -((camX * h * 0.08) % iw);
       if (x0 > 0) x0 -= iw;
+      g.imageSmoothingEnabled = true;
       for (let x = x0; x < w; x += iw) g.drawImage(far, x, h * 0.62 - ih / 2 - h * 0.02, iw, ih);
+      g.imageSmoothingEnabled = false;
       return;
     }
-    // far volcano (slow parallax) + smoke
+    // far volcano (slow parallax) + soft smoke
     const vx = w * 0.72 - camX * h * 0.08;
     g.fillStyle = '#7d6f78';
     g.beginPath();
@@ -128,23 +130,15 @@ export class BeachPainter implements Painter {
     g.lineTo(vx + h * 0.06, h * 0.3);
     g.lineTo(vx + h * 0.6, h * 0.62);
     g.fill();
-    g.fillStyle = 'rgba(240,236,230,0.55)';
-    for (let i = 0; i < 6; i++) {
-      const k = (t * 0.06 + i / 6) % 1;
-      g.beginPath();
-      g.arc(vx + k * h * 0.12, h * (0.28 - k * 0.2), h * (0.025 + k * 0.05), 0, Math.PI * 2);
-      g.fill();
-    }
-    // far sea band
     const sea = g.createLinearGradient(0, h * 0.58, 0, h);
-    sea.addColorStop(0, '#5fc4bd');
-    sea.addColorStop(1, '#1f7f8c');
+    sea.addColorStop(0, '#e0a98a');
+    sea.addColorStop(1, '#2f7f8c');
     g.fillStyle = sea;
     g.fillRect(0, h * 0.6, w, h * 2.4);
   }
 
   private rails(g: CanvasRenderingContext2D, camX: number, aspect: number): void {
-    g.strokeStyle = '#6b4a2e';
+    g.strokeStyle = '#3a2a22';
     g.lineWidth = 0.008;
     for (let s = Math.max(0, camX - 0.2); s < camX + aspect + 0.4; s += 0.045) {
       const p = railAt(s);
@@ -157,21 +151,23 @@ export class BeachPainter implements Painter {
       g.stroke();
       g.restore();
     }
-    g.strokeStyle = '#b9b3a6';
+    g.strokeStyle = '#b9a79a';
     g.lineWidth = 0.005;
     g.beginPath();
-    for (let s = Math.max(0, camX - 0.2); s < camX + aspect + 0.4; s += 0.02) {
+    const first = Math.max(0, camX - 0.2);
+    for (let s = first; s < camX + aspect + 0.4; s += 0.02) {
       const p = railAt(s);
-      if (s === Math.max(0, camX - 0.2)) g.moveTo(p.x, p.y);
+      if (s === first) g.moveTo(p.x, p.y);
       else g.lineTo(p.x, p.y);
     }
     g.stroke();
   }
 
-  private train(g: CanvasRenderingContext2D, s0: number, t: number, dt: number, phase: 'beach' | 'dive'): void {
-    const bob = Math.sin(t * 9) * 0.0015;
+  private train(g: CanvasRenderingContext2D, s0: number, t: number, dt: number, speed: number): void {
+    const bob = Math.sin(t * 9) * 0.0015 * Math.min(1, speed * 4);
+    const n = this.carriages.length;
     // carriages first (behind), then the locomotive
-    for (let i = this.cars; i >= 0; i--) {
+    for (let i = n; i >= 0; i--) {
       const isLoco = i === 0;
       const wdt = isLoco ? LOCO_W : CAR_W;
       const back = isLoco ? 0 : LOCO_W + GAP + (i - 1) * (CAR_W + GAP);
@@ -179,75 +175,32 @@ export class BeachPainter implements Painter {
       g.save();
       g.translate(mid.x, mid.y + bob * (i % 2 ? 1 : -1));
       g.rotate(mid.a);
-      const img = isLoco ? this.loco : this.car;
-      if (ready(img)) g.drawImage(img, -wdt / 2, -CAR_H, wdt, CAR_H);
-      else {
-        g.fillStyle = isLoco ? '#5fa88f' : 'rgba(170,230,230,0.8)';
-        g.fillRect(-wdt / 2, -CAR_H, wdt, CAR_H * 0.85);
-        g.fillStyle = '#d9ac4c';
-        g.fillRect(-wdt / 2, -CAR_H * 0.2, wdt, CAR_H * 0.05);
+      if (isLoco) {
+        if (ready(this.loco)) g.drawImage(this.loco, -wdt / 2, -CAR_H, wdt, CAR_H);
+        else {
+          g.fillStyle = '#5fa88f';
+          g.fillRect(-wdt / 2, -CAR_H, wdt, CAR_H * 0.85);
+        }
+      } else {
+        const car = this.carriages[i - 1];
+        g.translate(-wdt / 2, -CAR_H);
+        g.scale(CAR_H / CAR_ART_H, CAR_H / CAR_ART_H);
+        car?.drawInside(g, t, dt, Math.sin(mid.a) * 0.8);
+        if (ready(this.shell)) g.drawImage(this.shell, 0, 0);
+        else {
+          g.strokeStyle = '#d9ac4c';
+          g.lineWidth = 4;
+          g.strokeRect(22, 25, 244, 77);
+          g.fillStyle = '#7cc2a8';
+          g.fillRect(0, 102, 288, 30);
+        }
       }
       g.restore();
     }
-    // chimney steam while above water
-    const chim = railAt(s0 - LOCO_W * 0.25);
-    this.puffT -= dt;
-    if (chim.y < SEA_Y && this.puffT <= 0) {
-      this.puffT = phase === 'beach' ? 0.22 : 0.35;
-      this.puffs.push({ x: chim.x, y: chim.y - CAR_H * 1.05, r: 0.012, age: 0 });
-    }
-    for (let i = this.puffs.length - 1; i >= 0; i--) {
-      const p = this.puffs[i];
-      p.age += dt;
-      p.y -= dt * 0.05;
-      p.x -= dt * 0.04;
-      p.r += dt * 0.02;
-      if (p.age > 2.5) {
-        this.puffs.splice(i, 1);
-        continue;
-      }
-      g.fillStyle = `rgba(255,255,255,${(0.7 * (1 - p.age / 2.5)).toFixed(3)})`;
-      g.beginPath();
-      g.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-      g.fill();
-    }
-  }
-
-  private water(g: CanvasRenderingContext2D, _w: number, _h: number, t: number, camX: number, aspect: number): void {
-    const x0 = Math.max(SLOPE_X + (SEA_Y - BEACH_Y - 0.02) / K - 0.01, camX - 0.2);
-    const x1 = camX + aspect + 0.3;
-    if (x1 <= x0) return;
-    const grad = g.createLinearGradient(0, SEA_Y, 0, SEA_Y + 1.6);
-    grad.addColorStop(0, 'rgba(70,190,190,0.55)');
-    grad.addColorStop(0.3, 'rgba(25,110,140,0.72)');
-    grad.addColorStop(1, 'rgba(8,40,70,0.92)');
-    g.fillStyle = grad;
-    g.beginPath();
-    const wave = (x: number) => SEA_Y + Math.sin(x * 22 + t * 2.2) * 0.004 + Math.sin(x * 9 - t * 1.3) * 0.003;
-    g.moveTo(x0, wave(x0));
-    for (let x = x0; x <= x1; x += 0.02) g.lineTo(x, wave(x));
-    g.lineTo(x1, 9);
-    g.lineTo(x0, 9);
-    g.closePath();
-    g.fill();
-    // foam line where the sea meets the sand + surface highlight
-    g.strokeStyle = 'rgba(255,255,255,0.8)';
-    g.lineWidth = 0.004;
-    g.beginPath();
-    g.moveTo(x0, wave(x0));
-    for (let x = x0; x <= x1; x += 0.02) g.lineTo(x, wave(x));
-    g.stroke();
-    // light rays under the surface
-    g.fillStyle = 'rgba(220,255,245,0.06)';
-    for (let i = 0; i < 6; i++) {
-      const rx = Math.floor(camX) + i * 0.45 + Math.sin(t * 0.4 + i) * 0.05;
-      if (rx < x0) continue;
-      g.beginPath();
-      g.moveTo(rx, SEA_Y);
-      g.lineTo(rx + 0.08, SEA_Y);
-      g.lineTo(rx + 0.3, SEA_Y + 1.2);
-      g.lineTo(rx + 0.12, SEA_Y + 1.2);
-      g.fill();
-    }
+    // chimney steam while above water (same puff look as the main train)
+    const chim = railAt(s0 - LOCO_W * CHIMNEY.fromFront);
+    const lift = CAR_H * (1 - CHIMNEY.fromTop);
+    const top = { x: chim.x + Math.sin(chim.a) * lift, y: chim.y - Math.cos(chim.a) * lift };
+    this.steam.update(g, dt, top.y < SEA_Y - 0.01 ? top : null, speed / MAIN_UNIT, MAIN_UNIT);
   }
 }
