@@ -1,4 +1,6 @@
+import { fileUrl } from '../assets';
 import { formatNumber, type NumberFormatMode } from '../util/format';
+import { iconArt } from './art';
 import './hud.css';
 
 export interface HudState {
@@ -16,6 +18,12 @@ const BUTTONS = [
   { id: 'stamps', label: 'Stamps', key: 'S', icon: svg('<path d="M4 4h16v16H4z" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="2 2"/><circle cx="12" cy="12" r="4"/>') },
   { id: 'depot', label: 'Depot', key: 'D', icon: svg('<path d="M3 11 12 4l9 7v9H3z"/><path d="M9 20v-6h6v6" fill="#fff6e0"/>') },
 ] as const;
+
+/** Painted pixel icon `icons/<name>.png` as an <img> tag, else the procedural fallback markup (T-26). */
+export function iconHtml(name: string, fallback: string, exists?: (p: string) => boolean): string {
+  const p = exists ? iconArt(name, exists) : iconArt(name);
+  return p ? `<img class="ui-ico hud-img" src="${fileUrl(p)}" alt="" draggable="false">` : fallback;
+}
 
 function svg(inner: string): string {
   return `<svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">${inner}</svg>`;
@@ -45,9 +53,9 @@ export class Hud {
       top.appendChild(s);
       return s.querySelector('.hud-num') as HTMLElement;
     };
-    this.shells = stat('shells', '<i class="shell"></i>', 'Shells');
+    this.shells = stat('shells', iconHtml('shell', '<i class="shell"></i>'), 'Shells');
     this.sps = stat('sps', '<i class="wave"></i>', 'Shells/s');
-    this.tickets = stat('tickets', '<i class="ticket"></i>', 'Tickets');
+    this.tickets = stat('tickets', iconHtml('ticket', '<i class="ticket"></i>'), 'Tickets');
     const prog = el(
       'div',
       'hud-progress',
@@ -61,7 +69,7 @@ export class Hud {
 
     const bottom = el('nav', 'hud-bottom');
     for (const b of BUTTONS) {
-      const btn = el('button', 'hud-btn', `<span class="hud-btn-ico" aria-hidden="true">${b.icon}</span><span>${b.label}</span><kbd>${b.key}</kbd>`);
+      const btn = el('button', 'hud-btn', `<span class="hud-btn-ico" aria-hidden="true">${iconHtml(`tab_${b.id}`, b.icon)}</span><span>${b.label}</span><kbd>${b.key}</kbd>`);
       btn.type = 'button';
       btn.dataset.id = b.id;
       btn.setAttribute('aria-label', b.label);

@@ -1,7 +1,7 @@
 /* "While you were away" postcard: painted art with a parchment caption plate. */
 .ui-away-art {
   position: relative; display: flex; flex-direction: column; justify-content: flex-end; align-items: flex-start; gap: 4px;
-  padding: 10px; background: #c9e6de center / cover no-repeat; image-rendering: pixelated;
+  padding: 10px; background: #c9e6de center / cover no-repeat; image-rendering: auto; /* painted art: smooth downscale (T-26) */
   box-shadow: inset 0 0 0 1px rgba(60, 50, 30, 0.25);
 }
 .ui-away-plate {

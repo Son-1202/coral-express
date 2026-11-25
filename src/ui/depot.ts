@@ -1,6 +1,6 @@
 // Depot: reset (Tickets preview + new multiplier), Mascot picker, Line picker, upgrades, lifetime stats.
 import type { LineId } from '../data/schema';
-import { fileUrl, hasFile } from '../assets';
+import { iconImg, lineCover } from './art';
 import { speciesName } from './content';
 import { btn, fishIcon, h, TICKET } from './dom';
 import { defaultMascotName, depotResetHint, describeUpgrade, formatDuration, lineLockText } from './helpers';
@@ -9,6 +9,7 @@ import { carLabel } from './cars';
 import { costButton, type PanelView, type UiCtx } from './panel';
 
 let mascotId = '';
+
 let mascotName = '';
 let nameTouched = false;
 let nextLine: LineId = 1;
@@ -87,7 +88,7 @@ export function depotPanel(ctx: UiCtx): PanelView {
       for (const l of api.data.lines) {
         const open = opened.includes(l.id);
         lines.append(
-          btn(`ui-line-card${open ? ' open' : ' locked'}${l.id === nextLine ? ' cur' : ''}`, h('span', null, h('b', { text: l.name }), h('span', { text: l.region }), h('small', { text: open ? (l.id === nextLine ? 'Selected' : 'Ride this line') : lineLockText(api.data, s, l.id) })), () => {
+          btn(`ui-line-card${open ? ' open' : ' locked'}${l.id === nextLine ? ' cur' : ''}`, h('span', null, lineCover(l.id, open), h('b', { text: l.name }), h('span', { text: l.region }), h('small', { text: open ? (l.id === nextLine ? 'Selected' : 'Ride this line') : lineLockText(api.data, s, l.id) })), () => {
             if (!open) return;
             nextLine = l.id;
             ctx.rerender();
@@ -133,8 +134,7 @@ export function depotPanel(ctx: UiCtx): PanelView {
       const ups = h('div.ui-list');
       for (const u of api.data.upgrades) {
         const owned = p.upgrades.includes(u.id);
-        const path = `/icons/upgrade_${u.id}.png`;
-        const icon = hasFile(path) ? h('img.ui-up-ico', { src: fileUrl(path), alt: '' }) : h('i.ui-up-ico.ph', { text: u.name[0] });
+        const icon = iconImg(`upgrade_${u.id}`, 'ui-up-ico') ?? h('i.ui-up-ico.ph', { text: u.name[0] });
         const a = { type: 'buyUpgrade' as const, id: u.id };
         ups.append(
           h(

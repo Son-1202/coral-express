@@ -9,6 +9,7 @@ import { legProgress } from './helpers';
 import { Hud, mountRotateCard } from './hud';
 import { marketPanel, openMarketTab } from './market';
 import { closeTopModal, initModals, modalOpen } from './modal';
+import { applyIconVars } from './art';
 import { PanelHost, refreshCost, type PanelView, type UiCtx } from './panel';
 import { settingsPanel } from './settings';
 import { stampsPanel } from './stampBook';
@@ -44,6 +45,7 @@ const KEYS: Record<string, PanelId> = { m: 'market', t: 'track', s: 'stamps', d:
 
 export function mountUI(root: HTMLElement, api: GameApi, opts: MountOpts = {}): UiHandle {
   const layer = h('div.ui-root');
+  applyIconVars(document.documentElement);
   root.appendChild(layer);
   const offs: (() => void)[] = [];
   let tutorial: Tutorial | null = null;

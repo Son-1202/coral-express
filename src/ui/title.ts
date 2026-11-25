@@ -1,9 +1,8 @@
-// Title screen (key art, logo, Continue/New Game/Settings) + "While you were away" postcard.
+// Title screen (key art, logo, Continue/New Game/Settings). The away postcard lives in offline.ts.
 import { fileUrl, hasFile } from '../assets';
-import type { OfflineResult } from '../sim';
-import { btn, h, SHELL } from './dom';
+import { btn, h } from './dom';
 import { formatDuration } from './helpers';
-import { confirmDialog, showModal } from './modal';
+import { confirmDialog } from './modal';
 import type { UiCtx } from './panel';
 
 export interface TitleOpts {
@@ -18,7 +17,7 @@ export function showTitle(parent: HTMLElement, ctx: UiCtx, o: TitleOpts): () => 
   const root = h('div.ui-title');
   root.append(
     hasFile(art)
-      ? h('img.ui-title-art', { src: fileUrl(art), alt: '' })
+      ? h('img.ui-title-art', { decoding: 'async', alt: '', src: fileUrl(art, true) })
       : h('div.ui-title-art.ph', null, h('i.sun'), h('i.hills'), h('i.sea'), h('i.rail'), h('div.ui-title-train', null, h('i.loco'), h('i.car'), h('i.car'), h('i.car'))),
   );
   const close = () => {
@@ -59,35 +58,4 @@ export function showTitle(parent: HTMLElement, ctx: UiCtx, o: TitleOpts): () => 
   );
   parent.appendChild(root);
   return close;
-}
-
-/** "While you were away" postcard. */
-export function showOffline(ctx: UiCtx, r: OfflineResult): void {
-  let close = () => {};
-  const card = h(
-    'div.ui-postcard.ui-offline',
-    null,
-    h('div.ui-pc-art.ph.away', { 'data-line': ctx.api.sim.state.currentLine }, h('span', { text: 'While you were away' })),
-    h(
-      'div.ui-pc-back',
-      null,
-      h('div.ui-pc-stamp', { 'data-line': ctx.api.sim.state.currentLine }),
-      h('h3', { text: 'The train kept rolling…' }),
-      h(
-        'dl.ui-away',
-        null,
-        h('dt', { text: 'Time away' }),
-        h('dd', { text: formatDuration(r.seconds) }),
-        h('dt', { text: 'Shells earned' }),
-        h('dd', { html: `${SHELL}${ctx.fmt(r.shells)}` }),
-        h('dt', { text: 'Stations visited' }),
-        h('dd', { text: ctx.fmt(r.stationsVisited) }),
-      ),
-    ),
-    btn('ui-brass ui-pc-close', 'Collect', () => {
-      ctx.sound('coin', r.shells);
-      close();
-    }),
-  );
-  close = showModal(card);
 }

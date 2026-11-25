@@ -1,0 +1,90 @@
+/* T-26: painted art in the UI (postcards, station stamps, Line covers, icons). */
+
+/* fixed-aspect art box: the image fills it (cover crop), so panels never jump while it loads */
+.ui-art { position: relative; display: block; overflow: hidden; border-radius: 3px; background: #cfe3dc; }
+.ui-art > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; image-rendering: auto; }
+.ui-art > img.px { image-rendering: pixelated; }
+.ui-art > .ui-art-ph { position: absolute; inset: 0; display: block; aspect-ratio: auto;
+  background: radial-gradient(circle at 75% 25%, #fff4c2 0 9%, transparent 10%), linear-gradient(#bfe6f2 0 45%, #3cc7c4 45% 72%, #f3d9a4 72%); }
+.ui-art > .ui-art-ph[data-line='2'] { background: radial-gradient(circle at 75% 25%, #f2f4f7 0 9%, transparent 10%), linear-gradient(#c9d6e0 0 30%, #6d8297 30% 48%, #39546a 48% 70%, #b7c3c8 70%); }
+.ui-art > .ui-art-ph[data-line='3'] { background: radial-gradient(circle at 75% 25%, #ffd59a 0 9%, transparent 10%), linear-gradient(#f7c9a3 0 45%, #2f9e8f 45% 72%, #2c2a2c 72%); }
+
+/* ---------- opened postcard (modal): painting full-size above Wren's text ---------- */
+.ui-postcard.pc-full { width: min(560px, 92vw); grid-template-columns: 1fr; gap: 10px; }
+.ui-art.ui-pc-art { width: 100%; height: auto; min-height: 0; max-height: none; aspect-ratio: 3 / 2; image-rendering: auto; box-shadow: inset 0 0 0 1px rgba(60, 50, 30, .2); }
+.ui-postcard.pc-full .ui-pc-back { border-left: none; border-top: 2px solid #e8dcc0; padding: 6px 4px 0; }
+@media (max-height: 460px) {
+  /* phone landscape: painting left (as large as the height allows), text right */
+  .ui-postcard.pc-full { width: min(760px, 94vw); grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); }
+  .ui-art.ui-pc-art { align-self: start; max-height: calc(100vh - 110px); }
+  .ui-postcard.pc-full .ui-pc-back { border-top: none; border-left: 2px solid #e8dcc0; padding: 2px 4px 2px 10px; }
+}
+
+/* ---------- Wren's Postcards tab ---------- */
+.ui-art.ui-pc-pic { width: 100%; aspect-ratio: 3 / 2; border-radius: 2px; }
+.ui-pc-thumb.locked .ui-pc-pic > img { filter: grayscale(1) sepia(.25) blur(2.5px) brightness(1.08) contrast(.7); transform: scale(1.08); }
+.ui-pc-thumb.note .ui-pc-pic { outline: 2px dashed var(--brass); outline-offset: -6px; }
+.ui-pc-seal { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%) rotate(-8deg); padding: 2px 10px; font: 12px var(--font-num); letter-spacing: .5px;
+  color: var(--coral); background: rgba(255, 250, 240, .9); border: 2px solid var(--coral); border-radius: 4px; white-space: nowrap; }
+
+/* ---------- Stations tab: perforated postage stamps ---------- */
+.ui-stamps.stations { grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 10px; }
+.ui-stamp.station { aspect-ratio: auto; padding: 8px; border: none; outline: none; border-radius: 0; box-shadow: none; background: #fffaf0;
+  /* perforated edge: the content box stays solid, the 8px margin band gets punched half-holes */
+  -webkit-mask: linear-gradient(#000 0 0) content-box, radial-gradient(circle at 5px 5px, #0000 3.2px, #000 3.8px) -5px -5px / 10px 10px round;
+          mask: linear-gradient(#000 0 0) content-box, radial-gradient(circle at 5px 5px, #0000 3.2px, #000 3.8px) -5px -5px / 10px 10px round; }
+.ui-stamp.station .ui-stamp-in { gap: 3px; justify-content: flex-start; padding: 4px; background: #f3ead3; box-shadow: inset 0 0 0 1px #e2d4b0; }
+.ui-stamp.station[data-line='2'] .ui-stamp-in { background: #e6ebef; } .ui-stamp.station[data-line='3'] .ui-stamp-in { background: #f6e3d2; }
+.ui-art.ui-stamp-pic { width: 100%; aspect-ratio: 1 / 1; flex: none; border-radius: 1px; }
+.ui-art.ui-stamp-pic.big { aspect-ratio: 3 / 2; border-radius: 6px; }
+.ui-stamp.station small { min-height: 2.1em; display: flex; align-items: center; }
+.ui-stamp-badge { position: absolute; top: 3px; left: 3px; min-width: 20px; height: 20px; padding: 0 4px; display: grid; place-items: center; border-radius: 10px;
+  font: 11px var(--font-num); color: #fff; background: var(--coral); box-shadow: 0 0 0 2px #fff6e0, 0 1px 3px rgba(0, 0, 0, .3); }
+.ui-stamp-badge[data-line='2'] { background: #5d7ea0; } .ui-stamp-badge[data-line='3'] { background: #2f9e8f; }
+.ui-stamp-pic.big .ui-stamp-badge { top: 8px; left: 8px; min-width: 28px; height: 28px; border-radius: 14px; font-size: 15px; }
+.ui-stamp-q { position: absolute; inset: 0; display: grid; place-items: center; font: 16px var(--font-num); color: #f4efe2; text-shadow: 0 1px 2px rgba(0, 0, 0, .45); }
+.ui-stamp-pic.big .ui-stamp-q { font-size: 30px; }
+/* locked: a grey silhouette of the painting */
+.ui-stamp.locked .ui-stamp-pic > img, .ui-stamp-big.locked .ui-stamp-pic > img { filter: grayscale(1) brightness(.55) contrast(.55) blur(2px); transform: scale(1.1); }
+.ui-stamp.locked .ui-stamp-badge, .ui-stamp-big.locked .ui-stamp-badge { background: #9b917c; }
+.ui-stamp.station:nth-child(3n) { transform: rotate(1deg); } .ui-stamp.station:nth-child(3n+1) { transform: rotate(-.8deg); }
+/* the detail dialog shows the stamp art wide (not the generic blacked-out silhouette) */
+.ui-stamp-detail .ui-stamp-big.wide { width: min(330px, 76vw); height: auto; padding: 0; background: none; }
+.ui-stamp-big.wide.locked > * { filter: none; }
+@media (max-height: 460px) {
+  .ui-stamps.stations { grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 8px; }
+  .ui-stamp-detail .ui-stamp-big.wide { width: min(260px, 60vw); }
+}
+
+/* ---------- Line cards (Depot picker + Track map) ---------- */
+.ui-lines .ui-line-card { padding: 4px 8px 8px; background: var(--card); gap: 2px; overflow: hidden; }
+.ui-line-card > span.ui-art, .ui-line-card .ui-art.ui-line-art { display: block; width: calc(100% + 8px); margin: 0 -4px 4px; aspect-ratio: 16 / 9; border-radius: 5px; }
+.ui-lines .ui-line-card.locked { filter: none; opacity: 1; }
+.ui-lines .ui-line-card.locked::after { content: none; }
+.ui-line-card.locked .ui-line-art > img { filter: grayscale(1) brightness(.9) contrast(.8); }
+.ui-line-card.locked > b, .ui-line-card.locked > span > b { color: var(--ink-soft); }
+.ui-line-lock { position: absolute; right: 5px; top: 5px; display: flex; align-items: center; gap: 4px; padding: 2px 7px 2px 6px; font: 11px var(--font-num); color: #fff6e0;
+  background: rgba(40, 52, 58, .78); border-radius: 4px; }
+.ui-line-lock::before { content: ''; width: 8px; height: 7px; margin-top: 3px; border-radius: 1px; background: #fff6e0; box-shadow: 0 -4px 0 -1px rgba(40, 52, 58, .78), 0 -5px 0 0 #fff6e0; }
+@media (max-height: 460px) { .ui-lines .ui-line-card { padding: 3px 6px 5px; } .ui-line-card .ui-art.ui-line-art { width: calc(100% + 6px); margin: 0 -3px 3px; } }
+
+/* ---------- pixel icons ---------- */
+.ui-ico { image-rendering: pixelated; object-fit: contain; }
+.ui-up-ico { object-fit: contain; }
+
+/* currency glyphs → painted pixel icons when present (applyIconVars) */
+.has-ico-shell .ui-shell { background: var(--ico-shell) center / contain no-repeat; box-shadow: none; border-radius: 0; image-rendering: pixelated; width: 16px; height: 14px; }
+.has-ico-ticket .ui-ticket { background: var(--ico-ticket) center / contain no-repeat; box-shadow: none; border-radius: 0; transform: none; image-rendering: pixelated; width: 18px; height: 12px; }
+.has-ico-ticket .ui-reset-tickets .ui-ticket { width: 40px; height: 26px; }
+/* HUD */
+.hud-ico .hud-img { width: 24px; height: 24px; }
+.hud-btn-ico .hud-img { width: 32px; height: 32px; margin: -4px 0; }
+@media (max-height: 460px) { .hud-btn-ico .hud-img { width: 24px; height: 24px; } .hud-ico .hud-img { width: 20px; height: 20px; } }
+/* Wren's tip portrait */
+.ui-art.ui-tip-wren { border-radius: 50%; background: #dff2ee; }
+.ui-art.ui-tip-wren > img { object-position: 50% 22%; transform: scale(1.25); transform-origin: 50% 25%; }
+/* toast icons: tiny painted postcards / covers */
+.ui-art.ui-toast-art { width: 46px; aspect-ratio: 3 / 2; flex: none; border: 2px solid #fffaf0; outline: 1px solid #e8dcc0; transform: rotate(-5deg); box-shadow: 0 2px 4px rgba(0, 0, 0, .2); }
+.ui-art.ui-toast-stamp { width: 34px; aspect-ratio: 1 / 1; flex: none; border: 3px dotted #fffaf0; outline: 1px solid #c9b88f; border-radius: 1px; }
+@media (max-height: 460px) { .ui-art.ui-toast-art { width: 34px; } .ui-art.ui-toast-stamp { width: 26px; } }
+.ui-line-card .ui-line-art .ui-line-lock { color: #fff6e0; font-size: 11px; }

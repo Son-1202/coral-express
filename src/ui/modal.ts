@@ -1,5 +1,5 @@
 // Centered modal cards: confirm dialogs, postcards, offline popup.
-import { fileUrl, hasFile } from '../assets';
+import { lineCoverArt, paintedImg, postcardArt } from './art';
 import { btn, h } from './dom';
 import { postcardText, station } from './content';
 
@@ -64,15 +64,15 @@ export function confirmDialog(o: { title: string; body: HTMLElement | string; ok
   close = showModal(card);
 }
 
-/** Wren's postcard: art (if present) + handwritten text. */
-export function postcardCard(stationId: string, textOverride?: string, title?: string): HTMLElement {
+/** Wren's postcard: the painting full-size above her handwritten text. Notes pass `coverLine` → Line cover art. */
+export function postcardCard(stationId: string, textOverride?: string, title?: string, coverLine?: number): HTMLElement {
   const st = station(stationId);
-  const art = `/ui/postcard_${stationId}.png`;
-  const pic = hasFile(art)
-    ? h('img.ui-pc-art', { src: fileUrl(art), alt: '' })
-    : h('div.ui-pc-art.ph', { 'data-line': st?.line ?? 1 }, h('span', { text: st?.name ?? 'Coral Express' }));
+  const line = coverLine ?? st?.line ?? 1;
+  const art = coverLine ? lineCoverArt(coverLine) ?? postcardArt(stationId) : postcardArt(stationId);
+  const pic = paintedImg(art, 'ui-pc-art', () => h('span', { text: st?.name ?? 'Coral Express' }), { eager: true });
+  pic.dataset.line = String(line);
   return h(
-    'div.ui-postcard',
+    'div.ui-postcard.pc-full',
     null,
     pic,
     h(
@@ -85,8 +85,8 @@ export function postcardCard(stationId: string, textOverride?: string, title?: s
   );
 }
 
-export function showPostcard(stationId: string, textOverride?: string, title?: string): void {
-  const card = postcardCard(stationId, textOverride, title);
+export function showPostcard(stationId: string, textOverride?: string, title?: string, coverLine?: number): void {
+  const card = postcardCard(stationId, textOverride, title, coverLine);
   let close = () => {};
   card.append(btn('ui-brass ui-pc-close', 'Lovely', () => close()));
   close = showModal(card);

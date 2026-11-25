@@ -1,5 +1,6 @@
 // Stamp book: species stamps (+ shiny), station stamps, Wren's postcards.
 import { NOTES, SPECIES_FLAVOR, STATIONS } from './content';
+import { lineCoverArt, paintedImg, postcardArt, postcardPh } from './art';
 import { btn, fishIcon, h } from './dom';
 import { showModal, showPostcard } from './modal';
 import type { PanelView, UiCtx } from './panel';
@@ -7,10 +8,26 @@ import type { PanelView, UiCtx } from './panel';
 type Tab = 'species' | 'stations' | 'postcards';
 let tab: Tab = 'species';
 
-function flavorCard(title: string, text: string, icon: HTMLElement, got: boolean): void {
+function flavorCard(title: string, text: string, icon: HTMLElement, got: boolean, wide = false): void {
   let close = () => {};
-  const card = h('div.ui-dialog.ui-stamp-detail', null, h('div.ui-stamp-big' + (got ? '' : '.locked'), null, icon), h('h2', { text: got ? title : '???' }), h('p', { text: got ? text : 'Not collected yet. Keep riding!' }), btn('ui-brass', 'Close', () => close()));
+  const card = h('div.ui-dialog.ui-stamp-detail', null, h('div.ui-stamp-big' + (got ? '' : '.locked') + (wide ? '.wide' : ''), null, icon), h('h2', { text: got ? title : '???' }), h('p', { text: got ? text : 'Not collected yet. Keep riding!' }), btn('ui-brass', 'Close', () => close()));
   close = showModal(card);
+}
+
+/** Postcard thumbnail: the painting (locked = sealed: desaturated + blurred under a "Not yet" seal). */
+function pcThumb(art: string | null, line: number, got: boolean): HTMLElement {
+  const box = paintedImg(art, 'ui-pc-pic', () => postcardPh(line));
+  if (!got) box.append(h('b.ui-pc-seal', { text: 'Not yet' }));
+  return box;
+}
+
+/** Station stamp face: a crop of the station's postcard + index badge; locked = grey silhouette "???". */
+function stationArt(id: string, line: number, index: number, got: boolean, big = false): HTMLElement {
+  const box = paintedImg(postcardArt(id), 'ui-stamp-pic' + (big ? ' big' : ''), () => postcardPh(line));
+  box.dataset.line = String(line);
+  box.append(h('b.ui-stamp-badge', { 'data-line': line, text: String(index) }));
+  if (!got) box.append(h('b.ui-stamp-q', { text: '???' }));
+  return box;
 }
 
 export function stampsPanel(ctx: UiCtx): PanelView {
@@ -48,20 +65,28 @@ export function stampsPanel(ctx: UiCtx): PanelView {
       } else if (tab === 'stations') {
         for (const s of STATIONS) {
           const got = has(`station:${s.id}`);
-          const icon = () => h('span.ui-station-ico', { 'data-line': s.line, text: String(s.index) });
-          grid.append(btn(`ui-stamp round${got ? '' : ' locked'}`, h('span.ui-stamp-in', null, icon(), h('small', { text: got ? s.name : '???' })), () => flavorCard(s.name, s.greeting, icon(), got)));
+          grid.append(
+            btn(
+              `ui-stamp station${got ? '' : ' locked'}`,
+              h('span.ui-stamp-in', null, stationArt(s.id, s.line, s.index, got), h('small', { text: got ? s.name : '???' })),
+              () => flavorCard(s.name, s.greeting, stationArt(s.id, s.line, s.index, got, true), got, true),
+              { 'data-line': s.line, 'aria-label': got ? s.name : 'Locked station' },
+            ),
+          );
         }
       } else {
         for (const s of STATIONS) {
           const got = p.postcards.includes(s.id);
           grid.append(
-            btn(`ui-pc-thumb${got ? '' : ' locked'}`, h('span', null, h('i', { 'data-line': s.line }), h('small', { text: got ? s.name : 'Not yet' })), () => got && showPostcard(s.id)),
+            btn(`ui-pc-thumb${got ? '' : ' locked'}`, h('span', null, pcThumb(postcardArt(s.id), s.line, got), h('small', { text: got ? s.name : '???' })), () => got && showPostcard(s.id), {
+              'aria-label': got ? `Postcard from ${s.name}` : 'Postcard not received yet',
+            }),
           );
         }
-        if (p.resets > 0 && NOTES.firstDepotReset) grid.append(btn('ui-pc-thumb note', h('span', null, h('i', { 'data-line': 1 }), h('small', { text: 'A note from the depot' })), () => showPostcard('l1s1', NOTES.firstDepotReset.text, 'From the Depot')));
+        if (p.resets > 0 && NOTES.firstDepotReset) grid.append(btn('ui-pc-thumb note', h('span', null, pcThumb(lineCoverArt(1), 1, true), h('small', { text: 'A note from the depot' })), () => showPostcard('l1s1', NOTES.firstDepotReset.text, 'From the Depot', 1)));
         for (const l of [2, 3]) {
           const n = NOTES[`lineOpened${l}`];
-          if (n && p.openedLines.includes(l as 1 | 2 | 3)) grid.append(btn('ui-pc-thumb note', h('span', null, h('i', { 'data-line': l }), h('small', { text: `Line ${l} opens` })), () => showPostcard(`l${l}s1`, n.text, `Onward to Line ${l}`)));
+          if (n && p.openedLines.includes(l as 1 | 2 | 3)) grid.append(btn('ui-pc-thumb note', h('span', null, pcThumb(lineCoverArt(l), l, true), h('small', { text: `Line ${l} opens` })), () => showPostcard(`l${l}s1`, n.text, `Onward to Line ${l}`, l)));
         }
       }
       body.append(grid);

@@ -1,6 +1,7 @@
 // Contextual tutorial: ≤ 5 tips from src/story/tips.json. Never blocks input (one tap dismisses).
 import { TIPS } from './content';
 import { h } from './dom';
+import { paintedImg, wrenArt } from './art';
 import type { UiCtx } from './panel';
 
 const KEY = 'coral-express.tips';
@@ -68,7 +69,7 @@ export class Tutorial {
     if (!tip) return;
     if (this.current) this.seen.add(this.current);
     this.current = id;
-    this.root.replaceChildren(h('i.ui-tip-wren'), h('div.ui-tip-txt', null, h('b', { text: 'Wren’s tip' }), h('span', { text: tip.text })), h('small', { text: 'tap to dismiss' }));
+    this.root.replaceChildren(paintedImg(wrenArt(), 'ui-tip-wren', () => h('i'), { eager: true }), h('div.ui-tip-txt', null, h('b', { text: 'Wren’s tip' }), h('span', { text: tip.text })), h('small', { text: 'tap to dismiss' }));
     this.root.classList.remove('soft');
     this.root.classList.add('show');
   }

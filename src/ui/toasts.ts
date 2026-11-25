@@ -1,5 +1,6 @@
 // Toast stack (postcards, stamps, requests, bonds, milestones) driven by sim events.
 import { NOTES, speciesName, station } from './content';
+import { lineCoverArt, postcardArt, toastArt } from './art';
 import { fishIcon, h } from './dom';
 import { showPostcard } from './modal';
 import type { ToastSpec, UiCtx } from './panel';
@@ -92,6 +93,9 @@ export class Toasts {
     if (first.text) kids.push(h('span', { text: first.text }));
     if (more > 0) kids.push(h('span.ui-toast-more', { text: `+${more} more postcard${more > 1 ? 's' : ''}` }));
     g.txt.replaceChildren(...kids);
+    // keep the painted icon in step with the card shown (QA: grouped toasts went stale)
+    const ico = g.el.firstElementChild;
+    if (first.icon && ico && ico !== g.txt && ico !== first.icon) ico.replaceWith(first.icon);
     clearTimeout(g.timer);
     const el = g.el;
     g.timer = setTimeout(() => {
@@ -110,12 +114,12 @@ export function wireToasts(ctx: UiCtx, toasts: Toasts): () => void {
     api.on('postcard', (e) => {
       if (e.suppressToast) return; // D-011: the ending shows the final postcard
       const st = station(e.stationId);
-      toasts.push({ kind: 'postcard', title: 'A postcard from Wren', text: st ? `${st.name} — tap to read` : 'Tap to read', ms: 7000, onClick: () => showPostcard(e.stationId) });
+      toasts.push({ kind: 'postcard', title: 'A postcard from Wren', text: st ? `${st.name} — tap to read` : 'Tap to read', ms: 7000, icon: toastArt(postcardArt(e.stationId), st?.line ?? 1), onClick: () => showPostcard(e.stationId) });
     }),
     api.on('stamp', (e) => {
       if (e.kind === 'station') {
         const st = station(e.ref);
-        toasts.push({ kind: 'stamp', title: 'New station stamp', text: st?.name ?? e.ref });
+        toasts.push({ kind: 'stamp', title: 'New station stamp', text: st?.name ?? e.ref, icon: toastArt(postcardArt(e.ref), st?.line ?? 1, 'ui-toast-stamp') });
       } else {
         toasts.push({ kind: 'stamp', title: e.kind === 'shiny' ? 'Shiny stamp!' : 'New species stamp', text: speciesName(data, e.ref), icon: fishIcon(data, e.ref, e.kind === 'shiny', 34) });
       }
@@ -134,11 +138,11 @@ export function wireToasts(ctx: UiCtx, toasts: Toasts): () => void {
     api.on('lineOpened', (e) => {
       const n = NOTES[`lineOpened${e.line}`];
       const l = data.lines.find((x) => x.id === e.line);
-      toasts.push({ kind: 'postcard', title: `${l?.name ?? 'A new line'} is open!`, text: n ? 'Wren left a note — tap to read' : l?.region, ms: 8000, onClick: n ? () => showPostcard(`l${e.line}s1`, n.text, `Onward to ${l?.region ?? 'the next line'}`) : undefined });
+      toasts.push({ kind: 'postcard', title: `${l?.name ?? 'A new line'} is open!`, text: n ? 'Wren left a note — tap to read' : l?.region, ms: 8000, icon: toastArt(lineCoverArt(e.line), e.line), onClick: n ? () => showPostcard(`l${e.line}s1`, n.text, `Onward to ${l?.region ?? 'the next line'}`, e.line) : undefined });
     }),
     api.on('depotReset', (e) => {
       const n = NOTES.firstDepotReset;
-      toasts.push({ kind: 'info', title: `+${ctx.fmt(e.tickets)} Tickets`, text: e.oldFriend ? 'Old Friend! +25% forever' : 'A fresh run begins', ms: 6000, onClick: n && api.sim.state.permanent.resets === 1 ? () => showPostcard('l1s1', n.text, 'From the Depot') : undefined });
+      toasts.push({ kind: 'info', title: `+${ctx.fmt(e.tickets)} Tickets`, text: e.oldFriend ? 'Old Friend! +25% forever' : 'A fresh run begins', ms: 6000, onClick: n && api.sim.state.permanent.resets === 1 ? () => showPostcard('l1s1', n.text, 'From the Depot', 1) : undefined });
     }),
     api.on('sightEnd', (e) => {
       if (e.shells === 0) return;
