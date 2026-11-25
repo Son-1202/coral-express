@@ -33,7 +33,7 @@
 }
 @media (max-height: 460px) {
   .ending[data-beat='video'] .ending-caption,
-  .ending[data-beat='panorama'] .ending-caption { top: 4%; padding: 8px 16px 10px; font-size: 15px; }
+  .ending[data-beat='panorama'] .ending-caption { top: 4%; width: min(72vw, 600px); padding: 8px 16px 10px; font-size: 15px; }
 }
 
 .ending-postcard {

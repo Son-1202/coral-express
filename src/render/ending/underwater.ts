@@ -99,16 +99,15 @@ export class UnderwaterPainter implements Painter {
     this.actors.sort((a, c) => a.depth - c.depth);
   }
 
-  /** Keep panorama sprites apart: two relaxation passes over the non-swarm cast. */
+  /** Keep panorama sprites apart: three relaxation passes over the non-swarm cast. */
   private relax(b: MotionBounds): void {
     const cast = this.actors.filter((a) => !isSwarm(a.mover));
     const bodies: (Body & { a: Actor })[] = cast.map((a) => {
       const ar = ready(a.img) ? a.img.naturalWidth / a.img.naturalHeight : 1.6;
-      return { a, x: a.mover.pose.x, y: a.mover.pose.y, rx: a.size * ar * 0.92, ry: a.size * 0.92, floor: a.floor };
+      return { a, x: a.mover.pose.x, y: a.mover.pose.y, rx: a.size * ar * 1.08, ry: a.size * 1.05, floor: a.floor };
     });
     const box: Box = { minX: b.minX, maxX: b.maxX, minY: b.minY, maxY: b.maxY };
-    separate(bodies, 0.6, box);
-    separate(bodies, 0.6, box);
+    for (let i = 0; i < 3; i++) separate(bodies, 0.7, box);
     for (const o of bodies) if (o.x !== o.a.mover.pose.x || o.y !== o.a.mover.pose.y) o.a.mover.place(o.x, o.floor ? o.a.mover.pose.y : o.y);
   }
 

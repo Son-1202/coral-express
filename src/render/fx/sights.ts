@@ -243,7 +243,7 @@ export class SightFx {
         update: (dt) => {
           t0 += dt;
           const b = h.carBox(idx) ?? { x: h.focusX(), y: 1, w: 2, h: 1 };
-          ring.userData.h = b.h * 1.9;
+          ring.userData.h = Math.max(b.h * 1.5, (b.w * 1.12) / 1.5); // ring art is 3:2
           ring.userData.s = 1 + Math.sin(t0 * 6) * 0.06;
           ring.position.set(b.x, b.y + 0.2, 0.6);
           return true;

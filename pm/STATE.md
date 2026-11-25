@@ -1,6 +1,6 @@
 # PM STATE — Coral Express
 
-**Phase:** 5 Content & tuning (game playable end to end on live URL)
+**Phase:** 7 QA re-run → 8 Ship
 **Live URL:** https://coral-express.vercel.app (auto-deploys from main; first green deploy = T-01 efa824a)
 **Repo:** https://github.com/Son-1202/coral-express (branch `main`)
 
@@ -27,19 +27,19 @@
 | T-17 Cinematic video clips | ART | medium | done |
 | T-18 Audio + ending + video player | DEV | medium | done (wiring via T-19) |
 | T-20 Balance tuning (E1 green) | DEV+CONTENT | high | done (12/14, D-028) |
-| T-19 Render fixes, living world, depot scene, loading (+T-18 wiring) | DEV | medium | done (deploys with T-20) |
+| T-19 Render fixes, living world, depot scene, loading (+T-18 wiring) | DEV | medium | done |
 | T-21 QA E2E suite + screenshot matrix | QA | medium | done (14 bugs) |
-| T-22a Fix: world & sights readability | DEV | high | in progress |
-| T-22b Fix: ending, tank decor, offline art | DEV | high | in progress (resumed) |
+| T-22a Fix: world & sights readability | DEV | high | done |
+| T-22b Fix: ending, tank decor, offline art | DEV | high | done |
 | T-22c Fix: UI typography, phone, depot guard | DEV | high | done |
 | T-16 Painterly set + shiny | ART | medium | done |
 | T-17 Cinematic video clips | ART | medium | done |
 | T-18 Audio + ending + video player | DEV | medium | done (wiring via T-19) |
 | T-20 Balance tuning (E1 green) | DEV+CONTENT | high | done (12/14, D-028) |
-| T-19 Render fixes, living world, depot scene, loading (+T-18 wiring) | DEV | medium | done (deploys with T-20) |
+| T-19 Render fixes, living world, depot scene, loading (+T-18 wiring) | DEV | medium | done |
 | T-21 QA E2E suite + screenshot matrix | QA | medium | done (14 bugs) |
-| T-22a Fix: world & sights readability | DEV | high | in progress |
-| T-22b Fix: ending, tank decor, offline art | DEV | high | in progress (resumed) |
+| T-22a Fix: world & sights readability | DEV | high | done |
+| T-22b Fix: ending, tank decor, offline art | DEV | high | done |
 | T-22c Fix: UI typography, phone, depot guard | DEV | high | done |
 | T-12 Sprite sheets | ART | medium | done |
 | T-06 Sim meta (sights, depot, offline, save, markets, requests) | DEV | high | done |
