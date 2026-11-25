@@ -1,7 +1,7 @@
 # Balance tuning log (T-20, E1)
 
 Harness: `npx tsx scripts/balance.ts --games N` (greedy, random, bondNever, greedyOffline). Debug aids added in T-20: `scripts/balance/trace.ts` (one line per track / terminal / reset per game) and `scripts/balance/peek.ts` (greedy's top candidates and car layout at minute T).
-Final numbers: `docs/qa/balance_report.md` (1000 games per bot). Start point (T-07): 1/14 PASS.
+Final numbers: `docs/qa/balance_report.md` (1000 games per bot, 390 s): **12/14 PASS**, 2 accepted deviations below. Start point (T-07): 1/14 PASS.
 
 ## Diagnosis that drove the strategy
 1. **Reset count was structurally 2.** A Depot Reset needs a terminal reached *this run*, and greedy rides the newest opened Line, so the only possible path was L1 → L2 → L3 (2 resets), whatever the Ticket curve. → rule: Lines open after their previous terminal was reached in `opensAfterRuns` runs (2): L1, L1, L2, L2, L3 = **4 resets**, exactly, in every game.
