@@ -1,7 +1,17 @@
 import type { GameApi, UIEvents } from '../ui/types';
 import type { Settings } from './bus';
 import type { GameController } from './controller';
-import { clearSave, readSettings, writeSettings } from './storage';
+import { clearSave, decodeSaveCode, encodeSaveCode, readSettings, writeSettings } from './storage';
+import type { SaveCodeCheck } from '../ui/types';
+
+/** Reload without `?new=1` / `?warp=` (those would start fresh or fast-forward over an import). */
+function reloadClean(): void {
+  const u = new URL(location.href);
+  u.searchParams.delete('new');
+  u.searchParams.delete('warp');
+  if (u.href === location.href) location.reload();
+  else location.replace(u.href);
+}
 
 /** Hooks the render side provides to the API (Tank View lives in T-15's module). */
 export interface ApiHooks {
@@ -58,6 +68,19 @@ export function createApi(game: GameController, hooks: ApiHooks, hadSave: boolea
       clearSave();
       game.stop();
       location.reload();
+    },
+    // T-36 save transfer (logic lives in storage.ts + controller.ts)
+    exportSaveCode: () => encodeSaveCode(game.exportSave()),
+    async checkSaveCode(code): Promise<SaveCodeCheck> {
+      const r = await decodeSaveCode(code);
+      if (!r.ok) return r;
+      try {
+        const preview = game.previewImport(r.save);
+        return { ok: true, preview, current: game.currentPreview(), apply: () => game.applyImport(r.save) && (reloadClean(), true) };
+      } catch (err) {
+        console.warn('[save] imported save does not load', err);
+        return { ok: false, error: 'This save code could not be loaded. Your current trip is unchanged.' };
+      }
     },
     setPaused: (p) => {
       game.paused = p;

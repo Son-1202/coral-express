@@ -1,7 +1,8 @@
-// Settings: music/SFX volume, quality, number format, reset save (double confirm).
+// Settings: music/SFX volume, quality, number format, save code (T-36), reset save (double confirm).
 import { formatNumber } from '../util/format';
 import { btn, h } from './dom';
 import { confirmDialog } from './modal';
+import { saveCodeSection } from './saveTransfer';
 import type { PanelView, UiCtx } from './panel';
 import type { Settings } from './types';
 
@@ -47,6 +48,8 @@ export function settingsPanel(ctx: UiCtx): PanelView {
         segmented(st.numberFormat, [['short', `Short · ${formatNumber(1234567, 'short')}`], ['scientific', `Science · ${formatNumber(1234567, 'scientific')}`]], (v) => set({ numberFormat: v })),
         h('h3.ui-sec', { text: 'Save' }),
         h('p.ui-hint', { text: 'Your trip is saved in this browser automatically.' }),
+        saveCodeSection(ctx),
+        h('h3.ui-sec', { text: 'Start over' }),
         btn('ui-brass danger', 'Reset save…', () =>
           confirmDialog({
             title: 'Reset your save?',

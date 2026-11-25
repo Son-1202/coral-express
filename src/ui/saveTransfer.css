@@ -1,0 +1,46 @@
+/* T-36: Settings → Save code (copy / download / load). */
+.ui-sc-btns { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 6px; }
+.ui-sc-btns .ui-brass { flex: 1 1 150px; min-height: 44px; }
+.ui-sc-out { margin: 6px 0 4px; display: flex; flex-direction: column; gap: 6px; align-items: stretch; }
+.ui-sc-out[hidden] { display: none; }
+.ui-sc-out .ui-brass { align-self: flex-start; min-width: 44px; }
+.ui-sc-status { margin: 0; font-size: 13.5px; line-height: 1.3; color: var(--seafoam-deep); }
+.ui-sc-area {
+  width: 100%; box-sizing: border-box; min-height: 64px; resize: vertical; padding: 8px 10px;
+  font: 12px/1.3 ui-monospace, Menlo, Consolas, monospace; color: var(--ink); word-break: break-all;
+  background: #fffaf0; border: 2px solid var(--paper-shade); border-radius: 8px;
+  user-select: text; -webkit-user-select: text; touch-action: auto;
+}
+.ui-sc-area:focus { outline: 2px solid var(--seafoam-deep); outline-offset: 1px; }
+.ui-sc-area.out { min-height: 56px; color: var(--ink-soft); }
+
+/* import dialog */
+.ui-dialog.ui-sc-dialog { width: min(480px, 94vw); max-height: calc(100dvh - 32px); overflow-y: auto; overscroll-behavior: contain; touch-action: pan-y; box-sizing: border-box; text-align: left; }
+.ui-sc-dialog h2 { text-align: center; }
+.ui-sc-row { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+.ui-sc-row .ui-brass { flex: 1 1 140px; }
+.ui-sc-err { margin: 8px 0 0; min-height: 0; color: #a4442f; font-size: 14px; line-height: 1.3; }
+.ui-sc-err:empty { display: none; }
+.ui-sc-ok { margin: 10px 0 4px; color: var(--seafoam-deep); }
+.ui-sc-preview { border: 2px dotted var(--paper-shade); border-radius: 8px; padding: 4px 8px; background: #fffaf0; }
+.ui-sc-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.ui-sc-table th, .ui-sc-table td { padding: 3px 4px; text-align: left; font-weight: 400; vertical-align: top; }
+.ui-sc-table thead th { color: var(--ink-soft); font-size: 12.5px; border-bottom: 1px solid var(--paper-shade); }
+.ui-sc-table tbody th { color: var(--ink-soft); white-space: nowrap; }
+.ui-sc-table td { font-family: var(--font-num); font-size: 12px; }
+.ui-sc-table .inc { color: var(--seafoam-deep); }
+.ui-sc-table thead .inc { color: var(--seafoam-deep); }
+
+@media (max-height: 460px) {
+  .ui-dialog.ui-sc-dialog { padding: 12px 14px 12px; max-height: calc(100dvh - 16px); }
+  .ui-sc-dialog h2 { font-size: 20px; margin-bottom: 4px; }
+  .ui-sc-dialog p { font-size: 13px; margin: 3px 0; }
+  .ui-sc-area { min-height: 48px; }
+  .ui-sc-btns .ui-brass { flex: 1 1 120px; }
+  .ui-sc-table { font-size: 13px; }
+  .ui-sc-table th, .ui-sc-table td { padding: 2px 4px; }
+}
+
+/* Title → Settings (fresh home-screen icon: where a save code gets loaded). The title card
+   (z 15) used to cover the Settings panel (z 4); lift the open Settings panel above it. */
+.ui-root:has(> .ui-title:not(.out)) .ui-panel[data-panel='settings']:not([aria-hidden='true']) { z-index: 16; }

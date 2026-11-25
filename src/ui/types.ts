@@ -5,6 +5,13 @@ import type { Action, ActionResult, OfflineResult, Sim, StoryData } from '../sim
 import type { GameEventType, Listener, Settings, UiEventMap } from '../game/bus';
 
 export type { Settings, UiEventMap, GameEventType, Listener } from '../game/bus';
+export type { SavePreview } from '../game/storage';
+import type { SavePreview } from '../game/storage';
+
+/** T-36: result of checking a pasted save code. `apply()` writes exactly the checked save. */
+export type SaveCodeCheck =
+  | { ok: true; preview: SavePreview; current: SavePreview; apply(): boolean }
+  | { ok: false; error: string };
 
 /** Panels the UI can open (keyboard M/T/S/D, HUD buttons, `openPanel` event). */
 export type PanelId = 'market' | 'track' | 'stamps' | 'depot' | 'settings' | 'car';
@@ -52,6 +59,13 @@ export interface GameApi {
   newGame?(): void;
   /** Settings → Reset save (after the double confirm). Defaults to newGame. */
   resetSave?(): void;
+  /** T-36: fresh save code of the current game (`CE1.` gzip+base64url, `CE0.` uncompressed). */
+  exportSaveCode?(): Promise<string>;
+  /**
+   * T-36: decode + validate + dry-run a save code. Never touches the stored save; only the
+   * returned `apply()` does (true → the page reloads into the imported trip).
+   */
+  checkSaveCode?(code: string): Promise<SaveCodeCheck>;
   /** Pause/resume the sim (title screen). */
   setPaused?(p: boolean): void;
 }

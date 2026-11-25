@@ -4,7 +4,8 @@ import { legSeconds } from '../sim/upgrades';
 import requestsJson from '../story/requests.json';
 import { Bus } from './bus';
 import { trainPose, type TrainPose } from './pose';
-import { readSave, writeSave } from './storage';
+import type { SaveData } from '../sim';
+import { readSave, replaceSave, savePreviewOf, writeSave, type SavePreview } from './storage';
 
 /** Rendering side of the game; the controller feeds it sim events and frames. */
 export interface GameView {
@@ -49,6 +50,8 @@ export class GameController {
   private hiddenAt: number | null = null;
   private raf = 0;
   private readonly noSave: boolean;
+  /** T-36: set once an imported save is written, so nothing (autosave, pagehide) overwrites it. */
+  private saveLocked = false;
 
   constructor(o: ControllerOpts = {}) {
     this.noSave = !!o.noSave;
@@ -156,9 +159,47 @@ export class GameController {
 
   save(): void {
     this.saveTimer = 0;
-    if (this.noSave) return;
+    if (this.noSave || this.saveLocked) return;
     const at = Date.now();
     if (writeSave(this.sim.serialize(at))) this.bus.emit('saved', { at });
+  }
+
+  // ---------------- T-36: export / import ----------------
+
+  /** A fresh snapshot of the current game for a save code (also autosaved right now). */
+  exportSave(): SaveData {
+    this.save();
+    return this.sim.serialize(Date.now());
+  }
+
+  /** Summary of the game running now (for the import confirm). */
+  currentPreview(): SavePreview {
+    return savePreviewOf(this.sim.state, Date.now());
+  }
+
+  /**
+   * Dry-run: build a throwaway sim from `save` (no offline time) and summarise it.
+   * Throws if the save would not load.
+   */
+  previewImport(save: SaveData): SavePreview {
+    const { sim } = createSimInternal(this.data, { seed: this.seed, story: this.story, save });
+    if (sim.state.carriages.length === 0) throw new Error('import: save has no carriages');
+    sim.stats();
+    return savePreviewOf(sim.state, save.savedAt);
+  }
+
+  /**
+   * Replace the stored save with `save` and freeze this game so it can't save over it.
+   * false → storage refused; the previous save is kept and this game carries on.
+   */
+  applyImport(save: SaveData): boolean {
+    this.saveLocked = true;
+    if (!replaceSave(save)) {
+      this.saveLocked = false;
+      return false;
+    }
+    this.stop();
+    return true;
   }
 
   private readonly onVisibility = (): void => {
