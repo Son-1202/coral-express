@@ -86,3 +86,4 @@ See pm/CREDITS.md.
 - PRODUCER BUG (2026-11-25): placeholder Shells/s icon, plant decor leaf placeholder, Turtle Grass overflowing → FIXED in T-29 + T-30.
 - PRODUCER BUG (2026-11-25): foreground band (bushes, planter, fence, wall, grass, small trees) still procedural → FIXED in T-31 + T-32 (D-031).
 - PRODUCER BUG (2026-11-25): Depot Reset blocked (~8M run Shells for 1st Ticket on L1, no explanation) → FIXED in T-33 (D-032).
+- PRODUCER BUGS (2026-11-25): Depot Reset scene still procedural; no app icon (home screen shows 'C') → T-34 (ART) + T-35 (DEV).
