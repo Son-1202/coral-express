@@ -83,3 +83,4 @@ See pm/CREDITS.md.
 - PRODUCER BUG (2026-11-25): Stamp Book shows placeholders instead of postcard/station art → FIXED in T-26.
 - PRODUCER BUGS (2026-11-25): grey 'ghost' blobs in cars (missing-partner hint unreadable); Tank View ignores shiny sprites → FIXED in T-27 (note: tapping the hint also feeds the car — accepted).
 - PRODUCER REQUEST (2026-11-25): soften tilt-shift → DONE in T-28 (focusArea 0.56→0.90, offset −0.10→+0.05, kernel MEDIUM/SMALL→SMALL/VERY_SMALL, grain 0.08→0.048).
+- PRODUCER BUG (2026-11-25): placeholder Shells/s icon, plant decor leaf placeholder, Turtle Grass overflowing → T-29 (DEV) + T-30 (ART icon).
