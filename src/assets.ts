@@ -40,7 +40,16 @@ export const PATHS = {
   wildlife: (id: string) => `/wildlife/${id}.png`,
   plant: (id: string) => `/plants/${id}.png`,
   decor: (id: string) => `/decor/${id}.png`,
+  /** T-34/T-35 Depot Reset scene art (keyed shed / pool / buffer, tileable opaque yard). */
+  depot: (kind: DepotArtKind) => `/depot/${kind}.png`,
+  /** T-34 optional per-Line depot backdrop (21:9, opaque); the Line's far scenery is used when missing. */
+  depotBackdrop: (line: number) => `/depot/backdrop_l${line}.png`,
+  /** Far scenery time-of-day variant (`l<n>_far_{morning,dusk,night}`; afternoon = plain `l<n>_far`). */
+  sceneryFar: (line: number, tod: FarVariant) => `/scenery/l${line}_far${tod === 'day' ? '' : `_${tod}`}.png`,
 } as const;
+
+export type DepotArtKind = 'shed' | 'yard' | 'pool' | 'buffer';
+export type FarVariant = 'day' | 'morning' | 'dusk' | 'night';
 
 const available = new Set(existingFiles);
 
