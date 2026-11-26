@@ -1,0 +1,18 @@
+// T-37 prompt builder: node docs/art/tools/t37_prompts.cjs [names...] > batch.json
+// No style reference (D-021: the style bible leaks its scene behind isolated sprites); full STYLE BLOCK instead.
+const STYLE = "HD-2D pixel art, crisp pixel sprites on a painterly 3D miniature diorama, tilt-shift toy-model depth of field, vintage seaside train with glass aquarium carriages, seafoam green and cream paint, brass trim, riveted glass, cozy picture-book mood, gouache texture, gentle haze, no text, no watermark, no UI";
+const BG = "on a plain flat solid uniform light grey background (#c8c8c8), no shadow, no scenery, no sky, no train, no buildings, no text, no letters, no numbers";
+const PAL = "colours only from this palette: coral pink, seafoam green, butter yellow, sky blue, soft lilac, cream";
+const TILE = "Seamlessly tileable horizontal strip for a side-scrolling game, straight-on front view, uniform evenly spaced repeating pattern across the whole width with no focal point, the pattern continues off both the left and right edges";
+const gpt = (ar, prompt) => ({ model: "gpt_image_2_6", resolution: "2k", quality: "medium", aspect_ratio: ar, prompt });
+const P = {
+  bunting: gpt("21:9", `${STYLE}. ${TILE}. Subject: a festival pennant bunting garland: ONE thin perfectly straight horizontal twine rope running across the full width near the top of the image, with about 12 identical-size triangular cloth pennants hanging point-down from it, evenly spaced with small equal gaps, ${PAL}, colours repeating in order, each pennant with a slight fabric fold shading and a tiny stitched hem, crisp chunky pixel art with a dark 1-pixel outline. The rope is straight, not sagging. Only the garland, the lower part of the image is empty background, ${BG}.`),
+  lanterns: gpt("21:9", `${STYLE}. ${TILE}. Subject: a festival string of small round paper lanterns: ONE thin perfectly straight horizontal dark cord running across the full width near the top of the image, with about 9 identical small round paper lanterns hanging from it on short strings, evenly spaced, each lantern with thin ribs, a little brass cap and bottom ring, glowing warm from inside, lantern paper colours alternating coral pink, butter yellow, seafoam green, cream, crisp chunky pixel art with a dark 1-pixel outline. The cord is straight, not sagging. Only the lantern string, no glow haze on the background, ${BG}.`),
+  confetti: gpt("2:1", `${STYLE}. Sprite sheet of 8 separate small paper confetti pieces arranged in a neat grid of 4 columns and 2 rows, each piece centered in its own cell with lots of empty space around it, no overlap: a coral pink rectangle, a seafoam green curly ribbon streamer, a butter yellow square tilted, a sky blue spiral streamer, a soft lilac little circle, a cream star-shaped piece, a coral pink wavy streamer, a seafoam green triangle. Paper texture with slight shading, crisp chunky pixel art with a dark 1-pixel outline, ${BG}, no grid lines.`),
+  flag: gpt("1:1", `${STYLE}. single isolated subject, side view, centered, fully visible with generous empty margins, ${BG}. Subject: a small festival pennant flag on a short pole: a thin brass-capped wooden pole standing upright on a little round brass base, with a single long triangular cloth pennant in coral pink with a cream stripe flying to the right, a small seafoam ribbon tied below the pennant, crisp chunky pixel art with a dark 1-pixel outline.`),
+};
+module.exports = { P, STYLE };
+if (require.main === module) {
+  const names = process.argv.slice(2).length ? process.argv.slice(2) : Object.keys(P);
+  console.log(JSON.stringify(names.map((n, i) => ({ index: i, name: n, params: P[n] })), null, 1));
+}

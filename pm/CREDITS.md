@@ -20,4 +20,6 @@ Unit prices quoted: nano_banana_pro 2k 16:9 = 2.0 cr · gpt_image_2_6 1:1 = 0.75
 
 | 10 | T-34 | depot shed ×2, yard ×2, pool, buffer; app icon ×4 candidates | nano_banana_pro / gpt_image_2_6 | 17.75 | 585.96 | 416.04 |
 
-**Total: 585.96 credits spent.** Balance 416.04 (plus plan) after T-34, 2026-11-25.
+| 11 | T-37 | festival bunting, lanterns, confetti sheet, flag | gpt_image_2_6 | 7 | 592.96 | 409.04 |
+
+**Total: 592.96 credits spent.** Balance 409.04 (plus plan) after T-37, 2026-11-26.
