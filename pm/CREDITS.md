@@ -22,4 +22,6 @@ Unit prices quoted: nano_banana_pro 2k 16:9 = 2.0 cr · gpt_image_2_6 1:1 = 0.75
 
 | 11 | T-37 | festival bunting, lanterns, confetti sheet, flag | gpt_image_2_6 | 7 | 592.96 | 409.04 |
 
-**Total: 592.96 credits spent.** Balance 409.04 (plus plan) after T-37, 2026-11-26.
+| 12 | T-39 | kelp + vent interiors (4 variants), 7 UI icons | nano_banana_pro / gpt_image_2_6 | 10 | 602.96 | 399.04 |
+
+**Total: 602.96 credits spent.** Balance 399.04 (plus plan) after T-39, 2026-11-26.
