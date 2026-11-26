@@ -88,4 +88,4 @@ See pm/CREDITS.md.
 - PRODUCER BUG (2026-11-25): Depot Reset blocked (~8M run Shells for 1st Ticket on L1, no explanation) → FIXED in T-33 (D-032).
 - PRODUCER BUGS (2026-11-25): Depot Reset scene still procedural; no app icon (home screen shows 'C') → FIXED in T-34 + T-35 (D-033).
 - PRODUCER NEED (2026-11-25): save export/import before re-adding the home-screen app (iOS standalone storage is separate) → DONE in T-36.
-- PRODUCER BUG (2026-11-26): Festival Station bunting code-drawn and floating in the sky → T-37 (ART) + T-38 (DEV).
+- PRODUCER BUG (2026-11-26): Festival Station bunting code-drawn and floating in the sky → FIXED in T-37 + T-38 (open: dolphins leap from behind the town on L1).

@@ -1,8 +1,9 @@
 import * as THREE from 'three';
 import { PATHS, sharedTexture } from '../../assets';
 import type { Particles } from './particles';
-import { confettiTex, splashTex, sparkleTex, bubbleTex } from './paintFx';
-import { buntingTex, fountainTex, paintDolphin, paintGull, paintWhale, tapRingTex } from './sightPaint';
+import { FestivalDecor } from './festival';
+import { splashTex, sparkleTex, bubbleTex } from './paintFx';
+import { paintDolphin, paintGull, paintWhale, tapRingTex } from './sightPaint';
 
 /** A carriage's window box in world space. */
 export interface CarBox {
@@ -80,6 +81,8 @@ export class SightFx {
   readonly tappables: THREE.Object3D[] = [];
   private actors: Actor[] = [];
   private active: string | null = null;
+  /** Festival Station dressings; each outlives its sight (it ends on arrival) until its platform scrolls away. */
+  private fests: FestivalDecor[] = [];
 
   constructor(private readonly host: SightHost) {}
 
@@ -195,47 +198,17 @@ export class SightFx {
     );
   }
 
+  /** T-38: decor hangs at the platform the festival is for (latched now: the pose can run a sub-tick ahead). */
   private festival(): void {
-    const h = this.host;
-    const tex = buntingTex();
-    // bunting over the next platform
-    const st = new THREE.Mesh(new THREE.PlaneGeometry(10, 1.2), new THREE.MeshBasicMaterial({ map: tex, transparent: true, alphaTest: 0.05 }));
-    st.renderOrder = 5;
-    this.add({
-      mesh: st,
-      update: (_dt, t) => {
-        const sx = h.nextStationX();
-        st.position.set(sx, 3.3 + Math.sin(t * 1.5) * 0.04, -1.6);
-        if (Math.random() < 0.15)
-          h.particles.spawn({ tex: confettiTex(Math.floor(Math.random() * 6)), x: sx + (Math.random() - 0.5) * 10, y: 3.6, z: -1.2, vx: (Math.random() - 0.5) * 0.4, vy: -0.3, g: -0.3, life: 3, size: 0.07, aspect: 1.5, spin: 4, wobble: 0.15 });
-        return true;
-      },
-    });
-    // garlands strung along the train roof, plus confetti around the camera
-    const tr = tex.clone();
-    tr.wrapS = THREE.RepeatWrapping;
-    const g = new THREE.Mesh(new THREE.PlaneGeometry(1, 0.42), new THREE.MeshBasicMaterial({ map: tr, transparent: true, alphaTest: 0.05 }));
-    g.renderOrder = 6;
-    this.add({
-      mesh: g,
-      update: (_dt, t) => {
-        const s = h.trainSpan();
-        const len = Math.max(1, s.x1 - s.x0);
-        g.scale.set(len, 1, 1);
-        tr.repeat.x = len / 2.2;
-        g.position.set((s.x0 + s.x1) / 2, s.roof + 0.12 + Math.sin(t * 2) * 0.02, 0.35);
-        if (Math.random() < 0.35)
-          h.particles.spawn({ tex: confettiTex(Math.floor(Math.random() * 6)), x: h.focusX() + (Math.random() - 0.5) * 16, y: 5.5, z: 0.6, vx: (Math.random() - 0.5) * 0.5, vy: -0.6, g: -0.4, life: 4, size: 0.09, aspect: 1.5, spin: 5, wobble: 0.2 });
-        return true;
-      },
-    });
+    const d = new FestivalDecor(this.host.nextStationX(), this.host.particles);
+    this.fests.push(d);
+    this.group.add(d.group);
   }
 
   private stowaway(): void {
     const h = this.host;
     const idx = h.stowawayCar();
     const ring = spriteMesh(tapRingTex(), 1, 8);
-    const spray = spriteMesh(fountainTex(), 1.15, 9);
     let t0 = 0;
     this.add(
       {
@@ -246,21 +219,13 @@ export class SightFx {
           ring.userData.h = Math.max(b.h * 1.5, (b.w * 1.12) / 1.5); // ring art is 3:2
           ring.userData.s = 1 + Math.sin(t0 * 6) * 0.06;
           ring.position.set(b.x, b.y + 0.2, 0.6);
-          return true;
-        },
-      },
-      true,
-    );
-    this.add(
-      {
-        mesh: spray,
-        update: (dt) => {
-          const b = h.carBox(idx) ?? { x: h.focusX(), y: 1, w: 2, h: 1 };
+          // T-38: the splash out of the roof hatch is a pulsing particle fountain (was a stiff painted cone)
           const r = h.carRoof(idx) ?? { x: b.x, y: b.y + b.h };
-          spray.userData.s = 0.85 + Math.abs(Math.sin(t0 * 4)) * 0.3;
-          spray.position.set(b.x, r.y + 0.5 * (spray.userData.s as number), 0.5);
-          if (Math.random() < dt * 12)
-            h.particles.spawn({ tex: Math.random() < 0.5 ? sparkleTex() : bubbleTex(), x: b.x + (Math.random() - 0.5) * 1.2, y: r.y + 0.9, z: 0.6, vy: 0.6, life: 0.7, size: 0.12, sizeEnd: 0.03 });
+          const pulse = 0.6 + Math.abs(Math.sin(t0 * 4)) * 0.4;
+          if (Math.random() < dt * 26 * pulse)
+            h.particles.spawn({ tex: splashTex(), x: b.x + (Math.random() - 0.5) * 0.3, y: r.y + 0.05, z: 0.55, vx: (Math.random() - 0.5) * 1.4, vy: 2.6 + Math.random() * 1.4 * pulse, g: -7, life: 0.75, size: 0.16, sizeEnd: 0.24, aspect: 1.6 });
+          if (Math.random() < dt * 10)
+            h.particles.spawn({ tex: Math.random() < 0.5 ? sparkleTex() : bubbleTex(), x: b.x + (Math.random() - 0.5) * 1.2, y: r.y + 0.6, z: 0.6, vy: 0.6, life: 0.7, size: 0.12, sizeEnd: 0.03 });
           return true;
         },
       },
@@ -298,7 +263,9 @@ export class SightFx {
     const h = this.host;
     if (tapped) for (const a of this.actors) h.particles.burst(sparkleTex(), a.mesh.position.clone(), 12, { speed: 2 });
     const gull = this.active === 'seagull_thief' ? this.actors[0]?.mesh : undefined;
+    const fest = this.active === 'festival_station';
     this.clear(gull);
+    if (fest) this.fests[this.fests.length - 1]?.arrive();
     if (!gull) return;
     // the gull flies off (with or without loot), then is gone
     let t0 = 0;
@@ -317,7 +284,10 @@ export class SightFx {
     ];
   }
 
-  /** Remove every actor (except `keep`), reset zoom + fog. */
+  /**
+   * Remove every actor (except `keep`), reset zoom + fog. The festival decor is not an actor: it stays
+   * even when another sight starts at the arrival tick, and goes by distance in `update()`.
+   */
   private clear(keep?: THREE.Mesh): void {
     for (const a of this.actors) {
       this.group.remove(a.mesh);
@@ -335,6 +305,12 @@ export class SightFx {
   }
 
   update(dt: number, time: number): void {
+    const last = this.fests[this.fests.length - 1];
+    this.fests = this.fests.filter((d) => {
+      const keep = d.update(dt, time, this.host.focusX(), d === last && this.active === 'festival_station');
+      if (!keep) d.dispose();
+      return keep;
+    });
     this.actors = this.actors.filter((a) => {
       const keep = a.update(dt, time);
       fit(a.mesh);

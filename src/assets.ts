@@ -37,6 +37,8 @@ export const PATHS = {
   station: (line: number) => `/station/l${line}.png`,
   passenger: (n: number) => `/passengers/p${n}.png`,
   sight: (id: string) => `/sights/${id}.png`,
+  /** T-37/T-38 Festival Station decor: `bunting`, `lanterns`, `flag`, `confetti_<1..8>` (keyed, pixel art). */
+  festival: (name: string) => `/festival/${name}.png`,
   wildlife: (id: string) => `/wildlife/${id}.png`,
   plant: (id: string) => `/plants/${id}.png`,
   decor: (id: string) => `/decor/${id}.png`,

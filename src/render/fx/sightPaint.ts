@@ -50,26 +50,6 @@ export const paintWhale = blob(64, 26, (c) => {
   c.fillRect(46, 11, 2, 2);
 });
 
-let flagTex: THREE.Texture | null = null;
-/** A string of pennants (repeats horizontally). */
-export function buntingTex(): THREE.Texture {
-  if (flagTex) return flagTex;
-  const p = makeCanvas(96, 14);
-  const cols = ['#e45b4f', '#ffd447', '#2aa5a0', '#4c84c4', '#ff9a52', '#b98cf0'];
-  p.ctx.fillStyle = '#6b4a2c';
-  p.ctx.fillRect(0, 0, 96, 2);
-  for (let i = 0; i < 12; i++) {
-    p.ctx.fillStyle = cols[i % cols.length] ?? '#e45b4f';
-    for (let y = 0; y < 11; y++) {
-      const half = Math.max(0, 3.5 - y * 0.33);
-      p.ctx.fillRect(i * 8 + 4 - half, 2 + y, half * 2, 1);
-    }
-  }
-  flagTex = toTexture(p, true);
-  flagTex.wrapS = THREE.RepeatWrapping;
-  return flagTex;
-}
-
 let ringTex: THREE.Texture | null = null;
 /** Pulsing "tap here" ring: dashed cream + brass ellipse outline. */
 export function tapRingTex(): THREE.Texture {
@@ -88,30 +68,4 @@ export function tapRingTex(): THREE.Texture {
   ring(4, '#fff6d8', [10, 6]);
   ringTex = toTexture(p, true);
   return ringTex;
-}
-
-let sprayTex: THREE.Texture | null = null;
-/** Tall splash fountain (stowaway jumping in through the roof hatch). */
-export function fountainTex(): THREE.Texture {
-  if (sprayTex) return sprayTex;
-  const p = makeCanvas(24, 28);
-  const { ctx } = p;
-  const cols = ['#e9fbff', '#9fe3ef', '#4fc6d3'];
-  const rows: [number, number, number][] = [
-    [4, 11, 2], [6, 9, 6], [8, 7, 10], [11, 6, 12], [14, 5, 14], [18, 4, 16], [22, 2, 20], [25, 1, 22],
-  ];
-  for (const [y, x, w] of rows) {
-    ctx.fillStyle = cols[2] as string;
-    ctx.fillRect(x, y, w, 3);
-    ctx.fillStyle = cols[1] as string;
-    ctx.fillRect(x + 1, y, w - 2, 2);
-    ctx.fillStyle = cols[0] as string;
-    ctx.fillRect(x + Math.floor(w / 3), y, Math.max(1, Math.floor(w / 4)), 1);
-  }
-  for (const [x, y] of [[3, 3], [19, 1], [8, 0], [15, 5], [1, 12], [22, 10]] as const) {
-    ctx.fillStyle = cols[1] as string;
-    ctx.fillRect(x, y, 2, 2);
-  }
-  sprayTex = toTexture(p, true);
-  return sprayTex;
 }

@@ -23,6 +23,8 @@ export interface ParticleSpec {
   fadeIn?: number;
   /** Wobble sideways (bubbles). */
   wobble?: number;
+  /** Paper tumble (T-38 confetti): width follows |cos(age × flip)|, rad/s. */
+  flip?: number;
 }
 
 interface P extends Required<Omit<ParticleSpec, 'color' | 'tex' | 'additive'>> {
@@ -50,7 +52,7 @@ export class Particles {
       this.group.add(mesh);
       this.pool.push({
         mesh, mat, age: 0, alive: false, seed: i * 1.37, x: 0, y: 0, z: 0, vx: 0, vy: 0, g: 0, drag: 0, life: 1,
-        size: 1, sizeEnd: 1, aspect: 1, spin: 0, fadeIn: 0, wobble: 0,
+        size: 1, sizeEnd: 1, aspect: 1, spin: 0, fadeIn: 0, wobble: 0, flip: 0,
       });
     }
   }
@@ -66,7 +68,7 @@ export class Particles {
     Object.assign(p, {
       x: s.x, y: s.y, z: s.z, vx: s.vx ?? 0, vy: s.vy ?? 0, g: s.g ?? 0, drag: s.drag ?? 0, life: s.life,
       size: s.size, sizeEnd: s.sizeEnd ?? s.size, aspect: s.aspect ?? 1, spin: s.spin ?? 0, fadeIn: s.fadeIn ?? 0,
-      wobble: s.wobble ?? 0, age: 0, alive: true,
+      wobble: s.wobble ?? 0, flip: s.flip ?? 0, age: 0, alive: true,
     });
     p.mesh.rotation.z = 0;
     p.mesh.visible = true;
@@ -104,7 +106,8 @@ export class Particles {
       const wob = p.wobble ? Math.sin(p.age * 6 + p.seed) * p.wobble : 0;
       p.mesh.position.set(p.x + wob, p.y, p.z);
       const s = p.size + (p.sizeEnd - p.size) * k;
-      p.mesh.scale.set(s * p.aspect, s, 1);
+      const tumble = p.flip ? Math.max(0.15, Math.abs(Math.cos(p.age * p.flip + p.seed))) : 1;
+      p.mesh.scale.set(s * p.aspect * tumble, s, 1);
       p.mesh.rotation.z += p.spin * dt;
       const fin = p.fadeIn > 0 ? Math.min(1, k / p.fadeIn) : 1;
       p.mat.opacity = fin * Math.min(1, (1 - k) * 3);

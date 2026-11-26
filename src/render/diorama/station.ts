@@ -115,6 +115,44 @@ export function paintSign(name: string): HTMLCanvasElement {
   return p.canvas;
 }
 
+/**
+ * T-38: festival hang points per Line, as fractions of the uncropped station image (from top-left):
+ * L1 the awning's two outer tips, L2 the two roof eaves, L3 the thatch's lower corners. Render layout only.
+ */
+const EAVES: Record<number, readonly [{ x: number; y: number }, { x: number; y: number }]> = {
+  1: [{ x: 0.03, y: 0.3 }, { x: 0.965, y: 0.3 }],
+  2: [{ x: 0.17, y: 0.4 }, { x: 0.97, y: 0.41 }],
+  3: [{ x: 0.075, y: 0.28 }, { x: 0.78, y: 0.29 }],
+};
+/** Festival flag poles stand this far from the platform centre (world units). */
+const FLAG_X = 6.2;
+
+/** T-38: where festival decorations hang, local to a platform's origin (its world x = slot × spacing). */
+export interface FestivalAnchors {
+  /** Pole bases at both platform ends (on the platform top). */
+  flagL: THREE.Vector3;
+  flagR: THREE.Vector3;
+  /** Left and right eave / awning tips, a hair in front of the building. */
+  eaveL: THREE.Vector3;
+  eaveR: THREE.Vector3;
+  /** Top-left corner of the name sign, just behind it (bunting tucks in, never covers the name). */
+  sign: THREE.Vector3;
+}
+
+const VIEWS: StationView[] = [];
+
+/**
+ * Festival anchors for the current Line (all platforms share one Line, so any sized view answers).
+ * Null until a platform has been laid out once.
+ */
+export function festivalAnchors(): FestivalAnchors | null {
+  for (const v of VIEWS) {
+    const a = v.festivalAnchors();
+    if (a) return a;
+  }
+  return null;
+}
+
 /** One platform: procedural platform, line station art, name sign, lamp glows. */
 export class StationView {
   readonly group = new THREE.Group();
@@ -132,8 +170,11 @@ export class StationView {
   private name = '';
   /** Odometer slot this platform currently represents. */
   slot = Number.NaN;
+  /** T-38: last layout (art or placeholder), for the festival anchors. */
+  private laid: { isArt: boolean; fullH: number } | null = null;
 
   constructor(private readonly seed: number) {
+    VIEWS.push(this);
     const L = WORLD.platformLength;
     const face = new THREE.Mesh(new THREE.PlaneGeometry(L, PLATFORM_H), this.faceMat);
     face.position.set(0, PLATFORM_H / 2 - 0.02, -0.72);
@@ -215,6 +256,26 @@ export class StationView {
     this.setName(n);
   }
 
+  /** T-38: festival hang points (see `festivalAnchors`), null before the first layout. */
+  festivalAnchors(): FestivalAnchors | null {
+    const l = this.laid;
+    if (!l) return null;
+    const b = this.building;
+    const w = b.scale.x;
+    const top = b.position.y + b.scale.y / 2;
+    const eaves = (l.isArt ? EAVES[this.line] : undefined) ?? [{ x: 0.05, y: 0.22 }, { x: 0.95, y: 0.22 }];
+    const z = LAYER_Z.station + 0.04;
+    const at = (e: { x: number; y: number }) => new THREE.Vector3(b.position.x + (e.x - 0.5) * w, top - e.y * l.fullH, z);
+    const sx = 4.6 - SIGN.w / 2 + 0.12;
+    return {
+      flagL: new THREE.Vector3(-FLAG_X, PLATFORM_H - 0.02, -1.62),
+      flagR: new THREE.Vector3(FLAG_X + 0.1, PLATFORM_H - 0.02, -1.62),
+      eaveL: at(eaves[0]),
+      eaveR: at(eaves[1]),
+      sign: new THREE.Vector3(sx, PLATFORM_H + SIGN.y + SIGN.h / 2 - 0.06, -1.94),
+    };
+  }
+
   update(night: number): void {
     // size the building from its texture (pixel art, constant pixels per unit)
     const img = this.buildingMat.map?.image as { width?: number; height?: number } | undefined;
@@ -226,6 +287,7 @@ export class StationView {
     const h = isArt ? (ih * (1 - fit.cropBottom)) / fit.px : STATION_BUILDING.h;
     this.building.scale.set(w, h, 1);
     this.building.position.set(isArt ? -0.6 : 0, (isArt ? PLATFORM_H - 0.12 : PLATFORM_H - 0.05) + h / 2, LAYER_Z.station);
+    this.laid = this.line > 0 ? { isArt, fullH: isArt ? ih / fit.px : h } : null;
     for (const g of this.glows) {
       const l = g.userData.lamp as { x: number; y: number };
       // lamp y is a fraction of the uncropped image

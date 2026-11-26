@@ -123,10 +123,7 @@ export class FxEvents {
           s.train.findFish(e.fishId)?.fish.dropIn();
           s.passengers.cheer();
         }
-        if (e.sightId === 'festival_station') {
-          for (let i = 0; i < 40; i++)
-            P.spawn({ tex: confettiTex(i), x: s.rig.focusX + (Math.random() - 0.5) * 14, y: 4 + Math.random() * 2, z: 0.5, vx: (Math.random() - 0.5), vy: -0.5, g: -0.6, life: 3.5, size: 0.08, aspect: 1.5, spin: 5, wobble: 0.2 });
-        }
+        // T-38: the Festival Station arrival confetti lives with its decor (SightFx → FestivalDecor.arrive)
         break;
       }
       case 'stamp':
