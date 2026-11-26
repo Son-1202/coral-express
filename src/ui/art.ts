@@ -51,8 +51,11 @@ export function decorArt(data: DecorArtData, id: string, exists: Exists = hasFil
 
 /** Sight → its sprite in `sights/` (same mapping as the Tank View / world sights), or null. */
 const SIGHT_ART: Record<string, string> = { dolphin_race: 'dolphin', seagull_thief: 'gull', whale_breach: 'whale' };
+/** T-40: Sights with no creature sprite use their T-39 pixel icon (`icons/sight_<name>`). */
+const SIGHT_ICON: Record<string, string> = { festival_station: 'sight_festival', stowaway: 'sight_stowaway', sea_fog: 'sight_seafog' };
 export function sightArt(sightId: string, exists: Exists = hasFile): string | null {
-  const cands = [PATHS.sight(sightId), PATHS.sight(SIGHT_ART[sightId] ?? sightId)];
+  const icon = SIGHT_ICON[sightId];
+  const cands = [PATHS.sight(sightId), PATHS.sight(SIGHT_ART[sightId] ?? sightId), ...(icon ? [`/icons/${icon}.png`] : [])];
   return cands.find((p) => exists(p)) ?? null;
 }
 

@@ -2,8 +2,10 @@ import * as THREE from 'three';
 import { hasAsset, loadTexture } from '../../assets';
 import { loadGameData, type GameData } from '../../data/schema';
 import type { CarInfo } from '../../sim';
+import type { BondPP } from '../../game/bondPP';
 import type { CarView } from '../train/train';
 import { fishMaterial } from '../train/fishMaterial';
+import { TRAIN_SCALE } from '../train/paintTrain';
 import { fishSize, fishTexture } from '../train/fishView';
 import { ghostHintTex, heartBubbleTex } from './paintFx';
 import { ghostText, pickGhost } from './ghostPick';
@@ -28,8 +30,8 @@ interface CarBondFx {
   ghost: Ghost | null;
 }
 
-const HEART = 0.2;
-const HINT = 0.17;
+const HEART = 0.2 * TRAIN_SCALE;
+const HINT = 0.17 * TRAIN_SCALE;
 /** Ghost size caps (fraction of the window) so big species stay a small corner hint. */
 const GHOST_MAX_W = 0.34;
 const GHOST_MAX_H = 0.42;
@@ -63,7 +65,7 @@ export class BondFx {
   }
 
   /** Reconcile with the latest car info (called a few times a second). */
-  sync(car: CarView, info: CarInfo): void {
+  sync(car: CarView, info: CarInfo, pp?: BondPP): void {
     let fx = this.perCar.get(car.id);
     if (!fx) this.perCar.set(car.id, (fx = { hearts: new Map(), ghost: null }));
     const want = new Set<string>();
@@ -84,8 +86,8 @@ export class BondFx {
       }
     }
     // ghost: at most one per carriage (the most valuable bond one fish short)
-    const pick = info.possibleBonds.length ? pickGhost(info.possibleBonds, this.data.bonds, this.data.config.communityBonus) : null;
-    const key = pick ? `${pick.missing}|${pick.pairs.length}|${pick.communities.length}` : '';
+    const pick = info.possibleBonds.length ? pickGhost(info.possibleBonds, this.data.bonds, this.data.config.communityBonus, pp) : null;
+    const key = pick ? `${pick.missing}|${pick.pairs.length}|${pick.communities.length}|${pick.value.toFixed(3)}` : '';
     if (fx.ghost && fx.ghost.key !== key) {
       this.removeGhost(car, fx.ghost);
       fx.ghost = null;
@@ -151,6 +153,11 @@ export class BondFx {
       if (x >= rect.x - PAD && x <= rect.x + rect.w + PAD && y >= rect.y - PAD && y <= rect.y + rect.h + PAD) return { rect, text: g.text };
     }
     return null;
+  }
+
+  /** T-40: true when a CSS-pixel point is on a ghost or its hint bubble (a tap there explains, it does not feed). */
+  isGhostAt(x: number, y: number): boolean {
+    return this.ghostAt(x, y) !== null;
   }
 
   /** Screen centre (CSS px) + tooltip text of the first visible ghost — for E2E / debug. */

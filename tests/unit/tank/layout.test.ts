@@ -27,11 +27,13 @@ describe('tank placement rules', () => {
     expect(clampScale(1.5)).toBe(1.2);
     expect(clampScale(1)).toBe(1);
   });
-  it('farther fish are smaller, bluer, softer', () => {
+  it('farther fish are smaller and bluer (never faded)', () => {
     const near = depthLook(0);
     const far = depthLook(1);
     expect(far.scale).toBeLessThan(near.scale);
     expect(far.tint).toBeGreaterThan(near.tint);
-    expect(far.alpha).toBeLessThan(near.alpha);
+    // T-40: depth is scale + tint only, never alpha
+    expect(far.alpha).toBe(1);
+    expect(near.alpha).toBe(1);
   });
 });

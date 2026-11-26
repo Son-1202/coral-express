@@ -23,17 +23,17 @@
   font-variant-ligatures: none;
 }
 .ending-caption.on { opacity: 1; transform: translate(-50%, 0); }
-/* Underwater beats: the caption sits on a parchment plate in the upper third, clear of the cast. */
-.ending[data-beat='video'] .ending-caption,
-.ending[data-beat='panorama'] .ending-caption {
+/* Underwater beats: the caption sits on a parchment plate in the upper third, clear of the cast.
+   T-40: keyed on the caption's own class (set while it is hidden), not on the beat, so the
+   text never appears or fades out without its plate. */
+.ending-caption.plate {
   top: 7%; bottom: auto; width: min(80vw, 680px); padding: 12px 22px 14px;
   color: var(--ink, #2f4a4a); text-shadow: none;
   background: linear-gradient(#fbf1d6, #f3e3bd); border-radius: 8px;
   box-shadow: 0 0 0 3px var(--brass, #d9ac4c), 0 0 0 5px rgba(80, 56, 20, 0.35), 0 10px 24px rgba(4, 16, 24, 0.45);
 }
 @media (max-height: 460px) {
-  .ending[data-beat='video'] .ending-caption,
-  .ending[data-beat='panorama'] .ending-caption { top: 4%; width: min(72vw, 600px); padding: 8px 16px 10px; font-size: 15px; }
+  .ending-caption.plate { top: 4%; width: min(72vw, 600px); padding: 8px 16px 10px; font-size: 15px; }
 }
 
 .ending-postcard {

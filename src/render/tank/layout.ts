@@ -53,8 +53,11 @@ export function defaultPlacement(x: number, y: number): DecorPlacement {
   return { ...snapPlacement(x, y), scale: 1, flip: false };
 }
 
-/** Depth 0 (front glass) .. 1 (back wall) → sprite scale / tint / alpha. Farther = smaller, bluer, softer. */
+/**
+ * Depth 0 (front glass) .. 1 (back wall) → sprite scale / tint / alpha. Farther = smaller, bluer.
+ * T-40: always opaque — semi-transparent fish read as grey smudges in crowded tanks (QA).
+ */
 export function depthLook(d: number): { scale: number; tint: number; alpha: number } {
   const t = clamp(d, -0.6, 1);
-  return { scale: 1 - 0.32 * t, tint: Math.max(0, 0.42 * t), alpha: 1 - 0.22 * Math.max(0, t) };
+  return { scale: 1 - 0.32 * t, tint: Math.max(0, 0.42 * t), alpha: 1 };
 }

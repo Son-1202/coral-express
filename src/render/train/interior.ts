@@ -1,12 +1,9 @@
-import { PATHS, hasFile } from '../../assets';
+import { PATHS } from '../../assets';
 
 /**
- * Carriage-window interior per habitat. Kelp uses the Kelp Cathedral backdrop:
- * its `interior_kelp` painting reads as a brick/chevron wall at window size (QA bug 8).
+ * Carriage-window interior per habitat. T-40: the T-39 `interior_kelp` (readable kelp forest)
+ * replaced the old brick/chevron painting, so kelp no longer borrows the Kelp Cathedral backdrop.
  */
-const INTERIOR_OVERRIDE: Record<string, string> = { kelp: '/train/backdrop_kelp_1.png' };
-
 export function interiorPath(habitat: string): string {
-  const o = INTERIOR_OVERRIDE[habitat];
-  return o && hasFile(o) ? o : PATHS.interior(habitat);
+  return PATHS.interior(habitat);
 }

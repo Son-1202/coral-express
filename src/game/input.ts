@@ -80,6 +80,8 @@ export function attachInput(canvas: HTMLCanvasElement, stage: Stage, game: GameC
       return;
     }
     if (d.moved || d.consumed || !d.pick || d.pick.kind === 'sight') return;
+    // T-40: a tap on the missing-partner hint shows its tooltip (GhostTip) and does not feed the car
+    if (stage.bonds.isGhostAt(e.clientX, e.clientY)) return;
     const carId = d.pick.carId;
     const now = performance.now();
     if (lastTap.carId === carId && now - lastTap.at < DOUBLE_TAP_MS) {

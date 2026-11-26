@@ -2,6 +2,13 @@ import { makeCanvas, rng, shade } from '../paint/canvas';
 import { LIVERY } from '../paint/palette';
 import { PX } from '../diorama/paintTrack';
 
+/**
+ * T-40: the whole train (loco + glass carriages, so tanks and fish too) is drawn this much
+ * bigger than the art's native 104 px/unit. The loco scales with the cars so buffer/coupling
+ * heights stay matched; the bottom edge (wheels) stays on the rail because scaling is about it.
+ */
+export const TRAIN_SCALE = 1.2;
+/** Placeholder canvas sizes (painted at native PX; train.ts applies TRAIN_SCALE). */
 export const LOCO = { w: 3.1, h: 2.0 } as const;
 export const CAR = { w: 2.7, h: 1.7 } as const;
 /** Glass window of a carriage, in carriage-local units from its bottom-left. */

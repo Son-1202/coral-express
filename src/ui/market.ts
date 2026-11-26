@@ -2,11 +2,17 @@
 import type { Habitat } from '../data/schema';
 import type { CarInfo } from '../sim';
 import { conditionText, decorInfo, rewardText, speciesName, station } from './content';
-import { decorIcon } from './art';
+import { decorIcon, iconArt, spriteBox } from './art';
 import { btn, fishIcon, h, habitatName, passengerIcon } from './dom';
 import { defaultTargetCar, fishGainWithBonds, lineHabitats, partnersOf } from './helpers';
 import { costButton, type PanelView, type UiCtx } from './panel';
 import { carLabel, carPicker } from './cars';
+
+/** T-40: painted medallion icon (T-39) for a non-fish special; [] keeps the CSS-only medallion. */
+function specialIcon(name: string): HTMLElement[] {
+  const box = spriteBox(iconArt(name), 'ui-special-art');
+  return box ? [box] : [];
+}
 
 type Tab = 'fish' | 'decor' | 'special' | 'requests' | 'catalogue';
 const TABS: { id: Tab; label: string; short: string }[] = [
@@ -205,12 +211,14 @@ function specialTab(ctx: UiCtx, list: HTMLElement): void {
         specialTarget = id;
         ctx.rerender();
       });
+      art = specialIcon('special_slot');
       break;
     }
     case 'cosmetic': {
       const bd = api.data.cosmetics.backdrops.find((b) => b.id === sp.cosmetic);
       title = bd?.name ?? 'Backdrop';
       desc = `A new ${bd ? habitatName(bd.habitat).toLowerCase() : ''} backdrop for your tanks.`;
+      art = specialIcon('special_cosmetic');
       break;
     }
   }

@@ -4,11 +4,12 @@ import { PATHS, hasFile, sharedTexture } from '../../assets';
 import { createMover, type Mover } from '../anim/fishMotion';
 import { fishMaterial, shinyTint, type FishUniforms } from './fishMaterial';
 import { paintFish } from './tank';
+import { TRAIN_SCALE } from './paintTrain';
 
-/** World units per sprite pixel for fish (art is 64 px on the long side). */
-export const FISH_UNITS_PER_PX = 0.0088;
+/** World units per sprite pixel for fish (art is 64 px on the long side); grows with the tanks (T-40). */
+export const FISH_UNITS_PER_PX = 0.0088 * TRAIN_SCALE;
 /** Placeholder fish are tiny canvases; scale them up to a similar size. */
-const PLACEHOLDER_UNITS_PER_PX = 0.026;
+const PLACEHOLDER_UNITS_PER_PX = 0.026 * TRAIN_SCALE;
 const SWARM_COUNT = 9;
 
 let geo: THREE.PlaneGeometry | null = null;

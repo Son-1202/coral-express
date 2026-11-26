@@ -4,6 +4,7 @@ import type { Particles } from './particles';
 import { FestivalDecor } from './festival';
 import { splashTex, sparkleTex, bubbleTex } from './paintFx';
 import { paintDolphin, paintGull, paintWhale, tapRingTex } from './sightPaint';
+import { SeaStrip, STRIP_Z } from './seaStrip';
 
 /** A carriage's window box in world space. */
 export interface CarBox {
@@ -27,6 +28,12 @@ export interface SightHost {
   trainSpan(): { x0: number; x1: number; roof: number };
   /** World X of the next platform. */
   nextStationX(): number;
+  /** Train speed along X in world units/s (droplets riding with a moving car). */
+  trainVel(): number;
+  /** The train-view camera (the Dolphin Race water strip is camera-relative). */
+  camera(): THREE.Camera;
+  /** Current Line (1–3): picks the strip's water colours. */
+  line(): number;
   zoomOut(amount: number): void;
   fog(mult: number): void;
   readonly particles: Particles;
@@ -37,7 +44,8 @@ export interface SightHost {
  * behind the verge, so animals rise from "the sea beyond the fence" at readable size.
  */
 const STAGE = {
-  dolphin: { z: -4.4, h: 1.3, apex: 3.6, period: 1.7 },
+  /** T-40: leaps from the foreground water strip (seaStrip.ts); sizes are at the strip's depth. */
+  dolphin: { h: 0.58, apex: 0.72, period: 1.9 },
   whale: { z: -14, h: 4.4, apex: 9.8, breach: 3.4, period: 6.5, zoom: 1.3 },
   gull: { h: 0.78 },
 } as const;
@@ -83,8 +91,12 @@ export class SightFx {
   private active: string | null = null;
   /** Festival Station dressings; each outlives its sight (it ends on arrival) until its platform scrolls away. */
   private fests: FestivalDecor[] = [];
+  /** Dolphin Race water; eases out on its own after the sight ends. */
+  private readonly strip = new SeaStrip();
 
-  constructor(private readonly host: SightHost) {}
+  constructor(private readonly host: SightHost) {
+    this.group.add(this.strip.mesh);
+  }
 
   private add(a: Actor, tappable = false): void {
     this.group.add(a.mesh);
@@ -106,13 +118,22 @@ export class SightFx {
       this.host.particles.spawn({ tex: splashTex(), x: x + (Math.random() - 0.5) * size, y, z, vx: (Math.random() - 0.5) * size, vy: 1.5 + Math.random() * 2.5 * size, g: -6, life: 0.9, size: 0.35 * size, sizeEnd: 0.6 * size, aspect: 1.6 });
   }
 
+  /**
+   * T-40: the pod leaps out of a strip of open water that slides up over the foreground band
+   * (sea on L1, fjord water on L2, lagoon on L3), so jumps and splashes are always on water.
+   * The dolphins sit just behind the opaque strip: below the waterline the water hides them.
+   */
   private dolphins(): void {
     const h = this.host;
     const D = STAGE.dolphin;
+    const strip = this.strip;
+    strip.setLine(h.line());
+    strip.show(true);
+    const z = STRIP_Z - 0.06;
     const tex = sharedTexture(PATHS.sight('dolphin'), paintDolphin, { pixel: true });
     for (let i = 0; i < 3; i++) {
       const m = spriteMesh(tex, D.h, 6);
-      const hit = hitMesh(2.4, 2.2);
+      const hit = hitMesh(1.4, 1.2);
       const ph = i / 3;
       let lastCyc = 1;
       this.add(
@@ -122,13 +143,17 @@ export class SightFx {
           update: (_dt, t) => {
             const cyc = (t / D.period + ph) % 1;
             const jump = Math.sin(cyc * Math.PI);
+            const wy = strip.waterY;
             // the pod races the train: a slow surge around the camera focus
-            const x = h.focusX() - 4.2 + i * 2.6 + Math.sin(t * 0.7 + i) * 0.6 + cyc * 1.2;
-            m.position.set(x, -1.1 + jump * D.apex, D.z);
-            m.rotation.z = 0.35 - cyc * 1.5;
-            hit.position.set(x, Math.max(0.6, m.position.y), D.z + 0.05);
-            if (cyc < lastCyc) this.splash(x - 0.3, 0.1, D.z + 0.2, 5, 0.8);
-            if (cyc > 0.9 && lastCyc <= 0.9) this.splash(x + 0.5, 0.1, D.z + 0.2, 5, 0.8);
+            const x = h.focusX() - 3.0 + i * 2.3 + Math.sin(t * 0.7 + i) * 0.45 + cyc * 0.9;
+            m.position.set(x, wy - D.h * 0.6 + jump * (D.apex + D.h * 0.6), z);
+            m.rotation.z = 0.55 - cyc * 1.1;
+            hit.position.set(x, Math.max(wy + 0.35, m.position.y), STRIP_Z + 0.1);
+            if (strip.ready) {
+              // droplets sit just behind the water plane: they fall back into the sea instead of over it
+              if (cyc < lastCyc) this.splash(x - 0.2, wy, STRIP_Z - 0.02, 6, 0.45);
+              if (cyc > 0.88 && lastCyc <= 0.88) this.splash(x + 0.3, wy, STRIP_Z - 0.02, 6, 0.45);
+            }
             lastCyc = cyc;
             return true;
           },
@@ -222,10 +247,12 @@ export class SightFx {
           // T-38: the splash out of the roof hatch is a pulsing particle fountain (was a stiff painted cone)
           const r = h.carRoof(idx) ?? { x: b.x, y: b.y + b.h };
           const pulse = 0.6 + Math.abs(Math.sin(t0 * 4)) * 0.4;
+          // T-40: droplets inherit the car's velocity, so the fountain rides along with a moving train
+          const v = h.trainVel();
           if (Math.random() < dt * 26 * pulse)
-            h.particles.spawn({ tex: splashTex(), x: b.x + (Math.random() - 0.5) * 0.3, y: r.y + 0.05, z: 0.55, vx: (Math.random() - 0.5) * 1.4, vy: 2.6 + Math.random() * 1.4 * pulse, g: -7, life: 0.75, size: 0.16, sizeEnd: 0.24, aspect: 1.6 });
+            h.particles.spawn({ tex: splashTex(), x: b.x + (Math.random() - 0.5) * 0.3, y: r.y + 0.05, z: 0.55, vx: v + (Math.random() - 0.5) * 1.4, vy: 2.6 + Math.random() * 1.4 * pulse, g: -7, life: 0.75, size: 0.16, sizeEnd: 0.24, aspect: 1.6 });
           if (Math.random() < dt * 10)
-            h.particles.spawn({ tex: Math.random() < 0.5 ? sparkleTex() : bubbleTex(), x: b.x + (Math.random() - 0.5) * 1.2, y: r.y + 0.6, z: 0.6, vy: 0.6, life: 0.7, size: 0.12, sizeEnd: 0.03 });
+            h.particles.spawn({ tex: Math.random() < 0.5 ? sparkleTex() : bubbleTex(), x: b.x + (Math.random() - 0.5) * 1.2, y: r.y + 0.6, z: 0.6, vx: v, vy: 0.6, life: 0.7, size: 0.12, sizeEnd: 0.03 });
           return true;
         },
       },
@@ -302,9 +329,11 @@ export class SightFx {
     this.active = null;
     this.host.zoomOut(1);
     this.host.fog(1);
+    this.strip.show(false);
   }
 
   update(dt: number, time: number): void {
+    this.strip.update(dt, time, this.host.camera(), this.host.focusX());
     const last = this.fests[this.fests.length - 1];
     this.fests = this.fests.filter((d) => {
       const keep = d.update(dt, time, this.host.focusX(), d === last && this.active === 'festival_station');

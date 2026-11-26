@@ -1,7 +1,8 @@
 /**
  * `/?debug=zoo` — QA motion review: every species (all motion profiles incl. a `sinuous` demo),
  * every habitat's plants swaying, and every Sight animating. Standalone: owns its own renderer.
- * World: 80×50 units, y up; DOM labels are positioned in % of the 16:10 stage.
+ * World: 80×64 units, y up; DOM labels are positioned in % of the 5:4 stage.
+ * T-40: bigger species cells (5 columns, 10 units tall) and labels that scale with the stage.
  */
 import * as THREE from 'three';
 import { loadGameData, HABITATS, type Habitat, type SpeciesDef } from '../../data/schema';
@@ -11,7 +12,9 @@ import { HABITAT_COLORS, paintBackdrop, paintSight } from './paint';
 import { makeRng } from './motion';
 
 const W = 80;
-const H = 50;
+const H = 64;
+/** Fish drawn this much bigger than in Tank View so they read in the zoo cells (T-40). */
+const ZOO_FISH_SIZE = 2.2;
 
 export interface ZooHandle {
   /** Advance by dt seconds (works while paused — for deterministic screenshots). */
@@ -32,7 +35,7 @@ interface Sight {
 export function mountZoo(container: HTMLElement): ZooHandle {
   const data = loadGameData();
   const wrap = document.createElement('div');
-  wrap.style.cssText = 'position:relative;margin:0 auto;width:min(100vw,160vh);aspect-ratio:16/10;background:#17303a;font-family:"Pixelify Sans",system-ui,sans-serif;';
+  wrap.style.cssText = 'position:relative;margin:0 auto;width:min(100vw,125vh);aspect-ratio:80/64;container-type:inline-size;background:#17303a;font-family:"Pixelify Sans",system-ui,sans-serif;';
   const canvas = document.createElement('canvas');
   canvas.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;display:block;';
   wrap.appendChild(canvas);
@@ -44,10 +47,11 @@ export function mountZoo(container: HTMLElement): ZooHandle {
   const camera = new THREE.OrthographicCamera(0, W, H, 0, -50, 50);
   camera.position.z = 20;
 
-  const label = (text: string, x: number, y: number, size = 11) => {
+  const label = (text: string, x: number, y: number, size = 11, maxW = W) => {
     const d = document.createElement('div');
     d.textContent = text;
-    d.style.cssText = `position:absolute;left:${(x / W) * 100}%;top:${((H - y) / H) * 100}%;font-size:${size}px;color:#fbf3df;text-shadow:0 1px 0 #000;pointer-events:none;white-space:nowrap;`;
+    // size ≈ px at a 1000 px wide stage, never below 12 px; on a dark plate so it reads on any backdrop
+    d.style.cssText = `position:absolute;left:${(x / W) * 100}%;top:${((H - y) / H) * 100}%;font-size:max(12px,${(size * 0.13).toFixed(2)}cqw);color:#fbf3df;text-shadow:0 1px 0 #000;pointer-events:none;white-space:nowrap;background:rgba(10,28,34,.62);padding:1px 6px;border-radius:4px;max-width:calc(${(maxW / W) * 100}% - 12px);overflow:hidden;text-overflow:ellipsis;`;
     wrap.appendChild(d);
   };
   const quad = (x: number, y: number, w: number, h: number, mat: THREE.Material, z = -10) => {
@@ -57,11 +61,11 @@ export function mountZoo(container: HTMLElement): ZooHandle {
     return m;
   };
 
-  // ---- species grid: 6×4 cells (18 species + sinuous demo) ----
+  // ---- species grid: 5×4 cells (18 species + sinuous demo) ----
   const fish: FishActor[] = [];
-  const cols = 6;
+  const cols = 5;
   const cw = W / cols;
-  const ch = 8;
+  const ch = 10.6;
   const cells: { def: SpeciesDef; label: string }[] = data.species.map((d) => ({ def: d, label: `${d.name} · ${d.motion}${d.motionVariant ? '+tail' : ''}` }));
   const seadragon = data.species.find((s) => s.id === 'leafy_seadragon');
   if (seadragon) cells.push({ def: { ...seadragon, id: seadragon.id, motion: 'sinuous' }, label: 'sinuous profile demo' });
@@ -76,11 +80,11 @@ export function mountZoo(container: HTMLElement): ZooHandle {
     quad(x0, y0, cw - 0.3, 0.9, new THREE.MeshBasicMaterial({ color: '#f2e2bd' }), -9);
     const area: Area = { x0, w: cw - 0.3, floor: y0 + 0.9, surface: y0 + ch - 0.4, margin: 0.2 };
     const seed = 1000 + i * 17;
-    const a = new FishActor({ fishId: `zoo${i}`, def: c.def, level: 1, shiny: false, mascot: c.def.id === 'pebble_damsel', seed }, makeRng(seed), area);
+    const a = new FishActor({ fishId: `zoo${i}`, def: c.def, level: 1, shiny: false, mascot: c.def.id === 'pebble_damsel', seed }, makeRng(seed), area, ZOO_FISH_SIZE);
     a.uniforms.uTint.value.set(HABITAT_COLORS[hab].deep);
     fish.push(a);
     scene.add(a.object);
-    label(c.label, x0 + 0.3, y0 + ch - 0.4);
+    label(c.label, x0 + 0.3, y0 + ch - 0.5, 12, cw - 0.6);
   });
 
   // ---- plants: 5 habitats × 4, swaying ----
@@ -88,7 +92,7 @@ export function mountZoo(container: HTMLElement): ZooHandle {
   const py = 9.5;
   quad(0, py - 0.4, W, 8.6, new THREE.MeshBasicMaterial({ color: '#21414c' }), -11);
   HABITATS.forEach((h, hi) => {
-    label(`${h} plants`, hi * 16 + 0.5, py + 8, 12);
+    label(`${h} plants`, hi * 16 + 0.5, py + 8, 14);
     for (let n = 1; n <= 4; n++) {
       const id = `${h}_${n}`;
       const def = data.plants.find((p) => p.id === id);
@@ -118,7 +122,7 @@ export function mountZoo(container: HTMLElement): ZooHandle {
     };
     const extra = s.id === 'dolphin_race' ? [mk(), mk()] : s.id === 'sea_fog' ? [mk()] : [];
     sights.push({ id: s.id, mesh: mk(), extra, cx, cy: 3, w: 3.4 });
-    label(s.name, cx - 2.5, 8, 12);
+    label(s.name, cx - 2.5, 8, 14);
   });
 
   const aspectOf = (m: THREE.Mesh) => ((m.material as THREE.MeshBasicMaterial).map?.userData.aspect as number | undefined) ?? 1.6;

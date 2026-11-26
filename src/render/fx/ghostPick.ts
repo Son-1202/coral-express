@@ -1,9 +1,11 @@
 /**
  * T-27: which missing partner a carriage hints at (at most one "ghost" per car), and the
- * tooltip text explaining it. Pure: reads only the sim's `possibleBonds` and bonds data.
+ * tooltip text explaining it. Pure: reads only the sim's `possibleBonds` and bonds data, plus (T-40)
+ * the carriage's decor/upgrade pp so the % matches the market estimate.
  */
 import type { BondsData, SpeciesDef } from '../../data/schema';
 import type { PossibleBond } from '../../sim/types';
+import type { BondPP } from '../../game/bondPP';
 
 export interface GhostHint {
   /** Species the player could add. */
@@ -22,7 +24,7 @@ export interface GhostHint {
  * The most valuable bond that is exactly one fish short, grouped by the missing species
  * (a pair and a community waiting for the same fish make one hint). Ties keep sim order.
  */
-export function pickGhost(possible: readonly PossibleBond[], bonds: BondsData, communityBonus: number): GhostHint | null {
+export function pickGhost(possible: readonly PossibleBond[], bonds: BondsData, communityBonus: number, pp: BondPP = { pair: 0, community: 0 }): GhostHint | null {
   const by = new Map<string, GhostHint>();
   for (const b of possible) {
     if (b.missing.length !== 1) continue;
@@ -33,14 +35,14 @@ export function pickGhost(possible: readonly PossibleBond[], bonds: BondsData, c
     if (!h) by.set(missing, (h = { missing, anchor: present, pairs: [], communities: [], value: 0 }));
     if (b.kind === 'pair') {
       const def = bonds.pairs.find((p) => `${p.a}+${p.b}` === b.bondId);
-      const bonus = def?.bonus ?? 0;
+      const bonus = (def?.bonus ?? 0) + pp.pair;
       if (!h.pairs.length) h.anchor = present;
       h.pairs.push({ partner: present, bonus });
       h.value += bonus;
     } else {
       const name = bonds.communities.find((c) => c.id === b.bondId)?.name ?? b.bondId;
-      h.communities.push({ name, bonus: communityBonus });
-      h.value += communityBonus;
+      h.communities.push({ name, bonus: communityBonus + pp.community });
+      h.value += communityBonus + pp.community;
     }
   }
   let best: GhostHint | null = null;

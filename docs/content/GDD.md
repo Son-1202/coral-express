@@ -47,7 +47,7 @@ Pairs `{a,b,bonus}`: both in the same car → each gets `bonus`; a fish counts t
 - Shiny: each purchase `shinyChance` → appeal × `shinyAppealMult`.
 
 ## Depot Reset
-Available when runShells ≥ `depotReset.minRunShells` and any terminal reached. Tickets = `floor(sqrt(runShells / divisor))`, divisor = `lines[].ticketDivisor` of the run's Line (fallback `depotReset.divisor`) (T-20). Upgrades (`upgrades.json`, each once, cost in Tickets) carry typed `effects`. Lines open via `lines[].opensAfter` once that Line's terminal was reached in `lines[].opensAfterRuns` runs (default 1; T-20 uses 2 → Line 1, Line 1, Line 2, Line 2, Line 3 = 4 resets).
+Available when runShells ≥ `depotReset.minRunShells` and any terminal reached. Tickets = `floor(sqrt(runShells / divisor))`, divisor = `lines[].ticketDivisor` of the run's Line (fallback `depotReset.divisor`) (T-20). An eligible Depot Reset always grants ≥ 1 Ticket (D-032). Upgrades (`upgrades.json`, each once, cost in Tickets) carry typed `effects`. Lines open via `lines[].opensAfter` once that Line's terminal was reached in `lines[].opensAfterRuns` runs (default 1; T-20 uses 2 → Line 1, Line 1, Line 2, Line 2, Line 3 = 4 resets).
 
 ## Offline
 `offline.rate × (fishSps + avgFarePerArrival / legCycleSeconds) × min(elapsed, offline.capHours h)`; Season Pass replaces with rate 0.7 / cap 12 h.

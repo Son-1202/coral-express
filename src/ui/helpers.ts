@@ -1,6 +1,7 @@
 // Pure UI helpers (no DOM). Unit-tested in tests/unit/ui/helpers.test.ts.
 import type { GameData, SpeciesDef, UpgradeDef } from '../data/schema';
 import type { CarInfo, Carriage, DepotPreview, SimState } from '../sim';
+import { bondPP } from '../game/bondPP';
 
 /** Seconds until `cost` is affordable at `sps`: 0 = now, null = never (no income). */
 export function affordableIn(cost: number, shells: number, sps: number): number | null {
@@ -185,22 +186,7 @@ export interface GainEstimate {
 export function fishGainWithBonds(data: GameData, state: SimState, sp: SpeciesDef, car: Carriage | null, info: CarInfo | null): GainEstimate {
   const base = fishGain(data, state, sp, car?.habitat ?? null);
   if (!car || !info) return { sps: base, bond: null };
-  let decorPP = 0;
-  const seen = new Set<string>();
-  for (const d of car.decor) {
-    if (seen.has(d.id)) continue;
-    seen.add(d.id);
-    for (const e of data.decor.find((x) => x.id === d.id)?.effects ?? []) if (e.type === 'bondBonusPP') decorPP += e.value;
-  }
-  let pairPP = 0;
-  let commPP = 0;
-  for (const u of data.upgrades) {
-    if (!state.permanent.upgrades.includes(u.id)) continue;
-    for (const e of u.effects) {
-      if (e.type === 'pairBonusPP') pairPP += e.value;
-      else if (e.type === 'communityBonusPP') commPP += e.value;
-    }
-  }
+  const pp = bondPP(data, state, car);
   /** A fish's Shells/s before its current bonds. */
   const raw = (f: { sps: number; bondMult: number } | undefined) => (f ? f.sps / (f.bondMult || 1) : 0);
   const name = (id: string) => data.species.find((s) => s.id === id)?.name ?? id;
@@ -211,7 +197,7 @@ export function fishGainWithBonds(data: GameData, state: SimState, sp: SpeciesDe
   const pair = info.possibleBonds.find((b) => b.kind === 'pair' && b.missing.includes(sp.id));
   if (pair) {
     const def = data.bonds.pairs.find((p) => `${p.a}+${p.b}` === pair.bondId);
-    const bonus = (def?.bonus ?? 0) + decorPP + pairPP;
+    const bonus = (def?.bonus ?? 0) + pp.pair;
     const paired = new Set(info.activeBonds.filter((b) => b.kind === 'pair').flatMap((b) => b.fishIds));
     const partner = pair.present[0] ?? '';
     const mate = info.fish.find((f) => f.species === partner && !paired.has(f.fishId));
@@ -220,7 +206,7 @@ export function fishGainWithBonds(data: GameData, state: SimState, sp: SpeciesDe
   }
   const comm = info.possibleBonds.find((b) => b.kind === 'community' && b.missing.length === 1 && b.missing[0] === sp.id);
   if (comm) {
-    const bonus = data.config.communityBonus + decorPP + commPP;
+    const bonus = data.config.communityBonus + pp.community;
     let members = base;
     for (const m of comm.present) members += raw(info.fish.find((f) => f.species === m));
     sps += bonus * members;

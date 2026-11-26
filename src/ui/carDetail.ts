@@ -5,6 +5,7 @@ import { speciesName } from './content';
 import { btn, fishIcon, h, habitatName } from './dom';
 import { lineHabitats } from './helpers';
 import { carLabel } from './cars';
+import { iconHtml } from './hud';
 import { costButton, type PanelView, type UiCtx } from './panel';
 
 function bondName(ctx: UiCtx, kind: string, id: string, species: string[]): string {
@@ -58,11 +59,11 @@ export function carPanel(ctx: UiCtx): PanelView {
       );
       const actions = h('div.ui-car-actions');
       actions.append(
-        btn('ui-brass', h('span', { html: '<i class="ui-ico-feed"></i>Feed' }), () => {
+        btn('ui-brass', h('span', { html: `${iconHtml('feed', '<i class="ui-ico-feed"></i>')}Feed` }), () => {
           const r = api.act({ type: 'feed', carId: c.id });
           ctx.sound(r.ok ? 'click' : 'error');
         }, { disabled: info.frenzyActive || info.frenzyReadyIn > 0 }),
-        btn('ui-brass seafoam', h('span', { html: '<i class="ui-ico-glass"></i>Open Tank View' }), () => {
+        btn('ui-brass seafoam', h('span', { html: `${iconHtml('tankview', '<i class="ui-ico-glass"></i>')}Open Tank View` }), () => {
           ctx.close();
           api.enterTankView(c.id);
         }),

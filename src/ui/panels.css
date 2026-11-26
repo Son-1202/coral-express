@@ -179,6 +179,10 @@ body.ui-panel-open .ui-cog { display: none; }
 /* T-29: specials about a fish show its sprite; the discount badge text comes from data (market.ts) */
 .ui-special-icon { position: relative; display: grid; place-items: center; box-sizing: border-box; padding: 6px; }
 .ui-special-icon > .ui-fish { --s: 46px !important; }
+/* T-40: painted T-39 medallion icons (free slot / cosmetic) fill the medallion, crisp pixels */
+.ui-special-icon:has(> .ui-special-art) { background: radial-gradient(circle at 35% 30%, #fffdf3, #f6e6bf 70%); }
+.ui-sprite.ui-special-art { width: 48px; height: 48px; }
+.ui-sprite.ui-special-art img { image-rendering: pixelated; }
 .ui-special-off { position: absolute; right: -14px; bottom: -6px; padding: 1px 5px; font: 12px var(--font-num); color: #6b2a1a; background: #fff1c4; border: 2px solid var(--brass-dark); border-radius: 6px; transform: rotate(-6deg); }
 .ui-special-icon[data-kind='cosmetic'] { border-radius: 10px; background: linear-gradient(#bfe6f2, #5fc6d0 60%, #f3d9a4 62%); }
 .ui-special.sold { filter: grayscale(.4); }
@@ -284,3 +288,6 @@ body.ui-panel-open .ui-cog { display: none; }
   .ui-sell, .ui-move, .ui-link, .ui-buy, .ui-buy.sm { min-height: 44px; }
   .ui-sell, .ui-link { min-width: 44px; }
 }
+/* T-40: painted Feed / Tank View icons (T-39) in the car detail buttons */
+.ui-car-actions .hud-img { width: 26px; height: 26px; margin: -5px 6px -5px 0; vertical-align: middle; }
+@media (max-height: 460px) { .ui-car-actions .hud-img { width: 22px; height: 22px; } }

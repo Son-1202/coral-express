@@ -90,3 +90,4 @@ See pm/CREDITS.md.
 - PRODUCER NEED (2026-11-25): save export/import before re-adding the home-screen app (iOS standalone storage is separate) → DONE in T-36.
 - PRODUCER BUG (2026-11-26): Festival Station bunting code-drawn and floating in the sky → FIXED in T-37 + T-38 (open: dolphins leap from behind the town on L1).
 - 2026-11-26 polish pass started: T-39 (ART backdrops+icons) + T-40 (DEV polish, tanks +20%).
+- 2026-11-26 polish pass T-39 + T-40 DONE (tanks +20%, loco scaled with cars; dolphins leap from a sea strip that slides over the foreground during the sight).

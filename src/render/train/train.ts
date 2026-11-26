@@ -3,15 +3,17 @@ import type { MotionProfile } from '../../data/schema';
 import type { SimState } from '../../sim';
 import { hasAsset, loadTexture } from '../../assets';
 import { toTexture } from '../paint/canvas';
-import { CAR, LOCO, TANK_WINDOW, paintCarriage, paintLocomotive, paintWheel } from './paintTrain';
+import { CAR, LOCO, TANK_WINDOW, TRAIN_SCALE, paintCarriage, paintLocomotive, paintWheel } from './paintTrain';
 import { createTank, type Tank } from './tank';
 import { Steam } from './steam';
 import { FishView } from './fishView';
 
-const GAP = 0.12;
+const S = TRAIN_SCALE;
+const GAP = 0.12 * S;
+/** Not scaled: the art wheels' bottom row stays at the same height above the rail head (T-24). */
 const BODY_LIFT = 0.05;
-/** World units per pixel of the real train art (car_shell 288 px, locomotive 320 px). */
-const ART_PX = 1 / 104;
+/** World units per pixel of the real train art (car_shell 288 px, locomotive 320 px), T-40 scaled. */
+const ART_PX = S / 104;
 
 interface Geom {
   w: number;
@@ -22,7 +24,7 @@ interface Geom {
 
 /** Real art: the glass cut-out of car_shell.png is x 24..263, y 27..99 (288×148). */
 const CAR_ART: Geom = { w: 288 * ART_PX, h: 148 * ART_PX, win: { x: 24 * ART_PX, y: 48 * ART_PX, w: 240 * ART_PX, h: 73 * ART_PX } };
-const CAR_PH: Geom = { w: CAR.w, h: CAR.h, win: TANK_WINDOW };
+const CAR_PH: Geom = { w: CAR.w * S, h: CAR.h * S, win: { x: TANK_WINDOW.x * S, y: TANK_WINDOW.y * S, w: TANK_WINDOW.w * S, h: TANK_WINDOW.h * S } };
 const LOCO_ART = { w: 320 * ART_PX, h: 151 * ART_PX };
 
 interface Wheel {
@@ -95,8 +97,8 @@ export class Train {
     const group = new THREE.Group();
     const body = new THREE.Group();
     group.add(body);
-    const w = this.locoArt ? LOCO_ART.w : LOCO.w;
-    const h = this.locoArt ? LOCO_ART.h : LOCO.h;
+    const w = this.locoArt ? LOCO_ART.w : LOCO.w * S;
+    const h = this.locoArt ? LOCO_ART.h : LOCO.h * S;
     const tex = loadTexture('train.locomotive', paintLocomotive, { pixel: true });
     const m = sprite(tex, w, h);
     m.position.set(0, BODY_LIFT + h / 2, 0);
@@ -104,21 +106,21 @@ export class Train {
     const wheels: Wheel[] = [];
     if (!this.locoArt) {
       const big = toTexture(paintWheel(10, true), true);
-      const r = 0.27;
-      for (const wx of [-0.15, 0.48, 1.11]) {
+      const r = 0.27 * S;
+      for (const wx of [-0.15 * S, 0.48 * S, 1.11 * S]) {
         const wm = sprite(big, r * 2, r * 2);
         wm.position.set(wx, r, 0.02);
         group.add(wm);
         wheels.push({ mesh: wm, r });
       }
-      const rod = new THREE.Mesh(new THREE.PlaneGeometry(1.36, 0.06), new THREE.MeshBasicMaterial({ color: '#c9d2d6' }));
-      rod.position.set(0.48, r, 0.03);
+      const rod = new THREE.Mesh(new THREE.PlaneGeometry(1.36 * S, 0.06 * S), new THREE.MeshBasicMaterial({ color: '#c9d2d6' }));
+      rod.position.set(0.48 * S, r, 0.03);
       group.add(rod);
       this.rods.push(rod);
     }
     // chimney position (art: stack at ~x 245/320, top at ~y 8/151)
     if (this.locoArt) this.chimney.set(w / 2 - 75 * ART_PX, BODY_LIFT + h - 0.05, 0);
-    else this.chimney.set(w / 2 - 0.52, BODY_LIFT + h - 0.3, 0);
+    else this.chimney.set(w / 2 - 0.52 * S, BODY_LIFT + h - 0.3 * S, 0);
     this.group.add(group);
     return { group, body, wheels, w, h };
   }
@@ -141,17 +143,17 @@ export class Train {
     body.add(fishLayer);
     const wheels: Wheel[] = [];
     if (!this.art) {
-      const r = 0.17;
-      for (const wx of [-0.95, -0.57, 0.57, 0.95]) {
+      const r = 0.17 * S;
+      for (const wx of [-0.95 * S, -0.57 * S, 0.57 * S, 0.95 * S]) {
         const w = sprite(this.wheelSmall, r * 2, r * 2);
         w.position.set(wx, r, 0.04);
         group.add(w);
         wheels.push({ mesh: w, r });
       }
     }
-    const link = new THREE.Mesh(new THREE.PlaneGeometry(GAP + 0.16, 0.06), new THREE.MeshBasicMaterial({ color: '#34474c' }));
+    const link = new THREE.Mesh(new THREE.PlaneGeometry(GAP + 0.16 * S, 0.06 * S), new THREE.MeshBasicMaterial({ color: '#34474c' }));
     // T-24: coupling bar at buffer height (car art buffers ~31 px above the wheel line), not floating by the rails
-    link.position.set(g.w / 2 + GAP / 2, this.art ? BODY_LIFT + 31 * ART_PX : 0.26, -0.01);
+    link.position.set(g.w / 2 + GAP / 2, this.art ? BODY_LIFT + 31 * ART_PX : 0.26 * S, -0.01);
     group.add(link);
     const hit = new THREE.Mesh(this.hitGeo, new THREE.MeshBasicMaterial({ visible: false }));
     hit.position.set(0, BODY_LIFT + g.h / 2, 0.05);
@@ -294,8 +296,8 @@ export class Train {
     }
     const a = this.loco.wheels[0]?.mesh.rotation.z ?? 0;
     for (const rod of this.rods) {
-      rod.position.x = 0.48 + Math.cos(a) * 0.11;
-      rod.position.y = 0.27 + Math.sin(a) * 0.11;
+      rod.position.x = (0.48 + Math.cos(a) * 0.11) * S;
+      rod.position.y = (0.27 + Math.sin(a) * 0.11) * S;
     }
     const origin = this.chimney.clone().add(this.loco.group.position).add(this.group.position);
     this.steam.update(dt, origin, speed);

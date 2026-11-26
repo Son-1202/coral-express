@@ -9,6 +9,9 @@ import { paintCap, paintDecor, paintFish, paintPlant } from './paint';
 import { fishMaterial, plantMaterial, type FishUniforms, type PlantUniforms } from './shaders';
 import { depthLook, restingY, TANK } from './layout';
 
+/** Z of a fish hiding in decor: behind back-layer decor (−4 + x·0.01), in front of the ambient plants (−5). */
+const HIDE_Z = -4.5;
+
 /** Half-height (world units) per motion profile; tank is 16×9. */
 const HALF_H: Record<string, number> = {
   darter: 0.42, hoverer: 0.72, glider: 0.6, sinuous: 0.5, crawler: 0.36, hopper: 0.4, pulser: 0.62, swarm: 0.08, sessile: 0.62,
@@ -63,10 +66,11 @@ export class FishActor {
   readonly steer: DecorSteer | null;
   flash = 0;
 
-  constructor(readonly spec: FishSpec, rand: () => number, readonly area: Area = TANK_AREA) {
+  /** `sizeMul`: dev zoo only (T-40: bigger fish in its bigger cells). */
+  constructor(readonly spec: FishSpec, rand: () => number, readonly area: Area = TANK_AREA, sizeMul = 1) {
     const { def } = spec;
     this.tex = fishTexture(def, spec.shiny);
-    this.halfH = (SPECIES_HALF_H[def.id] ?? HALF_H[def.motion] ?? 0.45) * (1 + Math.min(0.25, (spec.level - 1) * 0.01));
+    this.halfH = (SPECIES_HALF_H[def.id] ?? HALF_H[def.motion] ?? 0.45) * (1 + Math.min(0.25, (spec.level - 1) * 0.01)) * sizeMul;
     this.depth = def.motion === 'sessile' || def.motion === 'crawler' ? 0.15 + rand() * 0.5 : rand();
     const profile = def.motion === 'glider' && def.motionVariant === 'sinuousTail' ? 'glider' : def.motion;
     const mat = fishMaterial(this.tex, rand() * 6.28);
@@ -115,7 +119,7 @@ export class FishActor {
     const p = this.mover.pose;
     const at = this.steer ? this.steer.step(dt, p, obstacles, !env.food, this.halfH * 0.8) : p;
     const hidden = this.steer?.hidden ?? 0;
-    // tucked into a hideout: pushed to the back and faded (the decor reads as covering it)
+    // tucked into a hideout: a little smaller/bluer and drawn fully behind the decor (T-40: no alpha fade)
     const look = depthLook(Math.min(1, this.depth + p.depthBias + hidden * 0.6));
     const u = this.uniforms;
     u.uTime.value = time;
@@ -123,7 +127,7 @@ export class FishActor {
     u.uAmp.value = p.wobbleAmp;
     if (this.spec.def.motionVariant !== 'sinuousTail') u.uWave.value = p.wave;
     u.uTintAmt.value = look.tint;
-    u.uAlpha.value = look.alpha * (1 - hidden * 0.75);
+    u.uAlpha.value = 1;
     this.flash = Math.max(0, this.flash - dt * 2.5);
     u.uFlash.value = this.flash > 0 ? Math.abs(Math.sin(this.flash * 18)) * 0.8 : 0;
     const z = 1 - (this.depth + p.depthBias) * 3; // nearer = higher z = drawn later
@@ -146,10 +150,13 @@ export class FishActor {
       return;
     }
     const o = this.object;
-    o.position.set(at.x, at.y, z - hidden * 4);
+    // T-40: once tucked in, sort behind every back-layer decor (z −4) but in front of the ambient plants (−5)
+    o.position.set(at.x, at.y, hidden > 0.5 ? HIDE_Z : z);
     o.scale.set(w * p.sx * p.facing, h * p.sy, 1);
     o.rotation.z = p.rot * p.facing;
     if (this.cap) {
+      // the cap draws without depth test: hide it while its wearer is tucked behind decor
+      this.cap.visible = hidden <= 0.5;
       const capH = 0.42;
       const capAspect = aspectOf(capTexture());
       this.cap.scale.set((capH * h * capAspect) / Math.max(1e-3, w), capH, 1);

@@ -49,6 +49,9 @@ interface EndingLine {
   postcardRef?: string;
 }
 
+/** Caption fade-out time (matches `.ending-caption` opacity transition in ending.css) + a frame. */
+const CAPTION_FADE_MS = 850;
+
 const lines = endingJson.lines as EndingLine[];
 const lineText = (beat: string) => lines.find((l) => l.beat === beat)?.text ?? '';
 
@@ -99,13 +102,20 @@ export function runEnding(o: EndingOptions): EndingHandle {
     beachActive = true;
   };
 
-  const say = (text: string) => {
+  // T-40: the parchment plate belongs to the caption itself (class `plate`), not to the beat, so a
+  // caption never shows (or fades out) without it: the style only changes while the caption is hidden.
+  let sayTimer = 0;
+  const say = (text: string, plate = false) => {
+    const wasOn = caption.classList.contains('on');
     caption.classList.remove('on');
+    clearTimeout(sayTimer);
     if (!text) return;
-    setTimeout(() => {
+    const restyle = caption.classList.contains('plate') !== plate;
+    sayTimer = window.setTimeout(() => {
+      caption.classList.toggle('plate', plate);
       caption.textContent = text;
       caption.classList.add('on');
-    }, 350);
+    }, wasOn && restyle ? CAPTION_FADE_MS : 350);
   };
   const flash = (color: string) => {
     fade.style.background = color;
@@ -151,13 +161,13 @@ export function runEnding(o: EndingOptions): EndingHandle {
           stopCine();
           layer.setPainter(new UnderwaterPainter({ fish: [], backdrop: '/ui/ending_keyart.png', wildSwarms: low ? 2 : 4, seed: 3 }));
         }
-        say(lineText('glassOpens'));
+        say(lineText('glassOpens'), true);
         break;
       case 'panorama':
         stopCine();
         flash('#0a3346');
         layer.setPainter(new UnderwaterPainter({ fish, wildSwarms: low ? 1 : 2, seed: 11, panorama: true }));
-        say(lineText('panorama'));
+        say(lineText('panorama'), true);
         break;
       case 'theEnd':
         say('');

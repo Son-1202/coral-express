@@ -19,9 +19,16 @@ import { FxEvents } from './fx/fxEvents';
 import { dayPhase, nightAmount } from './timeOfDay';
 import { ODO_WRAP } from '../game/pose';
 import { fishMaterial } from './train/fishMaterial';
+import { TRAIN_SCALE } from './train/paintTrain';
 import { fishSize, fishTexture } from './train/fishView';
 import { LivingWorld } from './world/world';
 import { DepotScene, type DepotSnapshot } from './depot/depotScene';
+import { bondPP } from '../game/bondPP';
+
+/** Carriages framed with the loco when no car is selected (T-40). */
+const FRAME_CARS = 3;
+/** Framed span's middle stops this far behind the platform centre (T-40; was train middle − 2.2). */
+const STOP_BACK = 0.6;
 
 export interface StageOpts {
   quality: Quality | 'auto';
@@ -127,6 +134,9 @@ export class Stage implements GameView {
         return { x0: Math.min(...xs) - half, x1: Math.max(...xs) + half, roof: this.train.roofY };
       },
       nextStationX: () => (Math.floor(this.game.pose().odo) + 1) * WORLD.stationSpacing,
+      trainVel: () => this.lastVel,
+      camera: () => this.rig.camera,
+      line: () => this.game.sim.state.currentLine,
       zoomOut: (z) => this.rig.setZoom(z),
       fog: (m) => this.diorama.setFogMult(m),
       particles: this.particles,
@@ -176,7 +186,12 @@ export class Stage implements GameView {
   }
 
   followX(): number {
-    return this.train.group.position.x + (this.train.centers[this.followIndex] ?? 0);
+    const c = this.train.centers;
+    if (this.selectedCarId) return this.train.group.position.x + (c[this.followIndex] ?? 0);
+    // T-40: nothing selected → frame the loco + the first ≤ 3 carriages (the bigger tanks no longer
+    // fit when following the loco). Depends only on the composition, so arrivals/stops cause no target switch.
+    const last = c[Math.min(FRAME_CARS, c.length - 1)] ?? 0;
+    return this.train.group.position.x + ((c[0] ?? 0) + last) / 2;
   }
 
   stationName(line: number, k: number): string {
@@ -191,7 +206,7 @@ export class Stage implements GameView {
       if (!this.rings.has(car.id)) {
         const r = new FrenzyRing();
         // on the carriage door (front end, upper corner)
-        r.mesh.position.set(this.train.carWidth / 2 - 0.2, 1.22, 0.12);
+        r.mesh.position.set(this.train.carWidth / 2 - 0.2 * TRAIN_SCALE, 1.22 * TRAIN_SCALE, 0.12);
         car.group.add(r.mesh);
         this.rings.set(car.id, r);
       }
@@ -210,8 +225,13 @@ export class Stage implements GameView {
   private placeTrain(dt: number, mDt = dt): void {
     const pose = this.game.pose();
     const x = pose.odo * WORLD.stationSpacing;
-    // align the middle of the train with the platform centre when stopped
-    const offset = this.train.length / 2 - 2.2;
+    // T-40: the bigger train is aligned by its framed part (loco + first ≤ 3 cars, ~14 u vs a 13 u
+    // platform): that span's middle sits STOP_BACK behind the platform centre, so with 3 cars the
+    // loco's nose stops at the platform end and the rear car overhangs ~1 u (was all at the rear).
+    const c = this.train.centers;
+    const k = Math.min(FRAME_CARS, c.length - 1);
+    const framed = k > 0 ? -((c[k] ?? 0) - this.train.carWidth / 2) : this.train.length;
+    const offset = framed / 2 - STOP_BACK;
     const wx = x + offset;
     if (Number.isFinite(this.lastX) && Math.abs(wx - this.lastX) > WORLD.stationSpacing * 1.5) {
       // big jump (offline / fast-forward / depot reset / odometer wrap): snap the view
@@ -277,7 +297,7 @@ export class Stage implements GameView {
       } catch {
         continue;
       }
-      this.bonds.sync(car, info);
+      this.bonds.sync(car, info, bondPP(this.game.data, sim.state, sim.state.carriages.find((c) => c.id === car.id) ?? null));
       car.frenzy = info.frenzyActive ? 1 : 0;
       const ring = this.rings.get(car.id);
       ring?.set(info.frenzyReadyIn > 0 ? 1 - info.frenzyReadyIn / cd : null, this.infoTimer);
