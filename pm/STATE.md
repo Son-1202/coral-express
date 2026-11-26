@@ -89,3 +89,4 @@ See pm/CREDITS.md.
 - PRODUCER BUGS (2026-11-25): Depot Reset scene still procedural; no app icon (home screen shows 'C') → FIXED in T-34 + T-35 (D-033).
 - PRODUCER NEED (2026-11-25): save export/import before re-adding the home-screen app (iOS standalone storage is separate) → DONE in T-36.
 - PRODUCER BUG (2026-11-26): Festival Station bunting code-drawn and floating in the sky → FIXED in T-37 + T-38 (open: dolphins leap from behind the town on L1).
+- 2026-11-26 polish pass started: T-39 (ART backdrops+icons) + T-40 (DEV polish, tanks +20%).
